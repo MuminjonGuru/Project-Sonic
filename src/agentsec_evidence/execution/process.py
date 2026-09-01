@@ -78,13 +78,15 @@ def _kill_process_tree(process: subprocess.Popen[bytes]) -> None:
     for child in children:
         with suppress(psutil.Error):
             child.terminate()
-    with suppress(psutil.Error):
-        root.terminate()
+    with suppress(OSError):
+        process.terminate()
 
-    _gone, alive = psutil.wait_procs([*children, root], timeout=2)
+    _gone, alive = psutil.wait_procs(children, timeout=2)
     for item in alive:
         with suppress(psutil.Error):
             item.kill()
+    if process.poll() is None:
+        process.kill()
 
 
 def _rss_bytes(process_id: int) -> int:

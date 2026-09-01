@@ -15,6 +15,8 @@ import psutil
 
 from agentsec_evidence.core.time import utc_now
 
+_WINDOWS_CREATE_NEW_PROCESS_GROUP = 0x00000200
+
 
 @dataclass(frozen=True)
 class ProcessCapture:
@@ -110,7 +112,7 @@ def run_bounded_process(
         msg = "timeout and output limits must be positive"
         raise ValueError(msg)
 
-    creation_flags = subprocess.CREATE_NEW_PROCESS_GROUP if os.name == "nt" else 0
+    creation_flags = _WINDOWS_CREATE_NEW_PROCESS_GROUP if os.name == "nt" else 0
     started_at = utc_now()
     started_ns = time.monotonic_ns()
     process = subprocess.Popen(

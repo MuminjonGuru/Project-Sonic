@@ -1,0 +1,95 @@
+{
+  "$id": "urn:agentsec-evidence:schema:v0.1.0:parser-report",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "complete": {
+      "title": "Complete",
+      "type": "boolean"
+    },
+    "execution_id": {
+      "minLength": 1,
+      "title": "Execution Id",
+      "type": "string"
+    },
+    "native_error_count": {
+      "minimum": 0,
+      "title": "Native Error Count",
+      "type": "integer"
+    },
+    "native_result_count": {
+      "minimum": 0,
+      "title": "Native Result Count",
+      "type": "integer"
+    },
+    "native_scanned_path_count": {
+      "minimum": 0,
+      "title": "Native Scanned Path Count",
+      "type": "integer"
+    },
+    "native_skipped_path_count": {
+      "minimum": 0,
+      "title": "Native Skipped Path Count",
+      "type": "integer"
+    },
+    "native_skipped_rule_count": {
+      "minimum": 0,
+      "title": "Native Skipped Rule Count",
+      "type": "integer"
+    },
+    "normalized_finding_count": {
+      "minimum": 0,
+      "title": "Normalized Finding Count",
+      "type": "integer"
+    },
+    "parsed_at": {
+      "format": "date-time",
+      "title": "Parsed At",
+      "type": "string"
+    },
+    "parser_id": {
+      "minLength": 1,
+      "title": "Parser Id",
+      "type": "string"
+    },
+    "parser_version": {
+      "minLength": 1,
+      "title": "Parser Version",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "0.1.0",
+      "default": "0.1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_blob_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Source Blob Sha256",
+      "type": "string"
+    },
+    "unknown_top_level_fields": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Unknown Top Level Fields",
+      "type": "array"
+    }
+  },
+  "required": [
+    "parser_id",
+    "parser_version",
+    "execution_id",
+    "source_blob_sha256",
+    "parsed_at",
+    "native_result_count",
+    "native_error_count",
+    "native_scanned_path_count",
+    "native_skipped_path_count",
+    "native_skipped_rule_count",
+    "normalized_finding_count",
+    "complete"
+  ],
+  "title": "ParserReport",
+  "type": "object"
+}

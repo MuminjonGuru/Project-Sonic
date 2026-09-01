@@ -1,0 +1,46 @@
+{
+  "errors": [
+    {
+      "code": 2,
+      "level": "warn",
+      "message": "\u001b[31mSynthetic native warning retained for adapter testing."
+    }
+  ],
+  "paths": {
+    "scanned": [
+      "/src/vulnerable.py"
+    ],
+    "skipped": []
+  },
+  "results": [
+    {
+      "check_id": "project.first-slice.python-eval",
+      "end": {
+        "col": 28,
+        "line": 2,
+        "offset": 79
+      },
+      "extra": {
+        "engine_kind": "OSS",
+        "fingerprint": "synthetic-native-fingerprint",
+        "message": "Controlled fixture contains a direct eval call.",
+        "metadata": {
+          "category": "security",
+          "confidence": "HIGH",
+          "cwe": [
+            "CWE-95"
+          ]
+        },
+        "severity": "ERROR"
+      },
+      "path": "/src/vulnerable.py",
+      "start": {
+        "col": 12,
+        "line": 2,
+        "offset": 63
+      }
+    }
+  ],
+  "skipped_rules": [],
+  "version": "1.174.0"
+}

@@ -1,0 +1,91 @@
+{
+  "$id": "urn:agentsec-evidence:schema:v0.1.0:target-snapshot",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "content_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Content Sha256",
+      "type": "string"
+    },
+    "file_count": {
+      "minimum": 0,
+      "title": "File Count",
+      "type": "integer"
+    },
+    "inventory_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Inventory Sha256",
+      "type": "string"
+    },
+    "license_status": {
+      "enum": [
+        "project-authored-private",
+        "identified",
+        "unknown"
+      ],
+      "title": "License Status",
+      "type": "string"
+    },
+    "retrieved_at": {
+      "format": "date-time",
+      "title": "Retrieved At",
+      "type": "string"
+    },
+    "revision": {
+      "minLength": 1,
+      "title": "Revision",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "0.1.0",
+      "default": "0.1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "snapshot_id": {
+      "minLength": 1,
+      "title": "Snapshot Id",
+      "type": "string"
+    },
+    "source_kind": {
+      "enum": [
+        "project-fixture",
+        "local",
+        "git"
+      ],
+      "title": "Source Kind",
+      "type": "string"
+    },
+    "source_label": {
+      "minLength": 1,
+      "title": "Source Label",
+      "type": "string"
+    },
+    "target_id": {
+      "minLength": 1,
+      "title": "Target Id",
+      "type": "string"
+    },
+    "total_bytes": {
+      "minimum": 0,
+      "title": "Total Bytes",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "target_id",
+    "snapshot_id",
+    "source_kind",
+    "source_label",
+    "revision",
+    "retrieved_at",
+    "license_status",
+    "content_sha256",
+    "inventory_sha256",
+    "file_count",
+    "total_bytes"
+  ],
+  "title": "TargetSnapshot",
+  "type": "object"
+}

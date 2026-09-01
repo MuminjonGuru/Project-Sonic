@@ -1,0 +1,109 @@
+{
+  "$defs": {
+    "ExecutionOutcome": {
+      "enum": [
+        "success",
+        "partial",
+        "failed",
+        "timed-out",
+        "cancelled",
+        "unsupported",
+        "unsafe-to-run"
+      ],
+      "title": "ExecutionOutcome",
+      "type": "string"
+    }
+  },
+  "$id": "urn:agentsec-evidence:schema:v0.1.0:summary",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "duration_ns": {
+      "minimum": 0,
+      "title": "Duration Ns",
+      "type": "integer"
+    },
+    "execution_outcome": {
+      "$ref": "#/$defs/ExecutionOutcome"
+    },
+    "generated_at": {
+      "format": "date-time",
+      "title": "Generated At",
+      "type": "string"
+    },
+    "native_error_count": {
+      "minimum": 0,
+      "title": "Native Error Count",
+      "type": "integer"
+    },
+    "native_result_count": {
+      "minimum": 0,
+      "title": "Native Result Count",
+      "type": "integer"
+    },
+    "normalized_coverage_count": {
+      "minimum": 0,
+      "title": "Normalized Coverage Count",
+      "type": "integer"
+    },
+    "normalized_failure_count": {
+      "minimum": 0,
+      "title": "Normalized Failure Count",
+      "type": "integer"
+    },
+    "normalized_finding_count": {
+      "minimum": 0,
+      "title": "Normalized Finding Count",
+      "type": "integer"
+    },
+    "provenance_resolution_rate": {
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Provenance Resolution Rate",
+      "type": "number"
+    },
+    "run_id": {
+      "minLength": 1,
+      "title": "Run Id",
+      "type": "string"
+    },
+    "sarif_representability_rate": {
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Sarif Representability Rate",
+      "type": "number"
+    },
+    "sarif_valid": {
+      "title": "Sarif Valid",
+      "type": "boolean"
+    },
+    "schema_version": {
+      "const": "0.1.0",
+      "default": "0.1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "statement": {
+      "const": "Semgrep detection was unchanged and was not evaluated as improved",
+      "default": "Semgrep detection was unchanged and was not evaluated as improved",
+      "title": "Statement",
+      "type": "string"
+    }
+  },
+  "required": [
+    "run_id",
+    "generated_at",
+    "execution_outcome",
+    "native_result_count",
+    "native_error_count",
+    "normalized_finding_count",
+    "normalized_coverage_count",
+    "normalized_failure_count",
+    "provenance_resolution_rate",
+    "sarif_representability_rate",
+    "sarif_valid",
+    "duration_ns"
+  ],
+  "title": "Summary",
+  "type": "object"
+}

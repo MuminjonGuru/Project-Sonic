@@ -1,0 +1,15 @@
+profile_id = "development-static-v1"
+profile_kind = "development"
+network = "denied"
+target_mount = "read-only"
+max_workers = 1
+
+[limits]
+timeout_seconds = 120
+cpu_count = 2.0
+memory_mb = 2048
+pids = 256
+tmpfs_mb = 256
+max_stdout_bytes = 10485760
+max_stderr_bytes = 10485760
+max_native_bytes = 52428800

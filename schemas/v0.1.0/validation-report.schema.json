@@ -1,0 +1,86 @@
+{
+  "$defs": {
+    "ValidationCheck": {
+      "additionalProperties": false,
+      "properties": {
+        "detail": {
+          "title": "Detail",
+          "type": "string"
+        },
+        "name": {
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "passed": {
+          "title": "Passed",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "name",
+        "passed",
+        "detail"
+      ],
+      "title": "ValidationCheck",
+      "type": "object"
+    }
+  },
+  "$id": "urn:agentsec-evidence:schema:v0.1.0:validation-report",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "checked_at": {
+      "format": "date-time",
+      "title": "Checked At",
+      "type": "string"
+    },
+    "checks": {
+      "items": {
+        "$ref": "#/$defs/ValidationCheck"
+      },
+      "title": "Checks",
+      "type": "array"
+    },
+    "kind": {
+      "enum": [
+        "schema",
+        "sarif",
+        "provenance",
+        "bundle"
+      ],
+      "title": "Kind",
+      "type": "string"
+    },
+    "passed": {
+      "title": "Passed",
+      "type": "boolean"
+    },
+    "run_id": {
+      "minLength": 1,
+      "title": "Run Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "0.1.0",
+      "default": "0.1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "validation_id": {
+      "minLength": 1,
+      "title": "Validation Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "validation_id",
+    "run_id",
+    "kind",
+    "checked_at",
+    "passed",
+    "checks"
+  ],
+  "title": "ValidationReport",
+  "type": "object"
+}

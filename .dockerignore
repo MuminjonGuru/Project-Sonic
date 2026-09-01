@@ -1,0 +1,14 @@
+.git
+.github
+.venv
+.pytest_cache
+.hypothesis
+.mypy_cache
+.ruff_cache
+workspace
+outputs
+releases
+tests
+test_cases
+*.pyc
+__pycache__

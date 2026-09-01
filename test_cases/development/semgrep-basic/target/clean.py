@@ -1,0 +1,5 @@
+import ast
+
+
+def evaluate_expression(user_input: str) -> object:
+    return ast.literal_eval(user_input)

@@ -1,0 +1,102 @@
+{
+  "$defs": {
+    "ManifestEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "byte_length": {
+          "minimum": 0,
+          "title": "Byte Length",
+          "type": "integer"
+        },
+        "relative_path": {
+          "maxLength": 4096,
+          "minLength": 1,
+          "title": "Relative Path",
+          "type": "string"
+        },
+        "sensitivity": {
+          "$ref": "#/$defs/Sensitivity"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "relative_path",
+        "sha256",
+        "byte_length",
+        "sensitivity"
+      ],
+      "title": "ManifestEntry",
+      "type": "object"
+    },
+    "Sensitivity": {
+      "enum": [
+        "public",
+        "public-redacted",
+        "metadata-only",
+        "restricted-vendor",
+        "disclosure-sensitive",
+        "secret",
+        "internal"
+      ],
+      "title": "Sensitivity",
+      "type": "string"
+    }
+  },
+  "$id": "urn:agentsec-evidence:schema:v0.1.0:bundle-manifest",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "bundle_id": {
+      "minLength": 1,
+      "title": "Bundle Id",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "entries": {
+      "items": {
+        "$ref": "#/$defs/ManifestEntry"
+      },
+      "title": "Entries",
+      "type": "array"
+    },
+    "entries_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Entries Sha256",
+      "type": "string"
+    },
+    "run_id": {
+      "minLength": 1,
+      "title": "Run Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "0.1.0",
+      "default": "0.1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "state": {
+      "const": "finalized",
+      "default": "finalized",
+      "title": "State",
+      "type": "string"
+    }
+  },
+  "required": [
+    "bundle_id",
+    "run_id",
+    "created_at",
+    "entries",
+    "entries_sha256"
+  ],
+  "title": "BundleManifest",
+  "type": "object"
+}

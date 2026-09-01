@@ -1,0 +1,68 @@
+[build-system]
+requires = ["hatchling==1.32.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "agentsec-evidence"
+version = "0.1.0"
+description = "A research-oriented security evidence orchestrator for AI-agent repositories."
+readme = "README.md"
+requires-python = ">=3.13.15,<3.14"
+dependencies = [
+  "jsonschema==4.26.0",
+  "portalocker==4.3.0",
+  "psutil==7.2.2",
+  "pydantic==2.13.5",
+  "rich==15.0.0",
+  "typer==0.27.2",
+]
+
+[project.scripts]
+agentsec-evidence = "agentsec_evidence.cli.app:main"
+
+[dependency-groups]
+dev = [
+  "hatchling==1.32.0",
+  "hypothesis==6.165.10",
+  "hypothesis-jsonschema==0.23.1",
+  "mypy==2.3.1",
+  "pre-commit==4.6.2",
+  "pytest==9.1.1",
+  "pytest-cov==7.1.0",
+  "ruff==0.16.5",
+  "types-jsonschema==4.26.0.20260518",
+  "types-psutil==7.2.2.20260827",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/agentsec_evidence"]
+
+[tool.pytest.ini_options]
+addopts = "--strict-config --strict-markers -ra"
+testpaths = ["tests"]
+xfail_strict = true
+
+[tool.coverage.run]
+branch = true
+source = ["agentsec_evidence"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["B", "E", "F", "I", "PERF", "RUF", "SIM", "UP"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["agentsec_evidence"]
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
+warn_unreachable = true
+pretty = true
+packages = ["agentsec_evidence"]

@@ -1,0 +1,138 @@
+{
+  "$defs": {
+    "Producer": {
+      "additionalProperties": false,
+      "properties": {
+        "adapter_id": {
+          "minLength": 1,
+          "title": "Adapter Id",
+          "type": "string"
+        },
+        "adapter_version": {
+          "minLength": 1,
+          "title": "Adapter Version",
+          "type": "string"
+        },
+        "tool_id": {
+          "minLength": 1,
+          "title": "Tool Id",
+          "type": "string"
+        },
+        "tool_version": {
+          "minLength": 1,
+          "title": "Tool Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "tool_id",
+        "tool_version",
+        "adapter_id",
+        "adapter_version"
+      ],
+      "title": "Producer",
+      "type": "object"
+    }
+  },
+  "$id": "urn:agentsec-evidence:schema:v0.1.0:coverage",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "adapter_support": {
+      "enum": [
+        "supported",
+        "partial",
+        "unsupported",
+        "unknown"
+      ],
+      "title": "Adapter Support",
+      "type": "string"
+    },
+    "applicability": {
+      "enum": [
+        "applicable",
+        "not-applicable",
+        "unknown"
+      ],
+      "title": "Applicability",
+      "type": "string"
+    },
+    "coverage_id": {
+      "minLength": 1,
+      "title": "Coverage Id",
+      "type": "string"
+    },
+    "execution": {
+      "enum": [
+        "not-run",
+        "success",
+        "partial",
+        "failed",
+        "timed-out",
+        "cancelled"
+      ],
+      "title": "Execution",
+      "type": "string"
+    },
+    "execution_id": {
+      "minLength": 1,
+      "title": "Execution Id",
+      "type": "string"
+    },
+    "limitations": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Limitations",
+      "type": "array"
+    },
+    "observation": {
+      "enum": [
+        "observed-risk",
+        "observed-control",
+        "no-observation",
+        "unknown"
+      ],
+      "title": "Observation",
+      "type": "string"
+    },
+    "producer": {
+      "$ref": "#/$defs/Producer"
+    },
+    "property_id": {
+      "minLength": 1,
+      "title": "Property Id",
+      "type": "string"
+    },
+    "run_id": {
+      "minLength": 1,
+      "title": "Run Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "0.1.0",
+      "default": "0.1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "target_snapshot_id": {
+      "minLength": 1,
+      "title": "Target Snapshot Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "coverage_id",
+    "run_id",
+    "execution_id",
+    "target_snapshot_id",
+    "property_id",
+    "producer",
+    "applicability",
+    "adapter_support",
+    "execution",
+    "observation"
+  ],
+  "title": "CoverageRecord",
+  "type": "object"
+}

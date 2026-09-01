@@ -1,0 +1,42 @@
+{
+  "$id": "urn:agentsec-evidence:schema:v0.1.0:inventory-entry",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "byte_length": {
+      "minimum": 0,
+      "title": "Byte Length",
+      "type": "integer"
+    },
+    "media_type": {
+      "minLength": 1,
+      "title": "Media Type",
+      "type": "string"
+    },
+    "path": {
+      "maxLength": 4096,
+      "minLength": 1,
+      "title": "Path",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "0.1.0",
+      "default": "0.1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Sha256",
+      "type": "string"
+    }
+  },
+  "required": [
+    "path",
+    "sha256",
+    "byte_length",
+    "media_type"
+  ],
+  "title": "InventoryEntry",
+  "type": "object"
+}

@@ -1,0 +1,158 @@
+{
+  "$id": "urn:agentsec-evidence:schema:v0.1.0:failure",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "affected_scope": {
+      "minLength": 1,
+      "title": "Affected Scope",
+      "type": "string"
+    },
+    "category": {
+      "enum": [
+        "configuration",
+        "missing-tool",
+        "incompatible-version",
+        "unsafe-target",
+        "timeout",
+        "resource-limit",
+        "nonzero-exit",
+        "malformed-output",
+        "unsupported-schema",
+        "parser-defect",
+        "network",
+        "authentication",
+        "quota",
+        "vendor",
+        "internal"
+      ],
+      "title": "Category",
+      "type": "string"
+    },
+    "evidence_blob_sha256": {
+      "items": {
+        "pattern": "^[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "title": "Evidence Blob Sha256",
+      "type": "array"
+    },
+    "execution_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Execution Id"
+    },
+    "failure_id": {
+      "minLength": 1,
+      "title": "Failure Id",
+      "type": "string"
+    },
+    "final_disposition": {
+      "minLength": 1,
+      "title": "Final Disposition",
+      "type": "string"
+    },
+    "native_exit_code": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Native Exit Code"
+    },
+    "native_signal": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Native Signal"
+    },
+    "partial_evidence_usable": {
+      "title": "Partial Evidence Usable",
+      "type": "boolean"
+    },
+    "retry_of": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Retry Of"
+    },
+    "retryability": {
+      "enum": [
+        "yes",
+        "no",
+        "unknown"
+      ],
+      "title": "Retryability",
+      "type": "string"
+    },
+    "run_id": {
+      "minLength": 1,
+      "title": "Run Id",
+      "type": "string"
+    },
+    "sanitized_message": {
+      "minLength": 1,
+      "title": "Sanitized Message",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "0.1.0",
+      "default": "0.1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "stage": {
+      "enum": [
+        "intake",
+        "planning",
+        "launch",
+        "execution",
+        "capture",
+        "parse",
+        "normalize",
+        "validate",
+        "export",
+        "analyze",
+        "release"
+      ],
+      "title": "Stage",
+      "type": "string"
+    }
+  },
+  "required": [
+    "failure_id",
+    "run_id",
+    "stage",
+    "category",
+    "retryability",
+    "affected_scope",
+    "sanitized_message",
+    "partial_evidence_usable",
+    "final_disposition"
+  ],
+  "title": "FailureRecord",
+  "type": "object"
+}

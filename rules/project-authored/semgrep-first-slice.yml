@@ -1,0 +1,13 @@
+rules:
+  - id: project.first-slice.python-eval
+    message: Controlled fixture contains a direct eval call.
+    languages:
+      - python
+    severity: ERROR
+    metadata:
+      category: security
+      confidence: HIGH
+      cwe:
+        - CWE-95
+      source: project-authored-first-slice
+    pattern: eval(...)

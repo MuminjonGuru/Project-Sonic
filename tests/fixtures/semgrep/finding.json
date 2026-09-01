@@ -1,0 +1,46 @@
+{
+  "engine_requested": "OSS",
+  "errors": [],
+  "future_additive_field": {
+    "preserved_by_native_reference": true
+  },
+  "paths": {
+    "scanned": [
+      "/src/clean.py",
+      "/src/vulnerable.py"
+    ]
+  },
+  "results": [
+    {
+      "check_id": "project.first-slice.python-eval",
+      "end": {
+        "col": 28,
+        "line": 2,
+        "offset": 79
+      },
+      "extra": {
+        "engine_kind": "OSS",
+        "fingerprint": "requires login",
+        "lines": "requires login",
+        "message": "Controlled fixture contains a direct eval call.",
+        "metadata": {
+          "category": "security",
+          "confidence": "HIGH",
+          "cwe": [
+            "CWE-95"
+          ]
+        },
+        "severity": "ERROR",
+        "validation_state": "NO_VALIDATOR"
+      },
+      "path": "/src/vulnerable.py",
+      "start": {
+        "col": 12,
+        "line": 2,
+        "offset": 63
+      }
+    }
+  ],
+  "skipped_rules": [],
+  "version": "1.174.0"
+}

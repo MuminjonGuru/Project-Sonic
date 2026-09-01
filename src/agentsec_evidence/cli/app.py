@@ -1,0 +1,464 @@
+from __future__ import annotations
+
+import json
+import re
+from pathlib import Path
+from typing import Annotated, Literal, cast
+
+import typer
+from pydantic import JsonValue
+from rich.console import Console
+from rich.table import Table
+
+from agentsec_evidence import __version__
+from agentsec_evidence.core.doctor import collect_doctor_report
+from agentsec_evidence.intake.snapshot import SnapshotError, create_snapshot
+from agentsec_evidence.models.contracts import (
+    BundleManifest,
+    RunState,
+    Summary,
+    TargetSnapshot,
+)
+from agentsec_evidence.operations.offline import (
+    load_existing_run,
+    normalize_existing_run,
+    rebuild_sarif,
+    rebuild_summary,
+    validate_existing_run,
+)
+from agentsec_evidence.orchestration.pipeline import SemgrepScanRequest, run_semgrep_scan
+
+app = typer.Typer(
+    name="agentsec-evidence",
+    help="Orchestrate and preserve reproducible security evidence.",
+    no_args_is_help=True,
+    rich_markup_mode=None,
+)
+target_app = typer.Typer(help="Register and inspect immutable target snapshots.")
+scan_app = typer.Typer(help="Run an approved scanner and finalize an evidence bundle.")
+export_app = typer.Typer(help="Rebuild an interoperability export without rerunning a tool.")
+app.add_typer(target_app, name="target")
+app.add_typer(scan_app, name="scan")
+app.add_typer(export_app, name="export")
+console = Console()
+
+_SNAPSHOT_ID = re.compile(r"^snapshot_[0-9a-f]{64}$")
+
+
+def _safe_text(value: object) -> str:
+    return "".join(
+        character if character >= " " and character != "\x7f" else "?" for character in str(value)
+    )
+
+
+def _emit_json(value: JsonValue) -> None:
+    typer.echo(json.dumps(value, ensure_ascii=False, sort_keys=True))
+
+
+def _emit_error(exc: BaseException) -> None:
+    typer.echo(f"error: {_safe_text(exc)}", err=True)
+
+
+def _find_project_root(explicit: Path | None) -> Path:
+    if explicit is not None:
+        root = explicit.resolve(strict=True)
+        if not (root / "pyproject.toml").is_file():
+            raise ValueError("Project root does not contain pyproject.toml")
+        return root
+    current = Path.cwd().resolve()
+    for candidate in (current, *current.parents):
+        if (candidate / "pyproject.toml").is_file() and (
+            candidate / "configs" / "tools" / "semgrep.toml"
+        ).is_file():
+            return candidate
+    raise ValueError("Could not locate the agentsec-evidence development root")
+
+
+def _workspace_root(project_root: Path, explicit: Path | None) -> Path:
+    return (explicit or project_root / "workspace").resolve()
+
+
+def _license_status(
+    value: str,
+) -> Literal["project-authored-private", "identified", "unknown"]:
+    allowed = {"project-authored-private", "identified", "unknown"}
+    if value not in allowed:
+        raise ValueError(f"License status must be one of: {', '.join(sorted(allowed))}")
+    return cast(Literal["project-authored-private", "identified", "unknown"], value)
+
+
+def _source_kind(value: str) -> Literal["project-fixture", "local", "git"]:
+    allowed = {"project-fixture", "local", "git"}
+    if value not in allowed:
+        raise ValueError(f"Source kind must be one of: {', '.join(sorted(allowed))}")
+    return cast(Literal["project-fixture", "local", "git"], value)
+
+
+def _terminal_exit_code(state: RunState) -> int:
+    return {
+        RunState.COMPLETE: 0,
+        RunState.PARTIAL: 8,
+        RunState.TIMED_OUT: 4,
+        RunState.EXECUTION_FAILED: 4,
+        RunState.PARSE_FAILED: 5,
+        RunState.VALIDATION_FAILED: 5,
+        RunState.REJECTED: 6,
+        RunState.CANCELLED: 130,
+    }.get(state, 5)
+
+
+@app.command()
+def version() -> None:
+    """Print the installed application version."""
+    typer.echo(__version__)
+
+
+@app.command()
+def doctor(
+    json_output: bool = typer.Option(False, "--json", help="Emit machine-readable JSON."),
+    strict: bool = typer.Option(False, help="Exit with code 3 when a requirement fails."),
+) -> None:
+    """Report prerequisites without changing the workspace."""
+    report = collect_doctor_report()
+    if json_output:
+        _emit_json(cast(JsonValue, report.model_dump(mode="json")))
+    else:
+        table = Table(title="Environment")
+        table.add_column("Check")
+        table.add_column("Status")
+        table.add_column("Detail")
+        for check in report.checks:
+            table.add_row(check.name, check.status, _safe_text(check.detail))
+        console.print(table)
+
+    if strict and not report.ready:
+        raise typer.Exit(code=3)
+
+
+@target_app.command("add")
+def target_add(
+    source: Annotated[Path, typer.Argument(exists=True, file_okay=False, resolve_path=True)],
+    label: Annotated[str, typer.Option("--label", help="Stable, non-secret source label.")],
+    revision: Annotated[str, typer.Option(help="Commit, tag, or declared local revision.")],
+    source_kind: Annotated[str, typer.Option(help="project-fixture, local, or git.")] = "local",
+    license_status: Annotated[
+        str,
+        typer.Option(help="project-authored-private, identified, or unknown."),
+    ] = "unknown",
+    project_root: Annotated[Path | None, typer.Option(help="Development repository root.")] = None,
+    workspace: Annotated[
+        Path | None, typer.Option(help="Authoritative private workspace root.")
+    ] = None,
+    json_output: Annotated[
+        bool, typer.Option("--json", help="Emit machine-readable JSON.")
+    ] = False,
+) -> None:
+    """Create or resolve a deterministic target snapshot."""
+    try:
+        root = _find_project_root(project_root)
+        result = create_snapshot(
+            source,
+            _workspace_root(root, workspace) / "targets",
+            source_label=label,
+            revision=revision,
+            source_kind=_source_kind(source_kind),
+            license_status=_license_status(license_status),
+        )
+    except (OSError, ValueError, SnapshotError) as exc:
+        _emit_error(exc)
+        raise typer.Exit(code=6 if isinstance(exc, SnapshotError) else 2) from exc
+
+    if json_output:
+        _emit_json(cast(JsonValue, result.snapshot.model_dump(mode="json")))
+        return
+    table = Table(title="Target snapshot")
+    table.add_column("Field")
+    table.add_column("Value")
+    for name, value in (
+        ("snapshot", result.snapshot.snapshot_id),
+        ("content sha256", result.snapshot.content_sha256),
+        ("files", result.snapshot.file_count),
+        ("bytes", result.snapshot.total_bytes),
+        ("license", result.snapshot.license_status),
+    ):
+        table.add_row(name, _safe_text(value))
+    console.print(table)
+
+
+@target_app.command("inspect")
+def target_inspect(
+    snapshot_id: str,
+    project_root: Annotated[Path | None, typer.Option(help="Development repository root.")] = None,
+    workspace: Annotated[
+        Path | None, typer.Option(help="Authoritative private workspace root.")
+    ] = None,
+    json_output: Annotated[
+        bool, typer.Option("--json", help="Emit machine-readable JSON.")
+    ] = False,
+) -> None:
+    """Read one registered snapshot without accepting a filesystem path."""
+    try:
+        if not _SNAPSHOT_ID.fullmatch(snapshot_id):
+            raise ValueError("Invalid snapshot ID")
+        root = _find_project_root(project_root)
+        snapshot_path = _workspace_root(root, workspace) / "targets" / snapshot_id / "snapshot.json"
+        snapshot = TargetSnapshot.model_validate_json(snapshot_path.read_bytes())
+    except (OSError, ValueError) as exc:
+        _emit_error(exc)
+        raise typer.Exit(code=2) from exc
+    if json_output:
+        _emit_json(cast(JsonValue, snapshot.model_dump(mode="json")))
+    else:
+        console.print_json(data=snapshot.model_dump(mode="json"))
+
+
+@scan_app.command("semgrep")
+def scan_semgrep(
+    source: Annotated[Path, typer.Argument(exists=True, file_okay=False, resolve_path=True)],
+    label: Annotated[str, typer.Option("--label", help="Stable, non-secret source label.")],
+    revision: Annotated[str, typer.Option(help="Commit, tag, or declared local revision.")],
+    run_label: Annotated[
+        str, typer.Option(help="Human-readable run label.")
+    ] = "semgrep-first-slice",
+    source_kind: Annotated[str, typer.Option(help="project-fixture, local, or git.")] = "local",
+    license_status: Annotated[
+        str,
+        typer.Option(help="project-authored-private, identified, or unknown."),
+    ] = "unknown",
+    project_root: Annotated[Path | None, typer.Option(help="Development repository root.")] = None,
+    workspace: Annotated[
+        Path | None, typer.Option(help="Authoritative private workspace root.")
+    ] = None,
+    json_output: Annotated[
+        bool, typer.Option("--json", help="Emit machine-readable JSON.")
+    ] = False,
+) -> None:
+    """Run the pinned, isolated Semgrep first slice."""
+    try:
+        root = _find_project_root(project_root)
+        result = run_semgrep_scan(
+            SemgrepScanRequest(
+                project_root=root,
+                workspace_root=_workspace_root(root, workspace),
+                target_source=source,
+                source_label=label,
+                revision=revision,
+                run_label=run_label,
+                source_kind=_source_kind(source_kind),
+                license_status=_license_status(license_status),
+            )
+        )
+    except SnapshotError as exc:
+        _emit_error(exc)
+        raise typer.Exit(code=6) from exc
+    except (OSError, ValueError) as exc:
+        _emit_error(exc)
+        raise typer.Exit(code=2) from exc
+
+    payload: JsonValue = {
+        "run_id": result.run_id,
+        "run_root": str(result.run_root),
+        "semantic_sha256": result.semantic_sha256,
+        "summary": result.summary.model_dump(mode="json"),
+        "terminal_state": result.terminal_state.value,
+    }
+    if json_output:
+        _emit_json(payload)
+    else:
+        table = Table(title="Semgrep evidence run")
+        table.add_column("Field")
+        table.add_column("Value")
+        for name, value in (
+            ("run", result.run_id),
+            ("terminal state", result.terminal_state.value),
+            ("findings", result.summary.normalized_finding_count),
+            ("failures", result.summary.normalized_failure_count),
+            ("SARIF valid", result.summary.sarif_valid),
+            ("semantic sha256", result.semantic_sha256),
+            ("bundle", result.run_root),
+        ):
+            table.add_row(name, _safe_text(value))
+        console.print(table)
+    exit_code = _terminal_exit_code(result.terminal_state)
+    if exit_code:
+        raise typer.Exit(code=exit_code)
+
+
+@app.command("inspect")
+def inspect_run(
+    run_id: str,
+    project_root: Annotated[Path | None, typer.Option(help="Development repository root.")] = None,
+    workspace: Annotated[
+        Path | None, typer.Option(help="Authoritative private workspace root.")
+    ] = None,
+    json_output: Annotated[
+        bool, typer.Option("--json", help="Emit machine-readable JSON.")
+    ] = False,
+) -> None:
+    """Inspect persisted run and summary records without executing a tool."""
+    try:
+        root = _find_project_root(project_root)
+        existing = load_existing_run(_workspace_root(root, workspace), run_id)
+        summary = Summary.model_validate_json(
+            (existing.root / "exports" / "summary.json").read_bytes()
+        )
+        manifest = BundleManifest.model_validate_json(
+            (existing.root / "bundle-manifest.json").read_bytes()
+        )
+    except (OSError, ValueError) as exc:
+        _emit_error(exc)
+        raise typer.Exit(code=2) from exc
+    payload: JsonValue = {
+        "manifest_entries": len(manifest.entries),
+        "run": existing.run.model_dump(mode="json"),
+        "summary": summary.model_dump(mode="json"),
+    }
+    if json_output:
+        _emit_json(payload)
+    else:
+        console.print_json(data=payload)
+
+
+@app.command("validate")
+def validate_run(
+    run_id: str,
+    project_root: Annotated[Path | None, typer.Option(help="Development repository root.")] = None,
+    workspace: Annotated[
+        Path | None, typer.Option(help="Authoritative private workspace root.")
+    ] = None,
+    json_output: Annotated[
+        bool, typer.Option("--json", help="Emit machine-readable JSON.")
+    ] = False,
+) -> None:
+    """Revalidate bundle hashes, schemas, provenance, and SARIF offline."""
+    try:
+        root = _find_project_root(project_root)
+        suite = validate_existing_run(
+            project_root=root,
+            workspace_root=_workspace_root(root, workspace),
+            run_id=run_id,
+        )
+    except (OSError, ValueError) as exc:
+        _emit_error(exc)
+        raise typer.Exit(code=5) from exc
+    payload: JsonValue = {
+        "bundle": suite.bundle.model_dump(mode="json"),
+        "passed": suite.passed,
+        "provenance": suite.provenance.report.model_dump(mode="json"),
+        "sarif": suite.sarif.model_dump(mode="json"),
+        "schema": suite.schema.model_dump(mode="json"),
+    }
+    if json_output:
+        _emit_json(payload)
+    else:
+        table = Table(title=f"Validation: {_safe_text(run_id)}")
+        table.add_column("Layer")
+        table.add_column("Status")
+        for name, passed in (
+            ("bundle", suite.bundle.passed),
+            ("schema", suite.schema.passed),
+            ("SARIF", suite.sarif.passed),
+            ("provenance", suite.provenance.report.passed),
+        ):
+            table.add_row(name, "pass" if passed else "fail")
+        console.print(table)
+    if not suite.passed:
+        raise typer.Exit(code=5)
+
+
+@app.command("normalize")
+def normalize_run(
+    run_id: str,
+    output: Annotated[Path, typer.Option(help="New derivative directory outside the run bundle.")],
+    project_root: Annotated[Path | None, typer.Option(help="Development repository root.")] = None,
+    workspace: Annotated[
+        Path | None, typer.Option(help="Authoritative private workspace root.")
+    ] = None,
+    json_output: Annotated[
+        bool, typer.Option("--json", help="Emit machine-readable JSON.")
+    ] = False,
+) -> None:
+    """Reparse native evidence offline into a separate derivative directory."""
+    try:
+        root = _find_project_root(project_root)
+        destination = normalize_existing_run(
+            project_root=root,
+            workspace_root=_workspace_root(root, workspace),
+            run_id=run_id,
+            output_root=output,
+        )
+    except (OSError, ValueError) as exc:
+        _emit_error(exc)
+        raise typer.Exit(code=5) from exc
+    if json_output:
+        _emit_json({"output": str(destination), "source_run_id": run_id})
+    else:
+        typer.echo(str(destination))
+
+
+@export_app.command("sarif")
+def export_sarif(
+    run_id: str,
+    output: Annotated[Path, typer.Option(help="New SARIF output path outside the run bundle.")],
+    project_root: Annotated[Path | None, typer.Option(help="Development repository root.")] = None,
+    workspace: Annotated[
+        Path | None, typer.Option(help="Authoritative private workspace root.")
+    ] = None,
+    json_output: Annotated[
+        bool, typer.Option("--json", help="Emit machine-readable JSON.")
+    ] = False,
+) -> None:
+    """Rebuild and validate SARIF from normalized findings only."""
+    try:
+        root = _find_project_root(project_root)
+        report = rebuild_sarif(
+            project_root=root,
+            workspace_root=_workspace_root(root, workspace),
+            run_id=run_id,
+            output=output,
+        )
+    except (OSError, ValueError) as exc:
+        _emit_error(exc)
+        raise typer.Exit(code=5) from exc
+    if json_output:
+        _emit_json(
+            {
+                "output": str(output.resolve()),
+                "source_run_id": run_id,
+                "validation": report.model_dump(mode="json"),
+            }
+        )
+    else:
+        typer.echo(str(output.resolve()))
+
+
+@app.command("summarize")
+def summarize_run(
+    run_id: str,
+    project_root: Annotated[Path | None, typer.Option(help="Development repository root.")] = None,
+    workspace: Annotated[
+        Path | None, typer.Option(help="Authoritative private workspace root.")
+    ] = None,
+    json_output: Annotated[
+        bool, typer.Option("--json", help="Emit machine-readable JSON.")
+    ] = False,
+) -> None:
+    """Recompute first-slice metrics from persisted evidence only."""
+    try:
+        root = _find_project_root(project_root)
+        summary = rebuild_summary(
+            project_root=root,
+            workspace_root=_workspace_root(root, workspace),
+            run_id=run_id,
+        )
+    except (OSError, ValueError) as exc:
+        _emit_error(exc)
+        raise typer.Exit(code=5) from exc
+    if json_output:
+        _emit_json(cast(JsonValue, summary.model_dump(mode="json")))
+    else:
+        console.print_json(data=summary.model_dump(mode="json"))
+
+
+def main() -> None:
+    app()

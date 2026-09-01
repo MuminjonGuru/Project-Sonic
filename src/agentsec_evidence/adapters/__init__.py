@@ -1,0 +1,1 @@
+"""External security-tool adapters."""

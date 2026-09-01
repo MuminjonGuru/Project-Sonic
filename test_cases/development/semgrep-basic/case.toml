@@ -1,0 +1,9 @@
+case_id = "dev-semgrep-basic-v1"
+case_version = "1.0.0"
+split = "development"
+source_label = "fixture:semgrep-basic"
+revision = "fixture-v1"
+license_status = "project-authored-private"
+expected_native_results = 1
+expected_rule_id = "project.first-slice.python-eval"
+excluded_path = "ignored/ignored.py"

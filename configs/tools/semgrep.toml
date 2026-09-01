@@ -1,0 +1,20 @@
+tool_id = "semgrep"
+tool_version = "1.174.0"
+adapter_id = "semgrep-json"
+adapter_version = "0.1.0"
+execution_mode = "container"
+image = "semgrep/semgrep@sha256:f1f7b71861c7b28b6e0f661225a2c4f58a484f5d0f182465c6d6b3b22f972ade"
+native_format = "semgrep-json"
+network = "denied"
+target_mount = "read-only"
+executes_target_code = false
+may_emit_secrets = true
+uses_external_service = false
+
+[exit_codes]
+clean_or_findings = [0]
+failure = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+
+[license]
+software = "LGPL-2.1-only"
+rules = "project-authored-private"

@@ -1,0 +1,96 @@
+{
+  "$defs": {
+    "BlobDescriptor": {
+      "additionalProperties": false,
+      "properties": {
+        "byte_length": {
+          "minimum": 0,
+          "title": "Byte Length",
+          "type": "integer"
+        },
+        "logical_role": {
+          "minLength": 1,
+          "title": "Logical Role",
+          "type": "string"
+        },
+        "media_type": {
+          "minLength": 1,
+          "title": "Media Type",
+          "type": "string"
+        },
+        "producer": {
+          "minLength": 1,
+          "title": "Producer",
+          "type": "string"
+        },
+        "relative_path": {
+          "maxLength": 4096,
+          "minLength": 1,
+          "title": "Relative Path",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "0.1.0",
+          "default": "0.1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "sensitivity": {
+          "$ref": "#/$defs/Sensitivity"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "sha256",
+        "byte_length",
+        "media_type",
+        "sensitivity",
+        "producer",
+        "logical_role",
+        "relative_path"
+      ],
+      "title": "BlobDescriptor",
+      "type": "object"
+    },
+    "Sensitivity": {
+      "enum": [
+        "public",
+        "public-redacted",
+        "metadata-only",
+        "restricted-vendor",
+        "disclosure-sensitive",
+        "secret",
+        "internal"
+      ],
+      "title": "Sensitivity",
+      "type": "string"
+    }
+  },
+  "$id": "urn:agentsec-evidence:schema:v0.1.0:blob-index",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "blobs": {
+      "items": {
+        "$ref": "#/$defs/BlobDescriptor"
+      },
+      "title": "Blobs",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "0.1.0",
+      "default": "0.1.0",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "blobs"
+  ],
+  "title": "BlobIndex",
+  "type": "object"
+}

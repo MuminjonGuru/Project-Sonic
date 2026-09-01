@@ -1,0 +1,11 @@
+{
+  "errors": [],
+  "paths": {
+    "scanned": [
+      "/src/clean.py"
+    ]
+  },
+  "results": [],
+  "skipped_rules": [],
+  "version": "1.174.0"
+}

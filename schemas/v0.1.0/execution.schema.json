@@ -1,0 +1,283 @@
+{
+  "$defs": {
+    "ExecutionLimits": {
+      "additionalProperties": false,
+      "properties": {
+        "cpu_count": {
+          "exclusiveMinimum": 0,
+          "title": "Cpu Count",
+          "type": "number"
+        },
+        "max_native_bytes": {
+          "exclusiveMinimum": 0,
+          "title": "Max Native Bytes",
+          "type": "integer"
+        },
+        "max_stderr_bytes": {
+          "exclusiveMinimum": 0,
+          "title": "Max Stderr Bytes",
+          "type": "integer"
+        },
+        "max_stdout_bytes": {
+          "exclusiveMinimum": 0,
+          "title": "Max Stdout Bytes",
+          "type": "integer"
+        },
+        "memory_mb": {
+          "exclusiveMinimum": 0,
+          "title": "Memory Mb",
+          "type": "integer"
+        },
+        "pids": {
+          "exclusiveMinimum": 0,
+          "title": "Pids",
+          "type": "integer"
+        },
+        "timeout_seconds": {
+          "exclusiveMinimum": 0,
+          "title": "Timeout Seconds",
+          "type": "integer"
+        },
+        "tmpfs_mb": {
+          "exclusiveMinimum": 0,
+          "title": "Tmpfs Mb",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "timeout_seconds",
+        "cpu_count",
+        "memory_mb",
+        "pids",
+        "tmpfs_mb",
+        "max_stdout_bytes",
+        "max_stderr_bytes",
+        "max_native_bytes"
+      ],
+      "title": "ExecutionLimits",
+      "type": "object"
+    },
+    "ExecutionOutcome": {
+      "enum": [
+        "success",
+        "partial",
+        "failed",
+        "timed-out",
+        "cancelled",
+        "unsupported",
+        "unsafe-to-run"
+      ],
+      "title": "ExecutionOutcome",
+      "type": "string"
+    },
+    "Producer": {
+      "additionalProperties": false,
+      "properties": {
+        "adapter_id": {
+          "minLength": 1,
+          "title": "Adapter Id",
+          "type": "string"
+        },
+        "adapter_version": {
+          "minLength": 1,
+          "title": "Adapter Version",
+          "type": "string"
+        },
+        "tool_id": {
+          "minLength": 1,
+          "title": "Tool Id",
+          "type": "string"
+        },
+        "tool_version": {
+          "minLength": 1,
+          "title": "Tool Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "tool_id",
+        "tool_version",
+        "adapter_id",
+        "adapter_version"
+      ],
+      "title": "Producer",
+      "type": "object"
+    }
+  },
+  "$id": "urn:agentsec-evidence:schema:v0.1.0:execution",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "approved_environment_names": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Approved Environment Names",
+      "type": "array"
+    },
+    "argv": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Argv",
+      "type": "array"
+    },
+    "config_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Config Sha256",
+      "type": "string"
+    },
+    "container_cleanup_attempted": {
+      "title": "Container Cleanup Attempted",
+      "type": "boolean"
+    },
+    "container_cleanup_succeeded": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Container Cleanup Succeeded"
+    },
+    "duration_ns": {
+      "minimum": 0,
+      "title": "Duration Ns",
+      "type": "integer"
+    },
+    "ended_at": {
+      "format": "date-time",
+      "title": "Ended At",
+      "type": "string"
+    },
+    "execution_id": {
+      "minLength": 1,
+      "title": "Execution Id",
+      "type": "string"
+    },
+    "exit_code": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Exit Code"
+    },
+    "image": {
+      "minLength": 1,
+      "title": "Image",
+      "type": "string"
+    },
+    "limits": {
+      "$ref": "#/$defs/ExecutionLimits"
+    },
+    "native_byte_length": {
+      "minimum": 0,
+      "title": "Native Byte Length",
+      "type": "integer"
+    },
+    "outcome": {
+      "$ref": "#/$defs/ExecutionOutcome"
+    },
+    "output_limited": {
+      "title": "Output Limited",
+      "type": "boolean"
+    },
+    "peak_host_rss_bytes": {
+      "minimum": 0,
+      "title": "Peak Host Rss Bytes",
+      "type": "integer"
+    },
+    "producer": {
+      "$ref": "#/$defs/Producer"
+    },
+    "profile_id": {
+      "minLength": 1,
+      "title": "Profile Id",
+      "type": "string"
+    },
+    "ruleset_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Ruleset Sha256",
+      "type": "string"
+    },
+    "run_id": {
+      "minLength": 1,
+      "title": "Run Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "0.1.0",
+      "default": "0.1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "started_at": {
+      "format": "date-time",
+      "title": "Started At",
+      "type": "string"
+    },
+    "stderr_byte_length": {
+      "minimum": 0,
+      "title": "Stderr Byte Length",
+      "type": "integer"
+    },
+    "stderr_truncated": {
+      "title": "Stderr Truncated",
+      "type": "boolean"
+    },
+    "stdout_byte_length": {
+      "minimum": 0,
+      "title": "Stdout Byte Length",
+      "type": "integer"
+    },
+    "stdout_truncated": {
+      "title": "Stdout Truncated",
+      "type": "boolean"
+    },
+    "target_snapshot_id": {
+      "minLength": 1,
+      "title": "Target Snapshot Id",
+      "type": "string"
+    },
+    "timed_out": {
+      "title": "Timed Out",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "execution_id",
+    "run_id",
+    "target_snapshot_id",
+    "producer",
+    "image",
+    "argv",
+    "profile_id",
+    "config_sha256",
+    "ruleset_sha256",
+    "limits",
+    "started_at",
+    "ended_at",
+    "duration_ns",
+    "outcome",
+    "timed_out",
+    "stdout_byte_length",
+    "stderr_byte_length",
+    "native_byte_length",
+    "peak_host_rss_bytes",
+    "output_limited",
+    "stdout_truncated",
+    "stderr_truncated",
+    "container_cleanup_attempted"
+  ],
+  "title": "ExecutionRecord",
+  "type": "object"
+}

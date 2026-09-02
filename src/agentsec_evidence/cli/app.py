@@ -26,6 +26,7 @@ from agentsec_evidence.operations.offline import (
     rebuild_summary,
     validate_existing_run,
 )
+from agentsec_evidence.orchestration.kics_pipeline import KicsScanRequest, run_kics_scan
 from agentsec_evidence.orchestration.pipeline import SemgrepScanRequest, run_semgrep_scan
 
 app = typer.Typer(
@@ -266,6 +267,78 @@ def scan_semgrep(
         _emit_json(payload)
     else:
         table = Table(title="Semgrep evidence run")
+        table.add_column("Field")
+        table.add_column("Value")
+        for name, value in (
+            ("run", result.run_id),
+            ("terminal state", result.terminal_state.value),
+            ("findings", result.summary.normalized_finding_count),
+            ("failures", result.summary.normalized_failure_count),
+            ("SARIF valid", result.summary.sarif_valid),
+            ("semantic sha256", result.semantic_sha256),
+            ("bundle", result.run_root),
+        ):
+            table.add_row(name, _safe_text(value))
+        console.print(table)
+    exit_code = _terminal_exit_code(result.terminal_state)
+    if exit_code:
+        raise typer.Exit(code=exit_code)
+
+
+@scan_app.command("kics")
+def scan_kics(
+    source: Annotated[Path, typer.Argument(exists=True, file_okay=False, resolve_path=True)],
+    label: Annotated[str, typer.Option("--label", help="Stable, non-secret source label.")],
+    revision: Annotated[str, typer.Option(help="Commit, tag, or declared local revision.")],
+    run_label: Annotated[
+        str, typer.Option(help="Human-readable run label.")
+    ] = "kics-g2-development",
+    source_kind: Annotated[str, typer.Option(help="project-fixture, local, or git.")] = "local",
+    license_status: Annotated[
+        str,
+        typer.Option(help="project-authored-private, identified, or unknown."),
+    ] = "unknown",
+    project_root: Annotated[Path | None, typer.Option(help="Development repository root.")] = None,
+    workspace: Annotated[
+        Path | None, typer.Option(help="Authoritative private workspace root.")
+    ] = None,
+    json_output: Annotated[
+        bool, typer.Option("--json", help="Emit machine-readable JSON.")
+    ] = False,
+) -> None:
+    """Run the pinned, isolated KICS G2 development adapter."""
+    try:
+        root = _find_project_root(project_root)
+        result = run_kics_scan(
+            KicsScanRequest(
+                project_root=root,
+                workspace_root=_workspace_root(root, workspace),
+                target_source=source,
+                source_label=label,
+                revision=revision,
+                run_label=run_label,
+                source_kind=_source_kind(source_kind),
+                license_status=_license_status(license_status),
+            )
+        )
+    except SnapshotError as exc:
+        _emit_error(exc)
+        raise typer.Exit(code=6) from exc
+    except (OSError, ValueError) as exc:
+        _emit_error(exc)
+        raise typer.Exit(code=2) from exc
+
+    payload: JsonValue = {
+        "run_id": result.run_id,
+        "run_root": str(result.run_root),
+        "semantic_sha256": result.semantic_sha256,
+        "summary": result.summary.model_dump(mode="json"),
+        "terminal_state": result.terminal_state.value,
+    }
+    if json_output:
+        _emit_json(payload)
+    else:
+        table = Table(title="KICS evidence run")
         table.add_column("Field")
         table.add_column("Value")
         for name, value in (

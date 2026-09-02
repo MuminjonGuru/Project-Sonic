@@ -1,0 +1,10 @@
+case_id = "dev-kics-malformed-v1"
+case_version = "1.0.0"
+split = "development"
+source_label = "fixture:kics-malformed"
+revision = "fixture-v1"
+license_status = "project-authored-private"
+expected_native_results = 0
+expected_terminal_state = "partial"
+expected_files_scanned = 1
+expected_files_parsed = 0

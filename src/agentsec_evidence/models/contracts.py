@@ -411,6 +411,7 @@ class Summary(ContractModel):
     sarif_representability_rate: float = Field(ge=0, le=1)
     sarif_valid: bool
     duration_ns: int = Field(ge=0)
-    statement: Literal["Semgrep detection was unchanged and was not evaluated as improved"] = (
-        "Semgrep detection was unchanged and was not evaluated as improved"
+    statement: NonEmpty = (
+        "This run evaluates evidence handling and interoperability; it does not claim "
+        "improved producer detection."
     )

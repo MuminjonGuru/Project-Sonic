@@ -21,6 +21,11 @@ _LEVELS: dict[NormalizedSeverity, str] = {
     "unknown": "none",
 }
 
+_TOOL_METADATA = {
+    "semgrep": ("Semgrep", "https://semgrep.dev/"),
+    "kics": ("KICS", "https://www.kics.io/"),
+}
+
 
 def _rule_descriptor(finding: Finding) -> dict[str, JsonValue]:
     properties: dict[str, JsonValue] = {}
@@ -107,25 +112,31 @@ def build_sarif(findings: Sequence[Finding], *, execution: ExecutionRecord) -> d
             "properties": properties,
         }
         if finding.fingerprints.native is not None:
-            result["fingerprints"] = {"semgrep/v1": finding.fingerprints.native}
+            result["fingerprints"] = {
+                f"{execution.producer.tool_id}/v1": finding.fingerprints.native
+            }
         locations = _location(finding)
         if locations:
             result["locations"] = locations
         results.append(result)
 
+    tool_name, information_uri = _TOOL_METADATA.get(
+        execution.producer.tool_id,
+        (execution.producer.tool_id, "https://example.invalid/unknown-tool"),
+    )
     driver: dict[str, JsonValue] = {
-        "name": "Semgrep",
+        "name": tool_name,
         "semanticVersion": execution.producer.tool_version,
-        "informationUri": "https://semgrep.dev/",
+        "informationUri": information_uri,
         "rules": [_rule_descriptor(representative[rule_id]) for rule_id in rule_ids],
     }
     run: dict[str, JsonValue] = {
         "tool": {"driver": driver},
-        "automationDetails": {"id": "agentsec-evidence/semgrep-first-slice"},
+        "automationDetails": {"id": f"agentsec-evidence/{execution.producer.tool_id}"},
         "originalUriBaseIds": {"SRCROOT": {"uri": "file:///src/"}},
         "invocations": [
             {
-                "executionSuccessful": execution.outcome.value == "success",
+                "executionSuccessful": execution.outcome.value in {"success", "unsupported"},
                 "properties": {
                     "agentsecEvidence/configSha256": execution.config_sha256,
                     "agentsecEvidence/rulesetSha256": execution.ruleset_sha256,

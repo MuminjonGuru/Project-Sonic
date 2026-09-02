@@ -1,0 +1,9 @@
+case_id = "dev-kics-clean-v1"
+case_version = "1.0.0"
+split = "development"
+source_label = "fixture:kics-clean"
+revision = "fixture-v1"
+license_status = "project-authored-private"
+expected_native_results = 0
+expected_files_scanned = 2
+expected_files_parsed = 2

@@ -365,8 +365,12 @@ def normalize_existing_run(
         )
     else:
         raise ValueError(f"Unsupported offline normalization producer: {tool_id}")
+    canonical_findings = sorted(
+        normalized.findings,
+        key=lambda item: item.fingerprints.record_v1,
+    )
     resolved_output.mkdir(parents=True, exist_ok=False)
-    atomic_write_jsonl(resolved_output / "findings.jsonl", normalized.findings)
+    atomic_write_jsonl(resolved_output / "findings.jsonl", canonical_findings)
     atomic_write_jsonl(resolved_output / "coverage.jsonl", normalized.coverage)
     atomic_write_jsonl(resolved_output / "failures.jsonl", normalized.failures)
     atomic_write_model(resolved_output / "parser-report.json", parser_report)

@@ -213,5 +213,17 @@ def test_kics_cli_and_offline_workflow_do_not_rerun_producer(
     assert export.exit_code == 0, export.output
     assert export_path.is_file()
     assert normalization.exit_code == 0, normalization.output
-    assert len((normalization_path / "findings.jsonl").read_text().splitlines()) == 2
+    source_findings = [
+        json.loads(line)
+        for line in (workspace / "runs" / run_id / "normalized" / "findings.jsonl")
+        .read_text()
+        .splitlines()
+    ]
+    derived_findings = [
+        json.loads(line)
+        for line in (normalization_path / "findings.jsonl").read_text().splitlines()
+    ]
+    assert [item["fingerprints"]["record_v1"] for item in derived_findings] == [
+        item["fingerprints"]["record_v1"] for item in source_findings
+    ]
     assert calls == 1

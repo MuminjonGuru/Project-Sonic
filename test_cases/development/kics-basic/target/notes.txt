@@ -1,0 +1,1 @@
+This unsupported project-authored file verifies explicit path-coverage accounting.

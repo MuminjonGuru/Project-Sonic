@@ -84,8 +84,8 @@
       "type": "string"
     },
     "statement": {
-      "const": "Semgrep detection was unchanged and was not evaluated as improved",
-      "default": "Semgrep detection was unchanged and was not evaluated as improved",
+      "default": "This run evaluates evidence handling and interoperability; it does not claim improved producer detection.",
+      "minLength": 1,
       "title": "Statement",
       "type": "string"
     }

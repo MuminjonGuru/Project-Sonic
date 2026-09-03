@@ -1,0 +1,13 @@
+case_id = "dev-kics-basic-v1"
+case_version = "1.0.0"
+split = "development"
+source_label = "fixture:kics-basic"
+revision = "fixture-v1"
+license_status = "project-authored-private"
+expected_native_results = 2
+expected_files_scanned = 4
+expected_files_parsed = 4
+expected_query_ids = [
+  "d0cc8694-fcad-43ff-ac86-32331d7e867f",
+  "dd29336b-fe57-445b-a26e-e6aa867ae609",
+]

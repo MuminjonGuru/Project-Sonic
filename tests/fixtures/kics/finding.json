@@ -1,0 +1,90 @@
+{
+	"kics_version": "v2.1.20",
+	"files_scanned": 4,
+	"lines_scanned": 35,
+	"files_parsed": 4,
+	"lines_parsed": 35,
+	"lines_ignored": 0,
+	"files_failed_to_scan": 0,
+	"queries_total": 2,
+	"queries_failed_to_execute": 0,
+	"queries_failed_to_compute_similarity_id": 0,
+	"scan_id": "console",
+	"severity_counters": {
+		"CRITICAL": 0,
+		"HIGH": 1,
+		"INFO": 0,
+		"LOW": 0,
+		"MEDIUM": 1,
+		"TRACE": 0
+	},
+	"total_counter": 2,
+	"total_bom_resources": 0,
+	"start": "2026-09-01T23:44:36.784491097Z",
+	"end": "2026-09-01T23:44:37.126543506Z",
+	"paths": [
+		"/src"
+	],
+	"queries": [
+		{
+			"query_name": "Container Is Privileged",
+			"query_id": "dd29336b-fe57-445b-a26e-e6aa867ae609",
+			"query_url": "https://kubernetes.io/docs/concepts/workloads/pods/#privileged-mode-for-containers",
+			"severity": "HIGH",
+			"platform": "Kubernetes",
+			"cwe": "269",
+			"risk_score": "7.7",
+			"cloud_provider": "COMMON",
+			"category": "Insecure Configurations",
+			"experimental": false,
+			"description": "Privileged containers lack essential security restrictions and should be avoided by removing the 'privileged' flag or by changing its value to false",
+			"description_id": "55f59030",
+			"files": [
+				{
+					"file_name": "../../src/privileged-pod.yaml",
+					"similarity_id": "3ffc2d212d78a11f102b6afd05d4131eb45cc9d56d12a5a5c28eee8f39400cd2",
+					"line": 10,
+					"resource_type": "Pod",
+					"resource_name": "agent-tool-runner",
+					"issue_type": "IncorrectValue",
+					"search_key": "metadata.name={{agent-tool-runner}}.spec.containers.name={{runner}}.securityContext.privileged",
+					"search_line": -1,
+					"search_value": "",
+					"expected_value": "metadata.name={{agent-tool-runner}}.spec.containers.name={{runner}}.securityContext.privileged is unset or false",
+					"actual_value": "metadata.name={{agent-tool-runner}}.spec.containers.name={{runner}}.securityContext.privileged is true"
+				}
+			]
+		},
+		{
+			"query_name": "S3 Bucket Allows Public ACL",
+			"query_id": "d0cc8694-fcad-43ff-ac86-32331d7e867f",
+			"query_url": "https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_public_access_block",
+			"severity": "MEDIUM",
+			"platform": "Terraform",
+			"cwe": "284",
+			"risk_score": "6.2",
+			"cloud_provider": "AWS",
+			"category": "Access Control",
+			"experimental": false,
+			"description": "S3 bucket allows public ACL",
+			"description_id": "7b8886c1",
+			"files": [
+				{
+					"file_name": "../../src/vulnerable.tf",
+					"similarity_id": "0e273ed6a7ada8f6c34e17a4d1309a87afbfa50055fa9be74fe2f8bdf2e9dd95",
+					"line": 3,
+					"resource_type": "aws_s3_bucket_public_access_block",
+					"resource_name": "agent_artifacts",
+					"issue_type": "IncorrectValue",
+					"search_key": "aws_s3_bucket_public_access_block[agent_artifacts].block_public_acls",
+					"search_line": 3,
+					"search_value": "",
+					"expected_value": "'block_public_acls' should equal 'true'",
+					"actual_value": "'block_public_acls' is equal 'false'",
+					"remediation": "{\"after\":\"true\",\"before\":\"false\"}",
+					"remediation_type": "replacement"
+				}
+			]
+		}
+	]
+}

@@ -1,0 +1,10 @@
+case_id = "dev-kics-unsupported-v1"
+case_version = "1.0.0"
+split = "development"
+source_label = "fixture:kics-unsupported"
+revision = "fixture-v1"
+license_status = "project-authored-private"
+expected_native_results = 0
+expected_execution_outcome = "unsupported"
+expected_files_scanned = 0
+expected_files_parsed = 0

@@ -1,0 +1,39 @@
+tool_id = "kics"
+tool_version = "v2.1.20"
+adapter_id = "kics-json"
+adapter_version = "0.1.0"
+execution_mode = "container"
+image = "checkmarx/kics@sha256:3e5a268eb8adda2e5a483c9359ddfc4cd520ab856a7076dc0b1d8784a37e2602"
+image_source_revision = "e1f23cad9640f55b963f22a116b04906b8c16ac6"
+native_format = "kics-json"
+network = "denied"
+target_mount = "read-only"
+executes_target_code = false
+may_emit_secrets = true
+uses_external_service = false
+query_selection_id = "kics-g2-development-v1"
+query_pack_sha256 = "b53f3e080b7da5ccc160aa171f633d01d63d1770b991cf49c837a68367e324da"
+query_pack_file_count = 3641
+query_pack_total_bytes = 4183806
+platforms = ["Terraform", "Kubernetes"]
+include_queries = [
+  "d0cc8694-fcad-43ff-ac86-32331d7e867f",
+  "dd29336b-fe57-445b-a26e-e6aa867ae609",
+]
+report_formats = ["json", "sarif"]
+query_timeout_seconds = 30
+max_file_size_mb = 5
+max_resolver_depth = 15
+parallel = 1
+disable_secrets = true
+disable_full_descriptions = true
+exclude_gitignore = true
+ignore_on_exit = "results"
+
+[exit_codes]
+clean_or_findings = [0, 20, 30, 40, 50, 60]
+failure = [126, 130]
+
+[license]
+software = "Apache-2.0"
+rules = "Apache-2.0"

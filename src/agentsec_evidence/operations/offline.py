@@ -8,7 +8,12 @@ from typing import cast
 
 from pydantic import BaseModel, JsonValue
 
-from agentsec_evidence.adapters.semgrep import normalize_semgrep, parse_semgrep_json
+from agentsec_evidence.adapters.kics import NormalizedKics, normalize_kics, parse_kics_json
+from agentsec_evidence.adapters.semgrep import (
+    NormalizedSemgrep,
+    normalize_semgrep,
+    parse_semgrep_json,
+)
 from agentsec_evidence.analysis.summary import build_summary
 from agentsec_evidence.core.identity import sha256_file
 from agentsec_evidence.core.io import (
@@ -18,7 +23,12 @@ from agentsec_evidence.core.io import (
     json_bytes,
 )
 from agentsec_evidence.core.time import utc_now
-from agentsec_evidence.execution.config import SemgrepToolConfig, load_toml_config
+from agentsec_evidence.execution.config import (
+    KicsToolConfig,
+    SemgrepToolConfig,
+    load_toml_bytes,
+    load_toml_config,
+)
 from agentsec_evidence.exports.sarif import build_sarif
 from agentsec_evidence.models.contracts import (
     BlobIndex,
@@ -263,41 +273,110 @@ def normalize_existing_run(
     native_path = existing.root.joinpath(*native.relative_path.split("/"))
     if sha256_file(native_path) != native.sha256:
         raise ValueError("Native report hash does not match its descriptor")
-    tool = load_toml_config(
-        project_root / "configs" / "tools" / "semgrep.toml", SemgrepToolConfig
-    ).value
-    parsed = parse_semgrep_json(native_path.read_bytes())
-    normalized = normalize_semgrep(
-        parsed,
-        tool=tool,
-        run_id=existing.run.run_id,
-        execution_id=existing.execution.execution_id,
-        target_snapshot_id=existing.target.snapshot_id,
-        source_blob_sha256=native.sha256,
+    config_descriptor = next(
+        (
+            descriptor
+            for descriptor in existing.blobs.blobs
+            if descriptor.logical_role == "tool-config"
+        ),
+        None,
     )
-    parser_report = ParserReport(
-        parser_id=tool.adapter_id,
-        parser_version=tool.adapter_version,
-        execution_id=existing.execution.execution_id,
-        source_blob_sha256=native.sha256,
-        parsed_at=utc_now(),
-        native_result_count=len(parsed.document.results),
-        native_error_count=len(parsed.document.errors),
-        native_scanned_path_count=len(parsed.document.paths.scanned),
-        native_skipped_path_count=len(parsed.document.paths.skipped),
-        native_skipped_rule_count=len(parsed.document.skipped_rules),
-        normalized_finding_count=len(normalized.findings),
-        unknown_top_level_fields=list(parsed.unknown_top_level_fields),
-        complete=len(normalized.findings) == len(parsed.document.results),
+    bundled_config: bytes | None = None
+    if config_descriptor is not None:
+        config_path = existing.root.joinpath(*config_descriptor.relative_path.split("/"))
+        if sha256_file(config_path) != config_descriptor.sha256:
+            raise ValueError("Bundled tool configuration hash does not match its descriptor")
+        bundled_config = config_path.read_bytes()
+
+    tool_id = existing.execution.producer.tool_id
+    normalized: NormalizedSemgrep | NormalizedKics
+    if tool_id == "semgrep":
+        semgrep_tool = (
+            load_toml_bytes(
+                bundled_config,
+                SemgrepToolConfig,
+                source=Path("<bundled-semgrep-config>"),
+            ).value
+            if bundled_config is not None
+            else load_toml_config(
+                project_root / "configs" / "tools" / "semgrep.toml", SemgrepToolConfig
+            ).value
+        )
+        semgrep_parsed = parse_semgrep_json(native_path.read_bytes())
+        normalized = normalize_semgrep(
+            semgrep_parsed,
+            tool=semgrep_tool,
+            run_id=existing.run.run_id,
+            execution_id=existing.execution.execution_id,
+            target_snapshot_id=existing.target.snapshot_id,
+            source_blob_sha256=native.sha256,
+        )
+        parser_report = ParserReport(
+            parser_id=semgrep_tool.adapter_id,
+            parser_version=semgrep_tool.adapter_version,
+            execution_id=existing.execution.execution_id,
+            source_blob_sha256=native.sha256,
+            parsed_at=utc_now(),
+            native_result_count=len(semgrep_parsed.document.results),
+            native_error_count=len(semgrep_parsed.document.errors),
+            native_scanned_path_count=len(semgrep_parsed.document.paths.scanned),
+            native_skipped_path_count=len(semgrep_parsed.document.paths.skipped),
+            native_skipped_rule_count=len(semgrep_parsed.document.skipped_rules),
+            normalized_finding_count=len(normalized.findings),
+            unknown_top_level_fields=list(semgrep_parsed.unknown_top_level_fields),
+            complete=len(normalized.findings) == len(semgrep_parsed.document.results),
+        )
+    elif tool_id == "kics":
+        if bundled_config is None:
+            raise ValueError("KICS offline normalization requires its bundled tool configuration")
+        kics_tool = load_toml_bytes(
+            bundled_config,
+            KicsToolConfig,
+            source=Path("<bundled-kics-config>"),
+        ).value
+        kics_parsed = parse_kics_json(native_path.read_bytes())
+        normalized = normalize_kics(
+            kics_parsed,
+            tool=kics_tool,
+            run_id=existing.run.run_id,
+            execution_id=existing.execution.execution_id,
+            target_snapshot_id=existing.target.snapshot_id,
+            source_blob_sha256=native.sha256,
+        )
+        parser_report = ParserReport(
+            parser_id=kics_tool.adapter_id,
+            parser_version=kics_tool.adapter_version,
+            execution_id=existing.execution.execution_id,
+            source_blob_sha256=native.sha256,
+            parsed_at=utc_now(),
+            native_result_count=kics_parsed.native_result_count,
+            native_error_count=len(normalized.failures),
+            native_scanned_path_count=kics_parsed.document.files_scanned,
+            native_skipped_path_count=max(
+                existing.target.file_count - kics_parsed.document.files_scanned, 0
+            ),
+            native_skipped_rule_count=max(
+                len(kics_tool.include_queries) - kics_parsed.document.queries_total, 0
+            ),
+            normalized_finding_count=len(normalized.findings),
+            unknown_top_level_fields=list(kics_parsed.unknown_fields),
+            complete=not normalized.failures
+            and len(normalized.findings) == kics_parsed.document.total_counter,
+        )
+    else:
+        raise ValueError(f"Unsupported offline normalization producer: {tool_id}")
+    canonical_findings = sorted(
+        normalized.findings,
+        key=lambda item: item.fingerprints.record_v1,
     )
     resolved_output.mkdir(parents=True, exist_ok=False)
-    atomic_write_jsonl(resolved_output / "findings.jsonl", normalized.findings)
+    atomic_write_jsonl(resolved_output / "findings.jsonl", canonical_findings)
     atomic_write_jsonl(resolved_output / "coverage.jsonl", normalized.coverage)
     atomic_write_jsonl(resolved_output / "failures.jsonl", normalized.failures)
     atomic_write_model(resolved_output / "parser-report.json", parser_report)
     metadata: JsonValue = {
-        "adapter_id": tool.adapter_id,
-        "adapter_version": tool.adapter_version,
+        "adapter_id": existing.execution.producer.adapter_id,
+        "adapter_version": existing.execution.producer.adapter_version,
         "generated_at": utc_now().isoformat(),
         "source_blob_sha256": native.sha256,
         "source_run_id": run_id,

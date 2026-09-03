@@ -25,6 +25,7 @@ from agentsec_evidence.core.time import utc_now
 from agentsec_evidence.execution.config import (
     ExecutionProfile,
     SemgrepToolConfig,
+    StaticToolConfig,
     load_toml_config,
 )
 from agentsec_evidence.execution.docker import (
@@ -102,7 +103,7 @@ class _ProductResult:
         return self.schema.passed and self.sarif.passed and self.provenance.report.passed
 
 
-def _producer(tool: SemgrepToolConfig) -> Producer:
+def _producer(tool: StaticToolConfig) -> Producer:
     return Producer(
         tool_id=tool.tool_id,
         tool_version=tool.tool_version,
@@ -187,6 +188,7 @@ def _failure(
     evidence: list[str],
     exit_code: int | None = None,
     partial: bool = False,
+    affected_scope: str = "semgrep execution",
 ) -> FailureRecord:
     return FailureRecord(
         failure_id=new_opaque_id("failure"),
@@ -195,7 +197,7 @@ def _failure(
         stage=stage,
         category=category,
         retryability="unknown",
-        affected_scope="semgrep execution",
+        affected_scope=affected_scope,
         native_exit_code=exit_code,
         sanitized_message=_sanitize_message(message),
         evidence_blob_sha256=evidence,
@@ -211,13 +213,14 @@ def _failed_coverage(
     snapshot: TargetSnapshot,
     producer: Producer,
     execution: CoverageExecution,
+    property_id: str = "code.static-analysis.semgrep",
 ) -> CoverageRecord:
     return CoverageRecord(
         coverage_id=new_opaque_id("coverage"),
         run_id=run_id,
         execution_id=execution_id,
         target_snapshot_id=snapshot.snapshot_id,
-        property_id="code.static-analysis.semgrep",
+        property_id=property_id,
         producer=producer,
         applicability="applicable",
         adapter_support="supported",
@@ -234,7 +237,7 @@ def _make_execution(
     execution_id: str,
     run_id: str,
     snapshot: TargetSnapshot,
-    tool: SemgrepToolConfig,
+    tool: StaticToolConfig,
     profile: ExecutionProfile,
     config_sha256: str,
     ruleset_sha256: str,
@@ -547,6 +550,39 @@ def run_semgrep_scan(request: SemgrepScanRequest) -> PipelineResult:
     ) as bundle:
         execution_id = new_opaque_id("execution")
         bundle.add_execution_id(execution_id)
+        prefix = f"executions/{execution_id}"
+        input_descriptors = [
+            _store_blob(
+                bundle=bundle,
+                blob_store=blob_store,
+                relative_path=f"{prefix}/inputs/profile.toml",
+                data=profile_loaded.raw,
+                media_type="application/toml",
+                sensitivity=Sensitivity.METADATA_ONLY,
+                producer="orchestrator",
+                logical_role="execution-profile",
+            ),
+            _store_blob(
+                bundle=bundle,
+                blob_store=blob_store,
+                relative_path=f"{prefix}/inputs/tool-config.toml",
+                data=tool_loaded.raw,
+                media_type="application/toml",
+                sensitivity=Sensitivity.METADATA_ONLY,
+                producer="orchestrator",
+                logical_role="tool-config",
+            ),
+            _store_blob(
+                bundle=bundle,
+                blob_store=blob_store,
+                relative_path=f"{prefix}/inputs/ruleset.yml",
+                data=rule_file.read_bytes(),
+                media_type="application/yaml",
+                sensitivity=Sensitivity.METADATA_ONLY,
+                producer="orchestrator",
+                logical_role="ruleset",
+            ),
+        ]
         bundle.transition(RunState.PLANNED, "pinned Semgrep execution planned")
         docker = _resolve_docker(request.docker_executable)
         if docker is None:
@@ -567,7 +603,6 @@ def run_semgrep_scan(request: SemgrepScanRequest) -> PipelineResult:
                 cleanup_attempted=False,
                 cleanup_succeeded=None,
             )
-            prefix = f"executions/{execution_id}"
             stdout_descriptor = _store_blob(
                 bundle=bundle,
                 blob_store=blob_store,
@@ -588,7 +623,7 @@ def run_semgrep_scan(request: SemgrepScanRequest) -> PipelineResult:
                 producer="orchestrator",
                 logical_role="stderr",
             )
-            blob_index = BlobIndex(blobs=[stdout_descriptor, stderr_descriptor])
+            blob_index = BlobIndex(blobs=[*input_descriptors, stdout_descriptor, stderr_descriptor])
             bundle.write_model(f"{prefix}/execution.json", execution)
             bundle.write_model(f"{prefix}/blobs.json", blob_index)
             failure = _failure(
@@ -665,8 +700,8 @@ def run_semgrep_scan(request: SemgrepScanRequest) -> PipelineResult:
                     environment=environment,
                 )
 
-            prefix = f"executions/{execution_id}"
             descriptors = [
+                *input_descriptors,
                 _store_blob(
                     bundle=bundle,
                     blob_store=blob_store,

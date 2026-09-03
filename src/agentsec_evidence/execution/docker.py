@@ -4,7 +4,11 @@ import re
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 
-from agentsec_evidence.execution.config import ExecutionProfile, SemgrepToolConfig
+from agentsec_evidence.execution.config import (
+    ExecutionProfile,
+    KicsToolConfig,
+    SemgrepToolConfig,
+)
 
 _CONTAINER_NAME = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9_.-]+$")
 
@@ -84,6 +88,86 @@ def build_semgrep_argv(
         "--exclude",
         "ignored/**",
         "/src",
+    ]
+
+
+def build_kics_argv(
+    *,
+    docker_executable: Path,
+    tool: KicsToolConfig,
+    profile: ExecutionProfile,
+    container_name: str,
+    target_root: Path,
+    output_root: Path,
+) -> list[str]:
+    if not _CONTAINER_NAME.fullmatch(container_name):
+        raise ValueError("Invalid Docker container name")
+    output_root.mkdir(parents=True, exist_ok=True)
+
+    limits = profile.limits
+    return [
+        str(docker_executable.resolve(strict=True)),
+        "run",
+        "--rm",
+        "--pull",
+        "never",
+        "--name",
+        container_name,
+        "--network",
+        "none",
+        "--read-only",
+        "--tmpfs",
+        f"/tmp:rw,noexec,nosuid,size={limits.tmpfs_mb}m",
+        "--cap-drop",
+        "ALL",
+        "--security-opt",
+        "no-new-privileges",
+        "--pids-limit",
+        str(limits.pids),
+        "--cpus",
+        str(limits.cpu_count),
+        "--memory",
+        f"{limits.memory_mb}m",
+        "--user",
+        "65534:65534",
+        "--env",
+        "HOME=/tmp",
+        "--mount",
+        _mount(target_root, "/src", read_only=True),
+        "--mount",
+        _mount(output_root, "/output", read_only=False),
+        tool.image,
+        "scan",
+        "--path",
+        "/src",
+        "--output-path",
+        "/output",
+        "--output-name",
+        "results",
+        "--report-formats",
+        ",".join(tool.report_formats),
+        "--type",
+        ",".join(tool.platforms),
+        "--include-queries",
+        ",".join(tool.include_queries),
+        "--disable-secrets",
+        "--disable-full-descriptions",
+        "--exclude-gitignore",
+        "--no-progress",
+        "--parallel",
+        str(tool.parallel),
+        "--timeout",
+        str(tool.query_timeout_seconds),
+        "--max-file-size",
+        str(tool.max_file_size_mb),
+        "--max-resolver-depth",
+        str(tool.max_resolver_depth),
+        "--ignore-on-exit",
+        tool.ignore_on_exit,
+        "--fail-on",
+        "critical,high,medium,low,info",
+        "--silent",
+        "--no-color",
     ]
 
 

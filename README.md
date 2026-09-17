@@ -132,6 +132,32 @@ platforms, query IDs, parser controls, and output formats in `configs/tools/kics
 native JSON is canonical; native KICS SARIF is retained only as a comparison artifact. A zero
 finding result is distinct from an unsupported target or a partial parse.
 
+## Planned Dependency Experiment (2026-09-18)
+
+This is the next working direction, **not an available CLI feature or completed benchmark**.
+Producer-neutral orchestration has been extracted and verified: 72 tests passed on Windows
+and Ubuntu, and five real Semgrep/KICS cases preserved their before/after/repeat semantics. Next
+compare direct dependency input to OSV with Syft native JSON plus an external CycloneDX SBOM
+consumed by OSV, using frozen offline data and equivalent configuration. The platform will
+measure package/occurrence preservation, alias-aware matches, explicit unsupported/error
+states, semantic repeatability and full-path cost against independently specified cases.
+
+The preferred first public candidate is `langchain-samples/cicd-pipeline-example` at
+`5ab0d0a0f3c90999f786f834d9c05484dfe5f2bf`, pending compatibility and admission checks.
+It is a formative example-project pilot, not the final benchmark corpus. No findings is a
+valid outcome, not a reason to replace it. No paid service or hosted model is required.
+
+The dated decision/protocol records live in the sibling `Project_Phase_02` planning folder,
+which is intentionally not distributed in this development checkout. `AGENTS.md` summarizes
+the implementation guardrails. Existing supported commands and result contracts are unchanged.
+
+Shared code lives in `src/agentsec_evidence/orchestration/shared.py`; producer planning/parsing
+stays separate. `tools/verify_orchestration_regression.ps1` runs and validates the five existing
+Docker fixtures and can compare against a saved baseline. Use a fresh directory under
+`workspace` for its `-ReportDirectory` argument. The pinned Ubuntu verification build is in
+`containers/verification/`. These checks establish engineering compatibility, not detection
+accuracy or public-repository benchmark readiness.
+
 ## Repository Boundary
 
 All implementation, tests, fixtures, benchmark definitions, runtime workspaces, and generated

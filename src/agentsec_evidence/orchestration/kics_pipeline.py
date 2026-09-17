@@ -14,7 +14,7 @@ from agentsec_evidence.core.time import utc_now
 from agentsec_evidence.execution.config import ExecutionProfile, KicsToolConfig, load_toml_config
 from agentsec_evidence.execution.docker import build_kics_argv, portable_docker_argv
 from agentsec_evidence.execution.process import ProcessCapture, run_bounded_process
-from agentsec_evidence.intake.snapshot import SnapshotResult, create_snapshot
+from agentsec_evidence.intake.snapshot import SnapshotResult
 from agentsec_evidence.models.contracts import (
     BlobDescriptor,
     BlobIndex,
@@ -25,17 +25,19 @@ from agentsec_evidence.models.contracts import (
     RunState,
     Sensitivity,
 )
-from agentsec_evidence.orchestration.pipeline import (
-    PipelineResult,
-    _cleanup_container,
-    _failed_coverage,
-    _failure,
-    _finish_run,
-    _make_execution,
-    _minimal_environment,
-    _remove_staging,
-    _resolve_docker,
-    _store_blob,
+from agentsec_evidence.orchestration.shared import (
+    PipelineResult as PipelineResult,
+)
+from agentsec_evidence.orchestration.shared import (
+    build_failed_coverage,
+    cleanup_container,
+    failure_record,
+    finish_run,
+    make_execution,
+    prepare_workspace,
+    remove_staging,
+    resolve_docker,
+    store_blob,
 )
 from agentsec_evidence.storage.blobs import BlobStore
 from agentsec_evidence.storage.bundle import RunBundle
@@ -105,7 +107,7 @@ def _missing_docker_result(
     input_descriptors: list[BlobDescriptor],
 ) -> PipelineResult:
     bundle.transition(RunState.RUNNING, "launch attempted")
-    execution = _make_execution(
+    execution = make_execution(
         execution_id=execution_id,
         run_id=bundle.run.run_id,
         snapshot=snapshot_result.snapshot,
@@ -122,7 +124,7 @@ def _missing_docker_result(
         cleanup_succeeded=None,
     )
     prefix = f"executions/{execution_id}"
-    stdout_descriptor = _store_blob(
+    stdout_descriptor = store_blob(
         bundle=bundle,
         blob_store=blob_store,
         relative_path=f"{prefix}/stdout.bin",
@@ -132,7 +134,7 @@ def _missing_docker_result(
         producer="orchestrator",
         logical_role="stdout",
     )
-    stderr_descriptor = _store_blob(
+    stderr_descriptor = store_blob(
         bundle=bundle,
         blob_store=blob_store,
         relative_path=f"{prefix}/stderr.bin",
@@ -145,7 +147,7 @@ def _missing_docker_result(
     blob_index = BlobIndex(blobs=[*input_descriptors, stdout_descriptor, stderr_descriptor])
     bundle.write_model(f"{prefix}/execution.json", execution)
     bundle.write_model(f"{prefix}/blobs.json", blob_index)
-    failure = _failure(
+    failure = failure_record(
         run_id=bundle.run.run_id,
         execution_id=execution_id,
         stage="launch",
@@ -154,7 +156,7 @@ def _missing_docker_result(
         evidence=[],
         affected_scope="kics execution",
     )
-    coverage = _failed_coverage(
+    coverage = build_failed_coverage(
         run_id=bundle.run.run_id,
         execution_id=execution_id,
         snapshot=snapshot_result.snapshot,
@@ -163,7 +165,7 @@ def _missing_docker_result(
         property_id="infrastructure-as-code.static-analysis.kics",
     )
     bundle.transition(RunState.EXECUTION_FAILED, "required Docker executable unavailable")
-    return _finish_run(
+    return finish_run(
         project_root=project_root,
         bundle=bundle,
         snapshot=snapshot_result.snapshot,
@@ -200,16 +202,17 @@ def run_kics_scan(request: KicsScanRequest) -> PipelineResult:
             },
         )
     )
-    snapshot_result = create_snapshot(
-        request.target_source,
-        workspace_root / "targets",
+    prepared = prepare_workspace(
+        workspace_root=workspace_root,
+        target_source=request.target_source,
         source_label=request.source_label,
         revision=request.revision,
         source_kind=request.source_kind,
         license_status=request.license_status,
     )
-    blob_store = BlobStore(workspace_root / "blobs")
-    environment = _minimal_environment(workspace_root / "runtime")
+    snapshot_result = prepared.snapshot_result
+    blob_store = prepared.blob_store
+    environment = prepared.environment
 
     with RunBundle.create(
         workspace_root,
@@ -222,7 +225,7 @@ def run_kics_scan(request: KicsScanRequest) -> PipelineResult:
         bundle.add_execution_id(execution_id)
         prefix = f"executions/{execution_id}"
         input_descriptors = [
-            _store_blob(
+            store_blob(
                 bundle=bundle,
                 blob_store=blob_store,
                 relative_path=f"{prefix}/inputs/profile.toml",
@@ -232,7 +235,7 @@ def run_kics_scan(request: KicsScanRequest) -> PipelineResult:
                 producer="orchestrator",
                 logical_role="execution-profile",
             ),
-            _store_blob(
+            store_blob(
                 bundle=bundle,
                 blob_store=blob_store,
                 relative_path=f"{prefix}/inputs/tool-config.toml",
@@ -242,7 +245,7 @@ def run_kics_scan(request: KicsScanRequest) -> PipelineResult:
                 producer="orchestrator",
                 logical_role="tool-config",
             ),
-            _store_blob(
+            store_blob(
                 bundle=bundle,
                 blob_store=blob_store,
                 relative_path=f"{prefix}/inputs/query-selection.json",
@@ -254,7 +257,7 @@ def run_kics_scan(request: KicsScanRequest) -> PipelineResult:
             ),
         ]
         bundle.transition(RunState.PLANNED, "pinned KICS execution planned")
-        docker = _resolve_docker(request.docker_executable)
+        docker = resolve_docker(request.docker_executable)
         if docker is None:
             return _missing_docker_result(
                 project_root=project_root,
@@ -306,7 +309,7 @@ def run_kics_scan(request: KicsScanRequest) -> PipelineResult:
             )
             if capture.timed_out or capture.output_limited:
                 cleanup_attempted = True
-                cleanup_succeeded = _cleanup_container(
+                cleanup_succeeded = cleanup_container(
                     docker=docker,
                     container_name=container_name,
                     cwd=project_root,
@@ -315,7 +318,7 @@ def run_kics_scan(request: KicsScanRequest) -> PipelineResult:
 
             descriptors = [
                 *input_descriptors,
-                _store_blob(
+                store_blob(
                     bundle=bundle,
                     blob_store=blob_store,
                     relative_path=f"{prefix}/stdout.bin",
@@ -325,7 +328,7 @@ def run_kics_scan(request: KicsScanRequest) -> PipelineResult:
                     producer="docker-cli",
                     logical_role="stdout",
                 ),
-                _store_blob(
+                store_blob(
                     bundle=bundle,
                     blob_store=blob_store,
                     relative_path=f"{prefix}/stderr.bin",
@@ -367,7 +370,7 @@ def run_kics_scan(request: KicsScanRequest) -> PipelineResult:
                     else:
                         native_sarif = data
                     descriptors.append(
-                        _store_blob(
+                        store_blob(
                             bundle=bundle,
                             blob_store=blob_store,
                             relative_path=f"{prefix}/native/{name}",
@@ -390,7 +393,7 @@ def run_kics_scan(request: KicsScanRequest) -> PipelineResult:
                 or capture.exit_code not in tool_loaded.value.exit_codes.clean_or_findings
             ):
                 initial_outcome = ExecutionOutcome.FAILED
-            execution = _make_execution(
+            execution = make_execution(
                 execution_id=execution_id,
                 run_id=bundle.run.run_id,
                 snapshot=snapshot_result.snapshot,
@@ -415,7 +418,7 @@ def run_kics_scan(request: KicsScanRequest) -> PipelineResult:
             if capture.timed_out:
                 early_state = RunState.TIMED_OUT
                 coverage_execution = "timed-out"
-                early_failure = _failure(
+                early_failure = failure_record(
                     run_id=bundle.run.run_id,
                     execution_id=execution_id,
                     stage="execution",
@@ -427,7 +430,7 @@ def run_kics_scan(request: KicsScanRequest) -> PipelineResult:
                 )
             elif capture.output_limited:
                 early_state = RunState.EXECUTION_FAILED
-                early_failure = _failure(
+                early_failure = failure_record(
                     run_id=bundle.run.run_id,
                     execution_id=execution_id,
                     stage="capture",
@@ -439,7 +442,7 @@ def run_kics_scan(request: KicsScanRequest) -> PipelineResult:
                 )
             elif cleanup_attempted and not cleanup_succeeded:
                 early_state = RunState.EXECUTION_FAILED
-                early_failure = _failure(
+                early_failure = failure_record(
                     run_id=bundle.run.run_id,
                     execution_id=execution_id,
                     stage="release",
@@ -451,7 +454,7 @@ def run_kics_scan(request: KicsScanRequest) -> PipelineResult:
                 )
             elif unsafe_outputs:
                 early_state = RunState.EXECUTION_FAILED
-                early_failure = _failure(
+                early_failure = failure_record(
                     run_id=bundle.run.run_id,
                     execution_id=execution_id,
                     stage="capture",
@@ -463,7 +466,7 @@ def run_kics_scan(request: KicsScanRequest) -> PipelineResult:
                 )
             elif native_size > profile_loaded.value.limits.max_native_bytes:
                 early_state = RunState.EXECUTION_FAILED
-                early_failure = _failure(
+                early_failure = failure_record(
                     run_id=bundle.run.run_id,
                     execution_id=execution_id,
                     stage="capture",
@@ -478,7 +481,7 @@ def run_kics_scan(request: KicsScanRequest) -> PipelineResult:
                 and native_json is None
             ):
                 early_state = RunState.EXECUTION_FAILED
-                early_failure = _failure(
+                early_failure = failure_record(
                     run_id=bundle.run.run_id,
                     execution_id=execution_id,
                     stage="execution",
@@ -491,7 +494,7 @@ def run_kics_scan(request: KicsScanRequest) -> PipelineResult:
 
             if early_failure is not None and early_state is not None:
                 bundle.transition(early_state, early_failure.sanitized_message)
-                failed_coverage = _failed_coverage(
+                failed_coverage = build_failed_coverage(
                     run_id=bundle.run.run_id,
                     execution_id=execution_id,
                     snapshot=snapshot_result.snapshot,
@@ -499,7 +502,7 @@ def run_kics_scan(request: KicsScanRequest) -> PipelineResult:
                     execution=coverage_execution,
                     property_id="infrastructure-as-code.static-analysis.kics",
                 )
-                return _finish_run(
+                return finish_run(
                     project_root=project_root,
                     bundle=bundle,
                     snapshot=snapshot_result.snapshot,
@@ -515,7 +518,7 @@ def run_kics_scan(request: KicsScanRequest) -> PipelineResult:
             bundle.transition(RunState.CAPTURED, "bounded KICS outputs and byte streams captured")
             bundle.transition(RunState.PARSING, "offline KICS JSON parsing started")
             if native_json is None or source_blob_sha256 is None:
-                failure = _failure(
+                failure = failure_record(
                     run_id=bundle.run.run_id,
                     execution_id=execution_id,
                     stage="parse",
@@ -528,7 +531,7 @@ def run_kics_scan(request: KicsScanRequest) -> PipelineResult:
                 execution.outcome = ExecutionOutcome.FAILED
                 bundle.write_model(f"{prefix}/execution.json", execution)
                 bundle.transition(RunState.PARSE_FAILED, failure.sanitized_message)
-                failed_coverage = _failed_coverage(
+                failed_coverage = build_failed_coverage(
                     run_id=bundle.run.run_id,
                     execution_id=execution_id,
                     snapshot=snapshot_result.snapshot,
@@ -536,7 +539,7 @@ def run_kics_scan(request: KicsScanRequest) -> PipelineResult:
                     execution="failed",
                     property_id="infrastructure-as-code.static-analysis.kics",
                 )
-                return _finish_run(
+                return finish_run(
                     project_root=project_root,
                     bundle=bundle,
                     snapshot=snapshot_result.snapshot,
@@ -551,7 +554,7 @@ def run_kics_scan(request: KicsScanRequest) -> PipelineResult:
             try:
                 parsed = parse_kics_json(native_json)
             except KicsParseError as exc:
-                failure = _failure(
+                failure = failure_record(
                     run_id=bundle.run.run_id,
                     execution_id=execution_id,
                     stage="parse",
@@ -564,7 +567,7 @@ def run_kics_scan(request: KicsScanRequest) -> PipelineResult:
                 execution.outcome = ExecutionOutcome.FAILED
                 bundle.write_model(f"{prefix}/execution.json", execution)
                 bundle.transition(RunState.PARSE_FAILED, failure.sanitized_message)
-                failed_coverage = _failed_coverage(
+                failed_coverage = build_failed_coverage(
                     run_id=bundle.run.run_id,
                     execution_id=execution_id,
                     snapshot=snapshot_result.snapshot,
@@ -572,7 +575,7 @@ def run_kics_scan(request: KicsScanRequest) -> PipelineResult:
                     execution="failed",
                     property_id="infrastructure-as-code.static-analysis.kics",
                 )
-                return _finish_run(
+                return finish_run(
                     project_root=project_root,
                     bundle=bundle,
                     snapshot=snapshot_result.snapshot,
@@ -599,7 +602,7 @@ def run_kics_scan(request: KicsScanRequest) -> PipelineResult:
             failures = list(normalized.failures)
             if parsed.document.kics_version != tool_loaded.value.tool_version:
                 failures.append(
-                    _failure(
+                    failure_record(
                         run_id=bundle.run.run_id,
                         execution_id=execution_id,
                         stage="parse",
@@ -613,7 +616,7 @@ def run_kics_scan(request: KicsScanRequest) -> PipelineResult:
                 )
             if capture.exit_code not in tool_loaded.value.exit_codes.clean_or_findings:
                 failures.append(
-                    _failure(
+                    failure_record(
                         run_id=bundle.run.run_id,
                         execution_id=execution_id,
                         stage="execution",
@@ -629,7 +632,7 @@ def run_kics_scan(request: KicsScanRequest) -> PipelineResult:
                 )
             if native_sarif is None:
                 failures.append(
-                    _failure(
+                    failure_record(
                         run_id=bundle.run.run_id,
                         execution_id=execution_id,
                         stage="capture",
@@ -649,7 +652,7 @@ def run_kics_scan(request: KicsScanRequest) -> PipelineResult:
                 )
                 if sarif_problem is not None:
                     failures.append(
-                        _failure(
+                        failure_record(
                             run_id=bundle.run.run_id,
                             execution_id=execution_id,
                             stage="validate",
@@ -690,7 +693,7 @@ def run_kics_scan(request: KicsScanRequest) -> PipelineResult:
                 )
             bundle.write_model(f"{prefix}/execution.json", execution)
             bundle.transition(RunState.VALIDATING, "schema, provenance, and SARIF checks started")
-            return _finish_run(
+            return finish_run(
                 project_root=project_root,
                 bundle=bundle,
                 snapshot=snapshot_result.snapshot,
@@ -704,4 +707,4 @@ def run_kics_scan(request: KicsScanRequest) -> PipelineResult:
             )
         finally:
             if execution_staging.exists():
-                _remove_staging(staging_root, execution_staging)
+                remove_staging(staging_root, execution_staging)

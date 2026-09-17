@@ -18,9 +18,46 @@ here. Development commits and release hashes may be referenced there.
 - KICS native SARIF: retained and checked only as a comparison artifact
 - Inputs: project-authored development fixtures only until the corpus pilot gate
 
-G2-A does not authorize Syft/OSV, vendor tools, dynamic testing, a UI, public repositories, or
-custom AI-agent checks. Those enter only through their separate eligibility and planning gates.
-Do not reinterpret G2-A as completion of the full G2 adapter layer.
+G2-A acceptance alone does not authorize later tools or experiments. The separate 2026-09-18
+working decision establishes the dependency-analysis direction below. The shared refactor is
+implemented and verified; dependency adapters, fixtures and public-candidate admission remain
+pending. Vendor tools, dynamic
+testing, a UI and custom AI-agent checks retain their separate gates. Do not reinterpret G2-A
+or this documentation update as completion of the full G2 adapter layer.
+
+## Next Dependency Stage: 2026-09-18
+
+Planning authority: `../Project_Phase_02/DECISION_REGISTER.md`, decisions D-2026-09-18-01 to -15,
+and `../Project_Phase_02/G2_CORE_ADAPTER_LAYER/DEPENDENCY_ANALYSIS_PROTOCOL_2026-09-18.md`.
+Those planning files are outside this Git repository; the essential development guardrails are:
+
+- Shared orchestration now lives in the public `orchestration.shared` module. Its September 18
+  verification passed 72 tests on Windows and Ubuntu and a five-case before/after/repeat Docker
+  matrix with identical semantics. Preserve those contracts; do not reintroduce private
+  cross-producer imports or label this as Syft/OSV implementation.
+- Add package/occurrence/relationship records; the existing file inventory is not that model.
+- Compare direct pinned dependency input -> OSV with one Syft discovery producing native JSON
+  and CycloneDX -> OSV. Preserve all native evidence; put generated SBOMs outside the target.
+- Use identical explicit OSV config, no baseline suppressions, no call/reachability analysis,
+  no remote resolution, strict offline matching and frozen per-ecosystem database hashes.
+  Select exact tool/schema versions and verify flags against those builds before the pilot.
+- Verify all-package visibility; distinguish reported identity from proven matching completion.
+  Preserve aliases, different versions and occurrences; no findings does not mean safe.
+- Separate producer exit codes from platform failure status; unsupported/partial/error cannot
+  become clean. Preserve backward compatibility or version any schema/semantic changes.
+- Author independent single-ecosystem expectations, review them, then automate positive,
+  negative and copied-SBOM mutation assertions. Neither Syft nor direct OSV is ground truth.
+- Begin with one suitable pinned public pilot only after fixture/admission gates. The preferred
+  candidate is `langchain-samples/cicd-pipeline-example` at
+  `5ab0d0a0f3c90999f786f834d9c05484dfe5f2bf`, not yet admitted or scanned. Record replacement
+  reasons; never drop it merely because there are no findings. Keep it out of held-out data.
+- D-2026-09-18-15 confirms lockfile-wide PyPI inventory across markers/groups for that first
+  pilot, recording the editable project separately. Do not install target dependencies or
+  reinterpret the lockfile as one installed runtime; exact eligible identity sets still need tests.
+- Keep execution artifacts here, not in phase folders. No target installs/builds/tests/agent
+  execution for this static pilot. Paid tooling and hosted models are not prerequisites.
+- Measure semantic repeatability and complete paired-path cost, including Syft generation;
+  unsupported identities and observability limits remain visible beside metric denominators.
 
 ## Safety
 

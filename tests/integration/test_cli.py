@@ -55,7 +55,7 @@ def test_cli_offline_workflow_does_not_rerun_producer(
             peak_rss_bytes=1,
         )
 
-    monkeypatch.setattr(pipeline, "_resolve_docker", lambda _explicit: fake_docker)
+    monkeypatch.setattr(pipeline, "resolve_docker", lambda _explicit: fake_docker)
     monkeypatch.setattr(pipeline, "run_bounded_process", fake_run)
     runner = CliRunner()
     common = ["--project-root", str(project_root), "--workspace", str(workspace)]
@@ -164,7 +164,7 @@ def test_kics_cli_and_offline_workflow_do_not_rerun_producer(
             peak_rss_bytes=1,
         )
 
-    monkeypatch.setattr(kics_pipeline, "_resolve_docker", lambda _explicit: fake_docker)
+    monkeypatch.setattr(kics_pipeline, "resolve_docker", lambda _explicit: fake_docker)
     monkeypatch.setattr(kics_pipeline, "run_bounded_process", fake_run)
     runner = CliRunner()
     common = ["--project-root", str(project_root), "--workspace", str(workspace)]

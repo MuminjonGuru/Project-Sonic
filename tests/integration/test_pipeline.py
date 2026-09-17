@@ -203,7 +203,7 @@ def test_timeout_invokes_cleanup_and_records_terminal_state(
         return True
 
     monkeypatch.setattr(pipeline, "run_bounded_process", fake_timeout)
-    monkeypatch.setattr(pipeline, "_cleanup_container", fake_cleanup)
+    monkeypatch.setattr(pipeline, "cleanup_container", fake_cleanup)
     result = run_semgrep_scan(
         _request(project_root=project_root, workspace=workspace, target=target, docker=docker)
     )

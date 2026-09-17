@@ -1,0 +1,16 @@
+{
+  "contract": "dependency-tools-v1",
+  "syft": {
+    "version": "1.52.0",
+    "image": "anchore/syft@sha256:500e2d872ac019436926e8322b4fc1f39441d94d21f6f4046c6ff29b30e8cb02",
+    "native_schema": "16.1.10",
+    "license": "Apache-2.0"
+  },
+  "osv": {
+    "version": "2.6.0",
+    "image": "ghcr.io/google/osv-scanner@sha256:afd838850ac1a0fcc15ff4a041dc9ba11123c3f0d2666217a5f0fcf9222b55fa",
+    "license": "Apache-2.0"
+  },
+  "cyclonedx_version": "1.6",
+  "ecosystem": "PyPI"
+}

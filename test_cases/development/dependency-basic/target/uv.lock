@@ -1,0 +1,40 @@
+version = 1
+revision = 3
+requires-python = ">=3.11"
+resolution-markers = ["python_full_version < '3.12'", "python_full_version >= '3.12'"]
+
+[[package]]
+name = "sonic-fixture"
+version = "0.0.0"
+source = { editable = "." }
+dependencies = [
+    { name = "requests", version = "2.31.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "requests", version = "2.33.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
+]
+
+[package.dev-dependencies]
+dev = [{ name = "packaging" }]
+
+[[package]]
+name = "requests"
+version = "2.31.0"
+source = { registry = "https://pypi.org/simple" }
+resolution-markers = ["python_full_version < '3.12'"]
+dependencies = [{ name = "urllib3" }]
+
+[[package]]
+name = "requests"
+version = "2.33.0"
+source = { registry = "https://pypi.org/simple" }
+resolution-markers = ["python_full_version >= '3.12'"]
+dependencies = [{ name = "urllib3" }]
+
+[[package]]
+name = "urllib3"
+version = "2.7.0"
+source = { registry = "https://pypi.org/simple" }
+
+[[package]]
+name = "packaging"
+version = "25.0"
+source = { registry = "https://pypi.org/simple" }

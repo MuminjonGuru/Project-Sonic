@@ -1,0 +1,10 @@
+check-for-app-update: false
+parallelism: 1
+default-catalogers:
+  - python-package-cataloger
+python:
+  guess-unpinned-requirements: false
+  search-remote-licenses: false
+package:
+  search-indexed-archives: false
+  search-unindexed-archives: false

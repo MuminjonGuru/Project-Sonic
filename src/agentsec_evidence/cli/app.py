@@ -12,6 +12,7 @@ from rich.table import Table
 
 from agentsec_evidence import __version__
 from agentsec_evidence.core.doctor import collect_doctor_report
+from agentsec_evidence.core.io import json_bytes
 from agentsec_evidence.dependencies.mutations import Mutation
 from agentsec_evidence.dependencies.pipeline import run_dependency_scan, validate_dependency_bundle
 from agentsec_evidence.intake.snapshot import SnapshotError, create_snapshot
@@ -30,6 +31,17 @@ from agentsec_evidence.operations.offline import (
 )
 from agentsec_evidence.orchestration.kics_pipeline import KicsScanRequest, run_kics_scan
 from agentsec_evidence.orchestration.pipeline import SemgrepScanRequest, run_semgrep_scan
+from agentsec_evidence.reporting.dependency import (
+    load_dependency_run,
+    resolve_dependency_run,
+    summarize_dependency,
+)
+from agentsec_evidence.reporting.service import (
+    load_report_source,
+    require_new_derivative,
+    validate_common_report,
+    write_common_report,
+)
 
 app = typer.Typer(
     name="agentsec-evidence",
@@ -41,6 +53,10 @@ target_app = typer.Typer(help="Register and inspect immutable target snapshots."
 scan_app = typer.Typer(help="Run an approved scanner and finalize an evidence bundle.")
 export_app = typer.Typer(help="Rebuild an interoperability export without rerunning a tool.")
 dependency_app = typer.Typer(help="Run and validate the isolated dependency evidence experiment.")
+report_app = typer.Typer(
+    help="Build and validate common reports from existing evidence; no rescanning."
+)
+app.add_typer(report_app, name="report")
 app.add_typer(dependency_app, name="dependencies")
 app.add_typer(target_app, name="target")
 app.add_typer(scan_app, name="scan")
@@ -375,6 +391,11 @@ def inspect_run(
     """Inspect persisted run and summary records without executing a tool."""
     try:
         root = _find_project_root(project_root)
+        if run_id.startswith("dep-run-"):
+            dependency_root = resolve_dependency_run(_workspace_root(root, workspace), run_id)
+            source, _ = load_report_source(root, dependency_root)
+            _emit_json(source.model_dump(mode="json"))
+            return
         existing = load_existing_run(_workspace_root(root, workspace), run_id)
         summary = Summary.model_validate_json(
             (existing.root / "exports" / "summary.json").read_bytes()
@@ -410,6 +431,19 @@ def validate_run(
     """Revalidate bundle hashes, schemas, provenance, and SARIF offline."""
     try:
         root = _find_project_root(project_root)
+        if run_id.startswith("dep-run-"):
+            dependency_root = resolve_dependency_run(_workspace_root(root, workspace), run_id)
+            source, _ = load_report_source(root, dependency_root)
+            _emit_json(
+                {
+                    "passed": True,
+                    "run_id": run_id,
+                    "state": source.state,
+                    "dependency_bundle": "valid",
+                    "reporting_sarif": "valid",
+                }
+            )
+            return
         suite = validate_existing_run(
             project_root=root,
             workspace_root=_workspace_root(root, workspace),
@@ -488,6 +522,22 @@ def export_sarif(
     """Rebuild and validate SARIF from normalized findings only."""
     try:
         root = _find_project_root(project_root)
+        if run_id.startswith("dep-run-"):
+            dependency_root = resolve_dependency_run(_workspace_root(root, workspace), run_id)
+            _, document = load_report_source(root, dependency_root)
+            destination = require_new_derivative(output, [dependency_root])
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            with destination.open("xb") as handle:
+                handle.write(json_bytes(document))
+            _emit_json(
+                {
+                    "output": str(destination),
+                    "source_run_id": run_id,
+                    "validation": {"passed": True},
+                    "comparison_paths": ["osv-direct", "osv-sbom"],
+                }
+            )
+            return
         report = rebuild_sarif(
             project_root=root,
             workspace_root=_workspace_root(root, workspace),
@@ -520,9 +570,15 @@ def summarize_run(
         bool, typer.Option("--json", help="Emit machine-readable JSON.")
     ] = False,
 ) -> None:
-    """Recompute first-slice metrics from persisted evidence only."""
+    """Summarize static or dependency evidence without rerunning any producer."""
     try:
         root = _find_project_root(project_root)
+        if run_id.startswith("dep-run-"):
+            existing_dependency = load_dependency_run(
+                resolve_dependency_run(_workspace_root(root, workspace), run_id)
+            )
+            _emit_json(summarize_dependency(existing_dependency).model_dump(mode="json"))
+            return
         summary = rebuild_summary(
             project_root=root,
             workspace_root=_workspace_root(root, workspace),
@@ -590,6 +646,45 @@ def dependency_validate(
     """Check the separate dependency bundle format offline."""
     try:
         _emit_json(validate_dependency_bundle(bundle))
+    except (OSError, ValueError) as exc:
+        _emit_error(exc)
+        raise typer.Exit(code=5) from exc
+
+
+@report_app.command("build")
+def report_build(
+    bundles: Annotated[list[Path], typer.Argument(exists=True, file_okay=False)],
+    output: Annotated[
+        Path, typer.Option(help="New derivative directory outside finalized evidence.")
+    ],
+    project_root: Annotated[Path | None, typer.Option()] = None,
+) -> None:
+    """Combine validated source views without collapsing sources, targets or comparison paths."""
+    try:
+        report = write_common_report(
+            project_root=_find_project_root(project_root), bundles=bundles, output=output
+        )
+    except (OSError, ValueError) as exc:
+        _emit_error(exc)
+        raise typer.Exit(code=5) from exc
+    _emit_json(
+        {
+            "output": str(output.resolve()),
+            "sources": len(report.sources),
+            "sarif_runs": report.sarif_runs,
+            "sensitivity": report.sensitivity,
+        }
+    )
+
+
+@report_app.command("validate")
+def report_validate(
+    directory: Annotated[Path, typer.Argument(exists=True, file_okay=False)],
+    project_root: Annotated[Path | None, typer.Option()] = None,
+) -> None:
+    """Validate report integrity, source bindings and SARIF/result accounting offline."""
+    try:
+        _emit_json(validate_common_report(_find_project_root(project_root), directory))
     except (OSError, ValueError) as exc:
         _emit_error(exc)
         raise typer.Exit(code=5) from exc

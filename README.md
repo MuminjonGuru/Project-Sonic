@@ -149,8 +149,10 @@ model is required. No findings remains a valid result, not a reason to replace t
 Package name/version projection retention is reported separately from lost source qualifiers;
 occurrences and native relationships are retained but their full fidelity is not scored.
 Reported package appearance does not prove successful per-package vulnerability matching.
-The dependency contract is not yet integrated into the existing SARIF exporter or GUI. It does
-not complete the full G2 gate or establish coverage of all AI-agent artifacts.
+Dependency evidence now participates in offline common reporting, with a separately versioned
+package summary and two SARIF runs for the direct and SBOM paths. Existing file-based contracts
+are unchanged. See [common reporting](docs/common-reporting.md) for commands and counting rules.
+The GUI, full G2 gate and coverage of all AI-agent artifacts remain open.
 
 The dated decision/protocol records live in the sibling `Project_Phase_02` planning folder,
 which is intentionally not distributed in this development checkout. `AGENTS.md` summarizes

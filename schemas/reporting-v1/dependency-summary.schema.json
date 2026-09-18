@@ -1,0 +1,451 @@
+{
+  "$defs": {
+    "DependencyStageSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "eligible_package_advisory_matches": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Eligible Package Advisory Matches"
+        },
+        "eligible_reported_packages": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Eligible Reported Packages"
+        },
+        "identified_unique_packages": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Identified Unique Packages"
+        },
+        "observations": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Observations"
+        },
+        "per_package_matching_completion": {
+          "const": "not-observable",
+          "default": "not-observable",
+          "title": "Per Package Matching Completion",
+          "type": "string"
+        },
+        "relationships": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Relationships"
+        },
+        "reported_match_occurrences": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Reported Match Occurrences"
+        },
+        "reported_package_advisory_matches": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Reported Package Advisory Matches"
+        },
+        "stage": {
+          "title": "Stage",
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "complete",
+            "partial",
+            "failed",
+            "unsupported",
+            "missing"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "unsupported_observations": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Unsupported Observations"
+        }
+      },
+      "required": [
+        "stage",
+        "state",
+        "observations",
+        "identified_unique_packages",
+        "eligible_reported_packages",
+        "reported_package_advisory_matches",
+        "reported_match_occurrences",
+        "eligible_package_advisory_matches",
+        "unsupported_observations",
+        "relationships"
+      ],
+      "title": "DependencyStageSummary",
+      "type": "object"
+    },
+    "Fraction": {
+      "additionalProperties": false,
+      "properties": {
+        "denominator": {
+          "minimum": 0,
+          "title": "Denominator",
+          "type": "integer"
+        },
+        "numerator": {
+          "minimum": 0,
+          "title": "Numerator",
+          "type": "integer"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Value"
+        }
+      },
+      "required": [
+        "numerator",
+        "denominator",
+        "value"
+      ],
+      "title": "Fraction",
+      "type": "object"
+    },
+    "StageComparison": {
+      "additionalProperties": false,
+      "properties": {
+        "added": {
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "type": "array"
+          },
+          "title": "Added",
+          "type": "array"
+        },
+        "comparable": {
+          "title": "Comparable",
+          "type": "boolean"
+        },
+        "contract": {
+          "const": "dependency-comparison-v1",
+          "default": "dependency-comparison-v1",
+          "title": "Contract",
+          "type": "string"
+        },
+        "left": {
+          "title": "Left",
+          "type": "string"
+        },
+        "left_out_of_scope": {
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "type": "array"
+          },
+          "title": "Left Out Of Scope",
+          "type": "array"
+        },
+        "limitations": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Limitations",
+          "type": "array"
+        },
+        "missing": {
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "type": "array"
+          },
+          "title": "Missing",
+          "type": "array"
+        },
+        "missing_identifiers": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Missing Identifiers",
+          "type": "array"
+        },
+        "package_projection_retention": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Fraction"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "right": {
+          "title": "Right",
+          "type": "string"
+        },
+        "right_out_of_scope": {
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "type": "array"
+          },
+          "title": "Right Out Of Scope",
+          "type": "array"
+        },
+        "source_qualifier_losses": {
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "type": "array"
+          },
+          "title": "Source Qualifier Losses",
+          "type": "array"
+        }
+      },
+      "required": [
+        "left",
+        "right",
+        "comparable",
+        "package_projection_retention",
+        "missing",
+        "added",
+        "left_out_of_scope",
+        "right_out_of_scope",
+        "source_qualifier_losses",
+        "missing_identifiers",
+        "limitations"
+      ],
+      "title": "StageComparison",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "ambiguous_projections": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Ambiguous Projections"
+    },
+    "comparisons": {
+      "items": {
+        "$ref": "#/$defs/StageComparison"
+      },
+      "title": "Comparisons",
+      "type": "array"
+    },
+    "contract": {
+      "const": "dependency-summary-v1",
+      "default": "dependency-summary-v1",
+      "title": "Contract",
+      "type": "string"
+    },
+    "database_sha256": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Database Sha256"
+    },
+    "eligible_unique_packages": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Eligible Unique Packages"
+    },
+    "limitations": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Limitations",
+      "type": "array"
+    },
+    "run_id": {
+      "title": "Run Id",
+      "type": "string"
+    },
+    "scope_available": {
+      "title": "Scope Available",
+      "type": "boolean"
+    },
+    "separate_local_packages": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Separate Local Packages"
+    },
+    "stages": {
+      "items": {
+        "$ref": "#/$defs/DependencyStageSummary"
+      },
+      "title": "Stages",
+      "type": "array"
+    },
+    "state": {
+      "enum": [
+        "complete",
+        "partial",
+        "failed"
+      ],
+      "title": "State",
+      "type": "string"
+    },
+    "timing_ns": {
+      "additionalProperties": {
+        "minimum": 0,
+        "type": "integer"
+      },
+      "title": "Timing Ns",
+      "type": "object"
+    },
+    "unsupported_scope_records": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Unsupported Scope Records"
+    }
+  },
+  "required": [
+    "run_id",
+    "state",
+    "scope_available",
+    "eligible_unique_packages",
+    "separate_local_packages",
+    "unsupported_scope_records",
+    "ambiguous_projections",
+    "database_sha256",
+    "stages",
+    "comparisons",
+    "timing_ns",
+    "limitations"
+  ],
+  "title": "DependencySummary",
+  "type": "object"
+}

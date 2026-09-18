@@ -66,7 +66,18 @@ optional extras and their dependency lists. Preserve earlier v1 hashes and raw b
 sort arbitrary sequences to manufacture agreement. OSV 2.6.0 requires its database bind mount
 at `/database/osv-scalibr/PyPI/all.zip`; do not follow an unverified moving documentation path.
 
-## Safety
+## Common Reporting: 2026-09-18
+
+`inspect`, `summarize`, `validate` and `export sarif` also accept dependency run IDs. The
+`report build` command combines validated static/dependency bundles into a new derivative;
+`report validate` verifies it. See `docs/common-reporting.md`.
+Keep `common-report-v1` and `dependency-summary-v1` separate from original source contracts.
+Never sum paired OSV paths or heterogeneous finding units into one vulnerability total.
+Missing evidence is null, not zero. Package SARIF uses logical locations, no fabricated source
+lines and no inferred severity. Existing evidence must remain byte-identical. A valid report
+does not establish successful analysis, consumer compatibility or public-release clearance.
+
+## Safety Controls
 
 - Build subprocess commands as argument arrays. Never invoke scanner commands through a shell.
 - Mount targets read-only; deny scanner networking; never expose the Docker socket or host home.

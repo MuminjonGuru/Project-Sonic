@@ -82,6 +82,22 @@ def test_cli_offline_workflow_does_not_rerun_producer(
     run_id = json.loads(scan.stdout)["run_id"]
     assert calls == 1
 
+    common_output = tmp_path / "common-report"
+    combined = runner.invoke(
+        app,
+        [
+            "report",
+            "build",
+            str(workspace / "runs" / run_id),
+            "--output",
+            str(common_output),
+            "--project-root",
+            str(project_root),
+        ],
+    )
+    assert combined.exit_code == 0, combined.output
+    assert json.loads(combined.stdout)["sarif_runs"] == 1
+
     validation = runner.invoke(app, ["validate", run_id, *common, "--json"])
     inspection = runner.invoke(app, ["inspect", run_id, *common, "--json"])
     summary = runner.invoke(app, ["summarize", run_id, *common, "--json"])
@@ -192,6 +208,22 @@ def test_kics_cli_and_offline_workflow_do_not_rerun_producer(
     run_id = payload["run_id"]
     assert payload["summary"]["normalized_finding_count"] == 2
     assert calls == 1
+
+    common_output = tmp_path / "common-kics-report"
+    combined = runner.invoke(
+        app,
+        [
+            "report",
+            "build",
+            str(workspace / "runs" / run_id),
+            "--output",
+            str(common_output),
+            "--project-root",
+            str(project_root),
+        ],
+    )
+    assert combined.exit_code == 0, combined.output
+    assert json.loads(combined.stdout)["sarif_runs"] == 1
 
     validation = runner.invoke(app, ["validate", run_id, *common, "--json"])
     summary = runner.invoke(app, ["summarize", run_id, *common, "--json"])

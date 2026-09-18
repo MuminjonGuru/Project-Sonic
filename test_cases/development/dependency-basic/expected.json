@@ -1,0 +1,32 @@
+{
+  "contract": "dependency-oracle-v1",
+  "case_id": "dependency-basic",
+  "review_status": "student-confirmed-finite-scope",
+  "review_provenance": "Student explicitly reviewed and approved this finite test scope in the 2026-09-18 conversation; not mentor approval or a complete real-repository oracle.",
+  "authorship": "AI-authored finite development oracle; not scanner-derived",
+  "database_sha256": "6f7b248e44eeadbf0d669c2e2842adc19bc1929f1b9da8ae2e69991dab3cbbdd",
+  "eligible_packages": [
+    ["requests", "2.31.0"],
+    ["requests", "2.33.0"],
+    ["urllib3", "2.7.0"],
+    ["packaging", "25.0"]
+  ],
+  "separate_local_packages": [["sonic-fixture", "0.0.0"]],
+  "expected_matches": [
+    ["requests", "2.31.0", "CVE-2024-35195"],
+    ["requests", "2.31.0", "CVE-2024-47081"],
+    ["requests", "2.31.0", "CVE-2026-25645"]
+  ],
+  "advisory_basis": [
+    {"id": "GHSA-9wx4-h78v-vm56", "introduced": "0", "fixed": "2.32.0"},
+    {"id": "GHSA-9hjg-9r4m-mvj7", "introduced": "0", "fixed": "2.32.4"},
+    {"id": "GHSA-gc5v-m9x4-r6x2", "introduced": "0", "fixed": "2.33.0"}
+  ],
+  "limitations": [
+    "Authored lockfile fragment, not an installable project or real resolved environment.",
+    "No target installation or agent execution.",
+    "No findings means no match against the frozen records, not safe.",
+    "Student-approved finite scope; automated compatibility checks do not establish complete real-world ground truth.",
+    "Dependency edges describe this fixture, not the complete upstream Requests dependency graph."
+  ]
+}

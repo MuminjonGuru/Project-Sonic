@@ -132,20 +132,25 @@ platforms, query IDs, parser controls, and output formats in `configs/tools/kics
 native JSON is canonical; native KICS SARIF is retained only as a comparison artifact. A zero
 finding result is distinct from an unsupported target or a partial parse.
 
-## Planned Dependency Experiment (2026-09-18)
+## Dependency Evidence Pilot (2026-09-18)
 
-This is the next working direction, **not an available CLI feature or completed benchmark**.
-Producer-neutral orchestration has been extracted and verified: 72 tests passed on Windows
-and Ubuntu, and five real Semgrep/KICS cases preserved their before/after/repeat semantics. Next
-compare direct dependency input to OSV with Syft native JSON plus an external CycloneDX SBOM
-consumed by OSV, using frozen offline data and equivalent configuration. The platform will
-measure package/occurrence preservation, alias-aware matches, explicit unsupported/error
-states, semantic repeatability and full-path cost against independently specified cases.
+The separately versioned `dependencies run` and `dependencies validate` commands now compare
+direct root `uv.lock` -> OSV with one Syft discovery -> native JSON plus external CycloneDX ->
+OSV. Both OSV paths use the same explicit configuration and frozen offline PyPI database.
+See [dependency reproduction and limitations](docs/dependency-pilot.md).
 
-The preferred first public candidate is `langchain-samples/cicd-pipeline-example` at
-`5ab0d0a0f3c90999f786f834d9c05484dfe5f2bf`, pending compatibility and admission checks.
-It is a formative example-project pilot, not the final benchmark corpus. No findings is a
-valid outcome, not a reason to replace it. No paid service or hosted model is required.
+The finite controlled scope was explicitly reviewed by the student. The public pilot uses
+`langchain-samples/cicd-pipeline-example` at `5ab0d0a0f3c90999f786f834d9c05484dfe5f2bf`:
+159 eligible PyPI identities across all lockfile markers/groups, with the editable root counted
+separately. This is an admitted formative example, not the final benchmark corpus or a deployed
+runtime. No dependencies, target tests, builds or agents are executed. No paid service or hosted
+model is required. No findings remains a valid result, not a reason to replace this case.
+
+Package name/version projection retention is reported separately from lost source qualifiers;
+occurrences and native relationships are retained but their full fidelity is not scored.
+Reported package appearance does not prove successful per-package vulnerability matching.
+The dependency contract is not yet integrated into the existing SARIF exporter or GUI. It does
+not complete the full G2 gate or establish coverage of all AI-agent artifacts.
 
 The dated decision/protocol records live in the sibling `Project_Phase_02` planning folder,
 which is intentionally not distributed in this development checkout. `AGENTS.md` summarizes
@@ -156,7 +161,7 @@ stays separate. `tools/verify_orchestration_regression.ps1` runs and validates t
 Docker fixtures and can compare against a saved baseline. Use a fresh directory under
 `workspace` for its `-ReportDirectory` argument. The pinned Ubuntu verification build is in
 `containers/verification/`. These checks establish engineering compatibility, not detection
-accuracy or public-repository benchmark readiness.
+accuracy or confirmatory benchmark readiness.
 
 ## Repository Boundary
 

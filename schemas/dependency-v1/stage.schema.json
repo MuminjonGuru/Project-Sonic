@@ -1,0 +1,272 @@
+{
+  "$defs": {
+    "AdvisoryMatch": {
+      "additionalProperties": false,
+      "properties": {
+        "aliases": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Aliases",
+          "type": "array"
+        },
+        "canonical_advisory": {
+          "title": "Canonical Advisory",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "original_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Original Ids",
+          "type": "array"
+        },
+        "package_pointer": {
+          "title": "Package Pointer",
+          "type": "string"
+        },
+        "version": {
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "package_pointer",
+        "name",
+        "version",
+        "canonical_advisory",
+        "original_ids",
+        "aliases"
+      ],
+      "title": "AdvisoryMatch",
+      "type": "object"
+    },
+    "JsonValue": {},
+    "PackageObservation": {
+      "additionalProperties": false,
+      "properties": {
+        "context": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Context",
+          "type": "object"
+        },
+        "ecosystem": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ecosystem"
+        },
+        "limitations": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Limitations",
+          "type": "array"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        },
+        "native_id": {
+          "title": "Native Id",
+          "type": "string"
+        },
+        "native_name": {
+          "title": "Native Name",
+          "type": "string"
+        },
+        "native_pointer": {
+          "title": "Native Pointer",
+          "type": "string"
+        },
+        "native_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Native Version"
+        },
+        "purl": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Purl"
+        },
+        "source_qualifiers": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Source Qualifiers",
+          "type": "object"
+        },
+        "status": {
+          "enum": [
+            "identified",
+            "unresolved",
+            "unsupported",
+            "conflicting"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Version"
+        }
+      },
+      "required": [
+        "native_pointer",
+        "native_id",
+        "native_name",
+        "native_version",
+        "status"
+      ],
+      "title": "PackageObservation",
+      "type": "object"
+    },
+    "Relationship": {
+      "additionalProperties": false,
+      "properties": {
+        "context": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Context",
+          "type": "object"
+        },
+        "destination_ref": {
+          "title": "Destination Ref",
+          "type": "string"
+        },
+        "kind": {
+          "title": "Kind",
+          "type": "string"
+        },
+        "native_pointer": {
+          "title": "Native Pointer",
+          "type": "string"
+        },
+        "source_ref": {
+          "title": "Source Ref",
+          "type": "string"
+        }
+      },
+      "required": [
+        "native_pointer",
+        "source_ref",
+        "destination_ref",
+        "kind"
+      ],
+      "title": "Relationship",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "contract": {
+      "const": "dependency-stage-v1",
+      "default": "dependency-stage-v1",
+      "title": "Contract",
+      "type": "string"
+    },
+    "limitations": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Limitations",
+      "type": "array"
+    },
+    "matches": {
+      "items": {
+        "$ref": "#/$defs/AdvisoryMatch"
+      },
+      "title": "Matches",
+      "type": "array"
+    },
+    "observations": {
+      "items": {
+        "$ref": "#/$defs/PackageObservation"
+      },
+      "title": "Observations",
+      "type": "array"
+    },
+    "raw_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Raw Sha256",
+      "type": "string"
+    },
+    "relationships": {
+      "items": {
+        "$ref": "#/$defs/Relationship"
+      },
+      "title": "Relationships",
+      "type": "array"
+    },
+    "stage": {
+      "enum": [
+        "lockfile",
+        "syft",
+        "cyclonedx",
+        "osv-direct",
+        "osv-sbom"
+      ],
+      "title": "Stage",
+      "type": "string"
+    },
+    "state": {
+      "default": "complete",
+      "enum": [
+        "complete",
+        "partial",
+        "failed",
+        "unsupported"
+      ],
+      "title": "State",
+      "type": "string"
+    }
+  },
+  "required": [
+    "stage",
+    "raw_sha256"
+  ],
+  "title": "StageEvidence",
+  "type": "object"
+}

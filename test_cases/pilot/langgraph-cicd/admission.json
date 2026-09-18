@@ -1,0 +1,33 @@
+{
+  "contract": "dependency-pilot-admission-v1",
+  "status": "approved",
+  "approval_kind": "engineering admission under student-approved pilot direction; not academic or public-release approval",
+  "repository": "https://github.com/langchain-samples/cicd-pipeline-example",
+  "revision": "5ab0d0a0f3c90999f786f834d9c05484dfe5f2bf",
+  "git_tree": "8e70659fafab833ceaec4f250d3a0652fadf8dd7",
+  "content_sha256": "331a5f63efc0b8e07c0d9977c3a36c4b96cc3cd4dae39744877fd605c054d0af",
+  "lockfile_sha256": "86684f5ded00e39304262979ca54ffda52f8521579990699932e567e845fd1ad",
+  "database_sha256": "6f7b248e44eeadbf0d669c2e2842adc19bc1929f1b9da8ae2e69991dab3cbbdd",
+  "oracle_review": "student-confirmed",
+  "oracle_review_scope": "Finite authored fixture only; public repository has no complete vulnerability oracle.",
+  "intake_checks": "47 files and 2481730 bytes; every archive file matched its pinned Git blob; no symlinks or submodules; snapshot safety checks passed",
+  "scope": "Root uv.lock only, all locked PyPI identities across markers and groups, no installation",
+  "eligible_unique_identities": 159,
+  "separate_local_identities": [["text2sql-agent", "0.1.0"]],
+  "license_observation": "MIT; Copyright (c) 2025 Marco Perini; original notice retained in private source snapshot",
+  "release_status": "private evidence pending separate license, disclosure and redaction review",
+  "split": "pilot-only; permanently excluded from held-out evaluation",
+  "execution_plan": {
+    "repetitions": 3,
+    "order": "direct OSV, Syft, SBOM OSV, sequential",
+    "container_cache": "new disposable container per stage",
+    "host_filesystem_cache": "uncontrolled; not a performance superiority benchmark",
+    "network": "none during scanning",
+    "database_mount": "read-only, pinned archive; no refresh",
+    "cpus": 2,
+    "memory_gib": 2,
+    "timeout_seconds_per_stage": 120,
+    "target_execution": false
+  },
+  "controlled_gate": "11-case development matrix passed, including three semantic repeats and three post-export mutations; evidence stays under workspace/dependency-matrix-2026-09-18"
+}

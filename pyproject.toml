@@ -10,6 +10,8 @@ readme = "README.md"
 requires-python = ">=3.13.15,<3.14"
 dependencies = [
   "jsonschema==4.26.0",
+  "packageurl-python==0.17.6",
+  "packaging==26.3",
   "portalocker==4.3.0",
   "psutil==7.2.2",
   "pydantic==2.13.5",

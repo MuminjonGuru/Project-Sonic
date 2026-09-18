@@ -16,12 +16,13 @@ here. Development commits and release hashes may be referenced there.
 - G1: Semgrep native JSON -> normalized JSONL -> SARIF -> summary
 - G2-A: KICS native JSON -> normalized JSONL -> project SARIF -> summary
 - KICS native SARIF: retained and checked only as a comparison artifact
-- Inputs: project-authored development fixtures only until the corpus pilot gate
+- Inputs: authored development fixtures and the explicitly admitted pinned dependency pilot only
 
 G2-A acceptance alone does not authorize later tools or experiments. The separate 2026-09-18
 working decision establishes the dependency-analysis direction below. The shared refactor is
-implemented and verified; dependency adapters, fixtures and public-candidate admission remain
-pending. Vendor tools, dynamic
+implemented and committed at `dd5f668a3fd764314a8886807cd924dc9f438da5`. Dependency adapters,
+controlled fixtures and the first pinned pilot are now implemented; see `docs/dependency-pilot.md`.
+Vendor tools, dynamic
 testing, a UI and custom AI-agent checks retain their separate gates. Do not reinterpret G2-A
 or this documentation update as completion of the full G2 adapter layer.
 
@@ -49,15 +50,21 @@ Those planning files are outside this Git repository; the essential development 
   negative and copied-SBOM mutation assertions. Neither Syft nor direct OSV is ground truth.
 - Begin with one suitable pinned public pilot only after fixture/admission gates. The preferred
   candidate is `langchain-samples/cicd-pipeline-example` at
-  `5ab0d0a0f3c90999f786f834d9c05484dfe5f2bf`, not yet admitted or scanned. Record replacement
+`5ab0d0a0f3c90999f786f834d9c05484dfe5f2bf`, admitted in `test_cases/pilot/langgraph-cicd/admission.json`. Record replacement
   reasons; never drop it merely because there are no findings. Keep it out of held-out data.
 - D-2026-09-18-15 confirms lockfile-wide PyPI inventory across markers/groups for that first
   pilot, recording the editable project separately. Do not install target dependencies or
-  reinterpret the lockfile as one installed runtime; exact eligible identity sets still need tests.
+  reinterpret the lockfile as one installed runtime. The admitted denominator is 159, plus one local root.
 - Keep execution artifacts here, not in phase folders. No target installs/builds/tests/agent
   execution for this static pilot. Paid tooling and hosted models are not prerequisites.
 - Measure semantic repeatability and complete paired-path cost, including Syft generation;
   unsupported identities and observability limits remain visible beside metric denominators.
+
+Dependency evidence uses `dependency-bundle-v1` and `dependency-semantic-v2`, separate from
+static `run-semantic-v2`. The v2 dependency projection canonicalizes only known unordered Syft
+optional extras and their dependency lists. Preserve earlier v1 hashes and raw bundles; never
+sort arbitrary sequences to manufacture agreement. OSV 2.6.0 requires its database bind mount
+at `/database/osv-scalibr/PyPI/all.zip`; do not follow an unverified moving documentation path.
 
 ## Safety
 

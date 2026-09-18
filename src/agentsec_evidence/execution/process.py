@@ -70,11 +70,11 @@ def _reader(stream: IO[bytes], capture: _StreamCapture, overflow: threading.Even
 def _kill_process_tree(process: subprocess.Popen[bytes]) -> None:
     try:
         root = psutil.Process(process.pid)
+        children = root.children(recursive=True)
     except psutil.Error:
-        process.kill()
+        with suppress(OSError):
+            process.kill()
         return
-
-    children = root.children(recursive=True)
     for child in children:
         with suppress(psutil.Error):
             child.terminate()
@@ -106,6 +106,8 @@ def run_bounded_process(
     timeout_seconds: float,
     max_stdout_bytes: int,
     max_stderr_bytes: int,
+    monitored_files: Sequence[Path] = (),
+    max_generated_bytes: int | None = None,
 ) -> ProcessCapture:
     if not argv or any(not argument or "\x00" in argument for argument in argv):
         msg = "argv must contain non-empty, NUL-free arguments"
@@ -113,6 +115,19 @@ def run_bounded_process(
     if timeout_seconds <= 0 or max_stdout_bytes <= 0 or max_stderr_bytes <= 0:
         msg = "timeout and output limits must be positive"
         raise ValueError(msg)
+    if monitored_files and (max_generated_bytes is None or max_generated_bytes <= 0):
+        raise ValueError("Monitored output files require a positive aggregate byte limit")
+
+    def generated_limit_exceeded() -> bool:
+        if max_generated_bytes is None:
+            return False
+        try:
+            return (
+                sum(path.stat().st_size for path in monitored_files if path.exists())
+                > max_generated_bytes
+            )
+        except OSError:
+            return True
 
     creation_flags = _WINDOWS_CREATE_NEW_PROCESS_GROUP if os.name == "nt" else 0
     started_at = utc_now()
@@ -154,7 +169,7 @@ def run_bounded_process(
     deadline = time.monotonic() + timeout_seconds
     while process.poll() is None:
         peak_rss = max(peak_rss, _rss_bytes(process.pid))
-        if overflow.is_set():
+        if overflow.is_set() or generated_limit_exceeded():
             output_limited = True
             _kill_process_tree(process)
             break
@@ -175,7 +190,7 @@ def run_bounded_process(
     if stdout_thread.is_alive() or stderr_thread.is_alive():
         msg = "Output reader did not terminate"
         raise RuntimeError(msg)
-    output_limited = output_limited or overflow.is_set()
+    output_limited = output_limited or overflow.is_set() or generated_limit_exceeded()
 
     ended_at = utc_now()
     return ProcessCapture(

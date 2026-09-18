@@ -12,6 +12,8 @@ from rich.table import Table
 
 from agentsec_evidence import __version__
 from agentsec_evidence.core.doctor import collect_doctor_report
+from agentsec_evidence.dependencies.mutations import Mutation
+from agentsec_evidence.dependencies.pipeline import run_dependency_scan, validate_dependency_bundle
 from agentsec_evidence.intake.snapshot import SnapshotError, create_snapshot
 from agentsec_evidence.models.contracts import (
     BundleManifest,
@@ -38,6 +40,8 @@ app = typer.Typer(
 target_app = typer.Typer(help="Register and inspect immutable target snapshots.")
 scan_app = typer.Typer(help="Run an approved scanner and finalize an evidence bundle.")
 export_app = typer.Typer(help="Rebuild an interoperability export without rerunning a tool.")
+dependency_app = typer.Typer(help="Run and validate the isolated dependency evidence experiment.")
+app.add_typer(dependency_app, name="dependencies")
 app.add_typer(target_app, name="target")
 app.add_typer(scan_app, name="scan")
 app.add_typer(export_app, name="export")
@@ -531,6 +535,64 @@ def summarize_run(
         _emit_json(cast(JsonValue, summary.model_dump(mode="json")))
     else:
         console.print_json(data=summary.model_dump(mode="json"))
+
+
+@dependency_app.command("run")
+def dependency_run(
+    source: Annotated[Path, typer.Argument(exists=True, file_okay=False)],
+    database: Annotated[Path, typer.Option(help="Frozen PyPI all.zip; never downloaded here.")],
+    database_sha256: Annotated[str, typer.Option(help="Expected SHA-256 of the frozen archive.")],
+    label: Annotated[str, typer.Option(help="Non-secret target identity.")],
+    revision: Annotated[str, typer.Option(help="Fixed revision or authored fixture version.")],
+    split: Annotated[
+        str, typer.Option(help="development or pilot; pilot needs admission.")
+    ] = "development",
+    admission: Annotated[Path | None, typer.Option(help="Reviewed pilot admission record.")] = None,
+    mutation: Annotated[
+        str | None, typer.Option(help="Development-only controlled SBOM change.")
+    ] = None,
+    project_root: Annotated[Path | None, typer.Option()] = None,
+    workspace: Annotated[Path | None, typer.Option()] = None,
+) -> None:
+    """Compare direct lockfile and SBOM-mediated offline matching; emit JSON."""
+    try:
+        if split not in {"development", "pilot"}:
+            raise ValueError("Only development and reviewed pilot splits are supported")
+        if mutation not in {None, "remove-component", "remove-purl", "change-version"}:
+            raise ValueError("Unsupported development mutation")
+        if not re.fullmatch(r"[0-9a-fA-F]{64}", database_sha256):
+            raise ValueError("Database hash must be SHA-256")
+        root = _find_project_root(project_root)
+        result = run_dependency_scan(
+            project_root=root,
+            workspace_root=_workspace_root(root, workspace),
+            source=source,
+            label=label,
+            revision=revision,
+            database=database,
+            database_sha256=database_sha256.lower(),
+            split=cast(Literal["development", "pilot"], split),
+            admission_file=admission,
+            mutation=cast(Mutation | None, mutation),
+        )
+    except (OSError, ValueError) as exc:
+        _emit_error(exc)
+        raise typer.Exit(code=2) from exc
+    _emit_json(result)
+    if result["state"] != "complete":
+        raise typer.Exit(code=8 if result["state"] == "partial" else 4)
+
+
+@dependency_app.command("validate")
+def dependency_validate(
+    bundle: Annotated[Path, typer.Argument(exists=True, file_okay=False)],
+) -> None:
+    """Check the separate dependency bundle format offline."""
+    try:
+        _emit_json(validate_dependency_bundle(bundle))
+    except (OSError, ValueError) as exc:
+        _emit_error(exc)
+        raise typer.Exit(code=5) from exc
 
 
 def main() -> None:

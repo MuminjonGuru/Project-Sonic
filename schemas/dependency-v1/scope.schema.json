@@ -1,0 +1,110 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "ambiguous_projections": {
+      "items": {
+        "maxItems": 2,
+        "minItems": 2,
+        "prefixItems": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "string"
+          }
+        ],
+        "type": "array"
+      },
+      "title": "Ambiguous Projections",
+      "type": "array"
+    },
+    "comparison_policy": {
+      "default": "PyPI name/version projection; report source-qualifier loss separately; never claim complete identity or relationship preservation from this ratio",
+      "title": "Comparison Policy",
+      "type": "string"
+    },
+    "contract": {
+      "const": "dependency-scope-v1",
+      "default": "dependency-scope-v1",
+      "title": "Contract",
+      "type": "string"
+    },
+    "eligible": {
+      "items": {
+        "maxItems": 2,
+        "minItems": 2,
+        "prefixItems": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "string"
+          }
+        ],
+        "type": "array"
+      },
+      "title": "Eligible",
+      "type": "array"
+    },
+    "group_policy": {
+      "default": "retain all recorded groups; no runtime filtering",
+      "title": "Group Policy",
+      "type": "string"
+    },
+    "input_file": {
+      "const": "uv.lock",
+      "default": "uv.lock",
+      "title": "Input File",
+      "type": "string"
+    },
+    "input_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Input Sha256",
+      "type": "string"
+    },
+    "marker_policy": {
+      "default": "retain all recorded branches; no runtime filtering",
+      "title": "Marker Policy",
+      "type": "string"
+    },
+    "scope": {
+      "const": "lockfile-wide-no-install",
+      "default": "lockfile-wide-no-install",
+      "title": "Scope",
+      "type": "string"
+    },
+    "separate_local": {
+      "items": {
+        "maxItems": 2,
+        "minItems": 2,
+        "prefixItems": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "string"
+          }
+        ],
+        "type": "array"
+      },
+      "title": "Separate Local",
+      "type": "array"
+    },
+    "unsupported_pointers": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Unsupported Pointers",
+      "type": "array"
+    }
+  },
+  "required": [
+    "input_sha256",
+    "eligible",
+    "separate_local",
+    "unsupported_pointers",
+    "ambiguous_projections"
+  ],
+  "title": "DependencyScope",
+  "type": "object"
+}

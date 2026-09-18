@@ -1,0 +1,3 @@
+# Deliberate adjacent-config conflict. The platform's explicit config must override this.
+[[PackageOverrides]]
+ignore = true

@@ -1,0 +1,182 @@
+{
+  "$defs": {
+    "Fraction": {
+      "additionalProperties": false,
+      "properties": {
+        "denominator": {
+          "minimum": 0,
+          "title": "Denominator",
+          "type": "integer"
+        },
+        "numerator": {
+          "minimum": 0,
+          "title": "Numerator",
+          "type": "integer"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Value"
+        }
+      },
+      "required": [
+        "numerator",
+        "denominator",
+        "value"
+      ],
+      "title": "Fraction",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "added": {
+      "items": {
+        "maxItems": 2,
+        "minItems": 2,
+        "prefixItems": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "string"
+          }
+        ],
+        "type": "array"
+      },
+      "title": "Added",
+      "type": "array"
+    },
+    "comparable": {
+      "title": "Comparable",
+      "type": "boolean"
+    },
+    "contract": {
+      "const": "dependency-comparison-v1",
+      "default": "dependency-comparison-v1",
+      "title": "Contract",
+      "type": "string"
+    },
+    "left": {
+      "title": "Left",
+      "type": "string"
+    },
+    "left_out_of_scope": {
+      "items": {
+        "maxItems": 2,
+        "minItems": 2,
+        "prefixItems": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "string"
+          }
+        ],
+        "type": "array"
+      },
+      "title": "Left Out Of Scope",
+      "type": "array"
+    },
+    "limitations": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Limitations",
+      "type": "array"
+    },
+    "missing": {
+      "items": {
+        "maxItems": 2,
+        "minItems": 2,
+        "prefixItems": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "string"
+          }
+        ],
+        "type": "array"
+      },
+      "title": "Missing",
+      "type": "array"
+    },
+    "missing_identifiers": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Missing Identifiers",
+      "type": "array"
+    },
+    "package_projection_retention": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Fraction"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "right": {
+      "title": "Right",
+      "type": "string"
+    },
+    "right_out_of_scope": {
+      "items": {
+        "maxItems": 2,
+        "minItems": 2,
+        "prefixItems": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "string"
+          }
+        ],
+        "type": "array"
+      },
+      "title": "Right Out Of Scope",
+      "type": "array"
+    },
+    "source_qualifier_losses": {
+      "items": {
+        "maxItems": 2,
+        "minItems": 2,
+        "prefixItems": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "string"
+          }
+        ],
+        "type": "array"
+      },
+      "title": "Source Qualifier Losses",
+      "type": "array"
+    }
+  },
+  "required": [
+    "left",
+    "right",
+    "comparable",
+    "package_projection_retention",
+    "missing",
+    "added",
+    "left_out_of_scope",
+    "right_out_of_scope",
+    "source_qualifier_losses",
+    "missing_identifiers",
+    "limitations"
+  ],
+  "title": "StageComparison",
+  "type": "object"
+}

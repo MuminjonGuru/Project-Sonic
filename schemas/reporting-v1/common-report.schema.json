@@ -1,0 +1,1087 @@
+{
+  "$defs": {
+    "CoverageRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "adapter_support": {
+          "enum": [
+            "supported",
+            "partial",
+            "unsupported",
+            "unknown"
+          ],
+          "title": "Adapter Support",
+          "type": "string"
+        },
+        "applicability": {
+          "enum": [
+            "applicable",
+            "not-applicable",
+            "unknown"
+          ],
+          "title": "Applicability",
+          "type": "string"
+        },
+        "coverage_id": {
+          "minLength": 1,
+          "title": "Coverage Id",
+          "type": "string"
+        },
+        "execution": {
+          "enum": [
+            "not-run",
+            "success",
+            "partial",
+            "failed",
+            "timed-out",
+            "cancelled"
+          ],
+          "title": "Execution",
+          "type": "string"
+        },
+        "execution_id": {
+          "minLength": 1,
+          "title": "Execution Id",
+          "type": "string"
+        },
+        "limitations": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Limitations",
+          "type": "array"
+        },
+        "observation": {
+          "enum": [
+            "observed-risk",
+            "observed-control",
+            "no-observation",
+            "unknown"
+          ],
+          "title": "Observation",
+          "type": "string"
+        },
+        "producer": {
+          "$ref": "#/$defs/Producer"
+        },
+        "property_id": {
+          "minLength": 1,
+          "title": "Property Id",
+          "type": "string"
+        },
+        "run_id": {
+          "minLength": 1,
+          "title": "Run Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "0.1.0",
+          "default": "0.1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "target_snapshot_id": {
+          "minLength": 1,
+          "title": "Target Snapshot Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "coverage_id",
+        "run_id",
+        "execution_id",
+        "target_snapshot_id",
+        "property_id",
+        "producer",
+        "applicability",
+        "adapter_support",
+        "execution",
+        "observation"
+      ],
+      "title": "CoverageRecord",
+      "type": "object"
+    },
+    "DependencySource": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "dependency",
+          "default": "dependency",
+          "title": "Kind",
+          "type": "string"
+        },
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "revision": {
+          "title": "Revision",
+          "type": "string"
+        },
+        "run_id": {
+          "title": "Run Id",
+          "type": "string"
+        },
+        "source_manifest_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Manifest Sha256",
+          "type": "string"
+        },
+        "source_semantic_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Source Semantic Sha256"
+        },
+        "state": {
+          "title": "State",
+          "type": "string"
+        },
+        "summary": {
+          "$ref": "#/$defs/DependencySummary"
+        },
+        "target_content_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Target Content Sha256"
+        }
+      },
+      "required": [
+        "run_id",
+        "state",
+        "label",
+        "revision",
+        "target_content_sha256",
+        "source_manifest_sha256",
+        "source_semantic_sha256",
+        "summary"
+      ],
+      "title": "DependencySource",
+      "type": "object"
+    },
+    "DependencyStageSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "eligible_package_advisory_matches": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Eligible Package Advisory Matches"
+        },
+        "eligible_reported_packages": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Eligible Reported Packages"
+        },
+        "identified_unique_packages": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Identified Unique Packages"
+        },
+        "observations": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Observations"
+        },
+        "per_package_matching_completion": {
+          "const": "not-observable",
+          "default": "not-observable",
+          "title": "Per Package Matching Completion",
+          "type": "string"
+        },
+        "relationships": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Relationships"
+        },
+        "reported_match_occurrences": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Reported Match Occurrences"
+        },
+        "reported_package_advisory_matches": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Reported Package Advisory Matches"
+        },
+        "stage": {
+          "title": "Stage",
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "complete",
+            "partial",
+            "failed",
+            "unsupported",
+            "missing"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "unsupported_observations": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Unsupported Observations"
+        }
+      },
+      "required": [
+        "stage",
+        "state",
+        "observations",
+        "identified_unique_packages",
+        "eligible_reported_packages",
+        "reported_package_advisory_matches",
+        "reported_match_occurrences",
+        "eligible_package_advisory_matches",
+        "unsupported_observations",
+        "relationships"
+      ],
+      "title": "DependencyStageSummary",
+      "type": "object"
+    },
+    "DependencySummary": {
+      "additionalProperties": false,
+      "properties": {
+        "ambiguous_projections": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Ambiguous Projections"
+        },
+        "comparisons": {
+          "items": {
+            "$ref": "#/$defs/StageComparison"
+          },
+          "title": "Comparisons",
+          "type": "array"
+        },
+        "contract": {
+          "const": "dependency-summary-v1",
+          "default": "dependency-summary-v1",
+          "title": "Contract",
+          "type": "string"
+        },
+        "database_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Database Sha256"
+        },
+        "eligible_unique_packages": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Eligible Unique Packages"
+        },
+        "limitations": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Limitations",
+          "type": "array"
+        },
+        "run_id": {
+          "title": "Run Id",
+          "type": "string"
+        },
+        "scope_available": {
+          "title": "Scope Available",
+          "type": "boolean"
+        },
+        "separate_local_packages": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Separate Local Packages"
+        },
+        "stages": {
+          "items": {
+            "$ref": "#/$defs/DependencyStageSummary"
+          },
+          "title": "Stages",
+          "type": "array"
+        },
+        "state": {
+          "enum": [
+            "complete",
+            "partial",
+            "failed"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "timing_ns": {
+          "additionalProperties": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "title": "Timing Ns",
+          "type": "object"
+        },
+        "unsupported_scope_records": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Unsupported Scope Records"
+        }
+      },
+      "required": [
+        "run_id",
+        "state",
+        "scope_available",
+        "eligible_unique_packages",
+        "separate_local_packages",
+        "unsupported_scope_records",
+        "ambiguous_projections",
+        "database_sha256",
+        "stages",
+        "comparisons",
+        "timing_ns",
+        "limitations"
+      ],
+      "title": "DependencySummary",
+      "type": "object"
+    },
+    "ExecutionOutcome": {
+      "enum": [
+        "success",
+        "partial",
+        "failed",
+        "timed-out",
+        "cancelled",
+        "unsupported",
+        "unsafe-to-run"
+      ],
+      "title": "ExecutionOutcome",
+      "type": "string"
+    },
+    "FailureRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "affected_scope": {
+          "minLength": 1,
+          "title": "Affected Scope",
+          "type": "string"
+        },
+        "category": {
+          "enum": [
+            "configuration",
+            "missing-tool",
+            "incompatible-version",
+            "unsafe-target",
+            "timeout",
+            "resource-limit",
+            "nonzero-exit",
+            "malformed-output",
+            "unsupported-schema",
+            "parser-defect",
+            "network",
+            "authentication",
+            "quota",
+            "vendor",
+            "internal"
+          ],
+          "title": "Category",
+          "type": "string"
+        },
+        "evidence_blob_sha256": {
+          "items": {
+            "pattern": "^[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "title": "Evidence Blob Sha256",
+          "type": "array"
+        },
+        "execution_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Execution Id"
+        },
+        "failure_id": {
+          "minLength": 1,
+          "title": "Failure Id",
+          "type": "string"
+        },
+        "final_disposition": {
+          "minLength": 1,
+          "title": "Final Disposition",
+          "type": "string"
+        },
+        "native_exit_code": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Native Exit Code"
+        },
+        "native_signal": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Native Signal"
+        },
+        "partial_evidence_usable": {
+          "title": "Partial Evidence Usable",
+          "type": "boolean"
+        },
+        "retry_of": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Retry Of"
+        },
+        "retryability": {
+          "enum": [
+            "yes",
+            "no",
+            "unknown"
+          ],
+          "title": "Retryability",
+          "type": "string"
+        },
+        "run_id": {
+          "minLength": 1,
+          "title": "Run Id",
+          "type": "string"
+        },
+        "sanitized_message": {
+          "minLength": 1,
+          "title": "Sanitized Message",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "0.1.0",
+          "default": "0.1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "stage": {
+          "enum": [
+            "intake",
+            "planning",
+            "launch",
+            "execution",
+            "capture",
+            "parse",
+            "normalize",
+            "validate",
+            "export",
+            "analyze",
+            "release"
+          ],
+          "title": "Stage",
+          "type": "string"
+        }
+      },
+      "required": [
+        "failure_id",
+        "run_id",
+        "stage",
+        "category",
+        "retryability",
+        "affected_scope",
+        "sanitized_message",
+        "partial_evidence_usable",
+        "final_disposition"
+      ],
+      "title": "FailureRecord",
+      "type": "object"
+    },
+    "Fraction": {
+      "additionalProperties": false,
+      "properties": {
+        "denominator": {
+          "minimum": 0,
+          "title": "Denominator",
+          "type": "integer"
+        },
+        "numerator": {
+          "minimum": 0,
+          "title": "Numerator",
+          "type": "integer"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Value"
+        }
+      },
+      "required": [
+        "numerator",
+        "denominator",
+        "value"
+      ],
+      "title": "Fraction",
+      "type": "object"
+    },
+    "JsonValue": {},
+    "Producer": {
+      "additionalProperties": false,
+      "properties": {
+        "adapter_id": {
+          "minLength": 1,
+          "title": "Adapter Id",
+          "type": "string"
+        },
+        "adapter_version": {
+          "minLength": 1,
+          "title": "Adapter Version",
+          "type": "string"
+        },
+        "tool_id": {
+          "minLength": 1,
+          "title": "Tool Id",
+          "type": "string"
+        },
+        "tool_version": {
+          "minLength": 1,
+          "title": "Tool Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "tool_id",
+        "tool_version",
+        "adapter_id",
+        "adapter_version"
+      ],
+      "title": "Producer",
+      "type": "object"
+    },
+    "ReportSource": {
+      "discriminator": {
+        "mapping": {
+          "dependency": "#/$defs/DependencySource",
+          "static": "#/$defs/StaticSource"
+        },
+        "propertyName": "kind"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/StaticSource"
+        },
+        {
+          "$ref": "#/$defs/DependencySource"
+        }
+      ]
+    },
+    "StageComparison": {
+      "additionalProperties": false,
+      "properties": {
+        "added": {
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "type": "array"
+          },
+          "title": "Added",
+          "type": "array"
+        },
+        "comparable": {
+          "title": "Comparable",
+          "type": "boolean"
+        },
+        "contract": {
+          "const": "dependency-comparison-v1",
+          "default": "dependency-comparison-v1",
+          "title": "Contract",
+          "type": "string"
+        },
+        "left": {
+          "title": "Left",
+          "type": "string"
+        },
+        "left_out_of_scope": {
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "type": "array"
+          },
+          "title": "Left Out Of Scope",
+          "type": "array"
+        },
+        "limitations": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Limitations",
+          "type": "array"
+        },
+        "missing": {
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "type": "array"
+          },
+          "title": "Missing",
+          "type": "array"
+        },
+        "missing_identifiers": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Missing Identifiers",
+          "type": "array"
+        },
+        "package_projection_retention": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Fraction"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "right": {
+          "title": "Right",
+          "type": "string"
+        },
+        "right_out_of_scope": {
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "type": "array"
+          },
+          "title": "Right Out Of Scope",
+          "type": "array"
+        },
+        "source_qualifier_losses": {
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "type": "array"
+          },
+          "title": "Source Qualifier Losses",
+          "type": "array"
+        }
+      },
+      "required": [
+        "left",
+        "right",
+        "comparable",
+        "package_projection_retention",
+        "missing",
+        "added",
+        "left_out_of_scope",
+        "right_out_of_scope",
+        "source_qualifier_losses",
+        "missing_identifiers",
+        "limitations"
+      ],
+      "title": "StageComparison",
+      "type": "object"
+    },
+    "StaticSource": {
+      "additionalProperties": false,
+      "properties": {
+        "coverage": {
+          "items": {
+            "$ref": "#/$defs/CoverageRecord"
+          },
+          "title": "Coverage",
+          "type": "array"
+        },
+        "failures": {
+          "items": {
+            "$ref": "#/$defs/FailureRecord"
+          },
+          "title": "Failures",
+          "type": "array"
+        },
+        "kind": {
+          "const": "static",
+          "default": "static",
+          "title": "Kind",
+          "type": "string"
+        },
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "revision": {
+          "title": "Revision",
+          "type": "string"
+        },
+        "run_id": {
+          "title": "Run Id",
+          "type": "string"
+        },
+        "source_manifest_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Manifest Sha256",
+          "type": "string"
+        },
+        "source_semantic_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Source Semantic Sha256"
+        },
+        "state": {
+          "title": "State",
+          "type": "string"
+        },
+        "summary": {
+          "$ref": "#/$defs/Summary"
+        },
+        "target_content_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Target Content Sha256"
+        }
+      },
+      "required": [
+        "run_id",
+        "state",
+        "label",
+        "revision",
+        "target_content_sha256",
+        "source_manifest_sha256",
+        "source_semantic_sha256",
+        "summary",
+        "coverage",
+        "failures"
+      ],
+      "title": "StaticSource",
+      "type": "object"
+    },
+    "Summary": {
+      "additionalProperties": false,
+      "properties": {
+        "duration_ns": {
+          "minimum": 0,
+          "title": "Duration Ns",
+          "type": "integer"
+        },
+        "execution_outcome": {
+          "$ref": "#/$defs/ExecutionOutcome"
+        },
+        "generated_at": {
+          "format": "date-time",
+          "title": "Generated At",
+          "type": "string"
+        },
+        "native_error_count": {
+          "minimum": 0,
+          "title": "Native Error Count",
+          "type": "integer"
+        },
+        "native_result_count": {
+          "minimum": 0,
+          "title": "Native Result Count",
+          "type": "integer"
+        },
+        "normalized_coverage_count": {
+          "minimum": 0,
+          "title": "Normalized Coverage Count",
+          "type": "integer"
+        },
+        "normalized_failure_count": {
+          "minimum": 0,
+          "title": "Normalized Failure Count",
+          "type": "integer"
+        },
+        "normalized_finding_count": {
+          "minimum": 0,
+          "title": "Normalized Finding Count",
+          "type": "integer"
+        },
+        "provenance_resolution_rate": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Provenance Resolution Rate",
+          "type": "number"
+        },
+        "run_id": {
+          "minLength": 1,
+          "title": "Run Id",
+          "type": "string"
+        },
+        "sarif_representability_rate": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Sarif Representability Rate",
+          "type": "number"
+        },
+        "sarif_valid": {
+          "title": "Sarif Valid",
+          "type": "boolean"
+        },
+        "schema_version": {
+          "const": "0.1.0",
+          "default": "0.1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "statement": {
+          "default": "This run evaluates evidence handling and interoperability; it does not claim improved producer detection.",
+          "minLength": 1,
+          "title": "Statement",
+          "type": "string"
+        }
+      },
+      "required": [
+        "run_id",
+        "generated_at",
+        "execution_outcome",
+        "native_result_count",
+        "native_error_count",
+        "normalized_finding_count",
+        "normalized_coverage_count",
+        "normalized_failure_count",
+        "provenance_resolution_rate",
+        "sarif_representability_rate",
+        "sarif_valid",
+        "duration_ns"
+      ],
+      "title": "Summary",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "contract": {
+      "const": "common-report-v1",
+      "default": "common-report-v1",
+      "title": "Contract",
+      "type": "string"
+    },
+    "counting_policy": {
+      "default": "Keep sources and comparison paths separate; do not sum paired OSV results, package observations or heterogeneous finding units into a vulnerability total.",
+      "title": "Counting Policy",
+      "type": "string"
+    },
+    "exporter": {
+      "default": "agentsec-evidence-common-report/1",
+      "title": "Exporter",
+      "type": "string"
+    },
+    "generated_at": {
+      "format": "date-time",
+      "title": "Generated At",
+      "type": "string"
+    },
+    "limitations": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Limitations",
+      "type": "array"
+    },
+    "provenance": {
+      "additionalProperties": {
+        "$ref": "#/$defs/JsonValue"
+      },
+      "title": "Provenance",
+      "type": "object"
+    },
+    "sarif_runs": {
+      "minimum": 0,
+      "title": "Sarif Runs",
+      "type": "integer"
+    },
+    "sensitivity": {
+      "const": "internal",
+      "default": "internal",
+      "title": "Sensitivity",
+      "type": "string"
+    },
+    "sources": {
+      "items": {
+        "$ref": "#/$defs/ReportSource"
+      },
+      "title": "Sources",
+      "type": "array"
+    }
+  },
+  "required": [
+    "generated_at",
+    "sources",
+    "sarif_runs"
+  ],
+  "title": "CommonReport",
+  "type": "object"
+}

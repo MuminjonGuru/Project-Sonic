@@ -133,8 +133,9 @@ Host Docker-client peak RSS is not scanner/container memory consumption.
 
 ## Remaining Gates
 
-Dependency SARIF export and integration into the common multi-tool result surface remain open;
-the existing Semgrep/KICS SARIF contract is unchanged. Additional ecosystems, full relationship
+Dependency SARIF export and offline common reporting are implemented in separately versioned
+derivatives; see [the reporting contract](common-reporting.md). Existing source bundles and the
+Semgrep/KICS SARIF contract are unchanged. Additional ecosystems, full relationship
 fidelity, broader corpus/ground truth, held-out benchmark freeze, agent-specific checks, UI,
 disclosure/redaction, source/database redistribution and university IP clearance require their
 own decisions. Pilot material must never enter held-out confirmatory evaluation.

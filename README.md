@@ -6,8 +6,18 @@ and measuring evidence quality for AI-agent repositories.
 
 ## Current Scope
 
-G1 established the Semgrep evidence path. G2-A now tests whether the same contract generalizes
-to KICS Infrastructure-as-Code evidence:
+The current implementation is a working CLI prototype, not a complete agent-security product.
+It integrates established scanners and evaluates how their evidence is preserved, compared,
+and reported. It does not implement a replacement SAST engine.
+
+| Area | Implemented capability | Evidence boundary |
+|---|---|---|
+| Code | Pinned Semgrep execution, normalization and SARIF | Project-authored development fixtures |
+| Infrastructure-as-Code | Pinned KICS execution, normalization and SARIF | Selected Terraform/Kubernetes queries and authored fixtures |
+| Dependencies | Direct OSV analysis compared with Syft -> CycloneDX -> OSV | Controlled PyPI cases and one pinned public-repository lockfile |
+| Common reporting | Validated static/dependency evidence in common JSON and SARIF | Offline derivatives; no new scans or combined vulnerability total |
+
+The static evidence path is:
 
 ```text
 project-authored fixture
@@ -18,10 +28,34 @@ project-authored fixture
   -> evidence-quality summary
 ```
 
-The KICS path covers selected Terraform and Kubernetes queries against project-authored
-positive, corrected-negative, malformed, and unsupported fixtures. It evaluates orchestration,
-coverage semantics, and interoperability. It does not improve either scanner's detection,
-establish runtime exploitability, scan public repositories, or complete the broader G2 gate.
+The dependency path compares two treatments of the same pinned root lockfile:
+
+```text
+uv.lock -> OSV ------------------------------------> direct evidence
+uv.lock -> Syft -> native JSON + CycloneDX -> OSV ---> SBOM-path evidence
+retained evidence -> validation -> common JSON / SARIF
+```
+
+Both OSV treatments use explicit shared settings and the same frozen offline database.
+The public pilot is lockfile-only: it does not execute the agent, install dependencies, or
+establish runtime exploitability. A successful no-finding scan is not proof of safety.
+
+Agent-specific checks and evaluation remain pending, including coverage of configurations,
+prompts/instructions, tools, skills, memory settings and MCP artifacts. Their supported formats
+and observable conditions still need to be selected and validated; this list is not a claim of
+implemented coverage. The local UI and broader held-out evaluation are also pending.
+
+### Evidence Walkthrough
+
+Existing finalized bundles can be inspected, validated and summarized without rerunning a
+scanner. Common reporting can combine their evidence into a new derivative while keeping
+source labels, statuses, limitations and the two dependency paths separate. See the
+[reporting commands and counting rules](docs/common-reporting.md) and
+[dependency reproduction and limitations](docs/dependency-pilot.md).
+
+Saved results must be identified as retained evidence, not presented as a live scan. Runtime
+workspaces and generated outputs are not distributed in Git, so a fresh checkout does not
+include the private pilot bundles or meeting reports.
 
 ## Development Environment
 

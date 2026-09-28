@@ -39,6 +39,8 @@ def compare_stages(
     right: StageEvidence,
     scope: DependencyScope,
 ) -> StageComparison:
+    # Compare the predeclared name/version projection, not full qualified package identity.
+    # Report qualifier losses separately and withhold ratios when either stage is incomplete.
     eligible = set(scope.eligible)
     left_all, right_all = package_set(left), package_set(right)
     left_set, right_set = left_all & eligible, right_all & eligible

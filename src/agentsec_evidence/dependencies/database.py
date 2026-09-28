@@ -23,6 +23,8 @@ class FrozenDatabase:
 def inspect_database(path: Path, expected_sha256: str, names: set[str]) -> FrozenDatabase:
     if not path.is_file() or path.is_symlink() or sha256_file(path) != expected_sha256:
         raise ValueError("Missing or hash-mismatched frozen database; no download is attempted")
+    # Union-find joins aliases transitively across records so connected CVE/GHSA/OSV IDs
+    # form one advisory group instead of inflating the comparison's vulnerability count.
     parent: dict[str, str] = {}
 
     def root(value: str) -> str:

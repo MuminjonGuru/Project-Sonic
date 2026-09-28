@@ -145,6 +145,8 @@ def run_bounded_process(
     assert process.stdout is not None
     assert process.stderr is not None
 
+    # Drain both pipes concurrently so a full stdout or stderr pipe cannot stall the producer.
+    # Track truncation/timeouts separately from exit status; generated-file limits are polled.
     overflow = threading.Event()
     stdout_capture = _StreamCapture(max_stdout_bytes, [])
     stderr_capture = _StreamCapture(max_stderr_bytes, [])

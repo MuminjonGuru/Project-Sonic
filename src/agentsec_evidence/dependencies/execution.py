@@ -23,6 +23,8 @@ def build_dependency_argv(
     database: Path | None = None,
     adjacent_config: Path | None = None,
 ) -> list[str]:
+    # Explicit config and offline, non-resolving OSV keep both comparison paths controlled.
+    # Exclude source-dependent call analysis from this inventory-and-matching experiment.
     if (
         producer not in {"syft", "osv"}
         or not name.startswith("sonic-dep-")

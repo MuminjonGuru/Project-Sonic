@@ -230,6 +230,8 @@ def create_snapshot(
 
     destination_root.mkdir(parents=True, exist_ok=True)
     final_root = destination_root / snapshot_id
+    # A content-based snapshot ID is not enough for reuse: verify stored bytes and
+    # provenance before returning an existing snapshot.
     if final_root.exists():
         existing_snapshot = _verify_existing_snapshot(
             final_root=final_root,

@@ -49,6 +49,8 @@ def _observation(
     qualifiers: dict[str, str] | None = None,
     context: dict[str, JsonValue] | None = None,
 ) -> PackageObservation:
+    # Normalize name/version without discarding native identity. If a supplied package URL
+    # disagrees, flag the conflict rather than choosing one representation as correct.
     raw_name = text_value(name)
     raw_version = version if isinstance(version, str) and version else None
     normalized_name: str | None = None
@@ -106,6 +108,8 @@ type LiteralStatus = Literal["identified", "unresolved", "unsupported", "conflic
 
 
 def parse_lockfile(data: bytes) -> tuple[StageEvidence, DependencyScope]:
+    # The denominator covers the whole lockfile, not one installed environment.
+    # Record local, unsupported and source-ambiguous entries separately from eligible PyPI pairs.
     document = tomllib.loads(data.decode("utf-8"))
     if document.get("version") != 1:
         raise ValueError("Unsupported uv lockfile format version")
@@ -256,6 +260,8 @@ def parse_osv(
     exit_code: int,
     alias_groups: dict[str, tuple[str, ...]],
 ) -> StageEvidence:
+    # The pinned OSV build uses exit 1 for findings and 128 for no packages.
+    # Keep errors and exit/output contradictions explicit instead of reporting a clean scan.
     document = object_value(json.loads(data))
     stage = StageEvidence(stage=stage_name, raw_sha256=sha256_bytes(data))
     if exit_code == 128:

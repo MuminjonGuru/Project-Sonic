@@ -81,6 +81,8 @@ def load_dependency_run(root: Path) -> DependencyRun:
 
 
 def summarize_dependency(existing: DependencyRun) -> DependencySummary:
+    # Missing stages use null counts, not zero; failed-stage counts are only observations.
+    # Keep occurrences, distinct packages and package-advisory pairs as separate units.
     scope = existing.scope
     rows = []
     for name in STAGES:
@@ -164,6 +166,8 @@ type LiteralState = Literal["complete", "partial", "failed"]
 
 
 def dependency_sarif(existing: DependencyRun) -> dict[str, JsonValue]:
+    # Separate comparison paths and use logical package locations rather than invented lines.
+    # SARIF level "none" means severity is unmapped, not that the package is safe.
     runs: list[JsonValue] = []
     summary = summarize_dependency(existing)
     for path in ("osv-direct", "osv-sbom"):

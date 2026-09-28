@@ -68,6 +68,8 @@ def seal_bundle(root: Path) -> None:
 
 
 def validate_dependency_bundle(root: Path) -> dict[str, JsonValue]:
+    # Check file integrity, native evidence pointers and the recorded semantic digest.
+    # Passing these checks establishes evidence consistency, not a security verdict.
     root = root.resolve(strict=True)
     document = json.loads((root / "manifest.json").read_bytes())
     if document.get("contract") != "dependency-bundle-v1":
@@ -156,6 +158,8 @@ def run_dependency_scan(
     admission_file: Path | None = None,
     mutation: Mutation | None = None,
 ) -> dict[str, JsonValue]:
+    # The pilot gate fixes scope and inputs before comparing direct and SBOM-mediated OSV.
+    # Preserve partial evidence without treating an incomplete path as a clean result.
     source = source.resolve(strict=True)
     if split == "development" and not source.is_relative_to(
         (project_root / "test_cases/development").resolve()

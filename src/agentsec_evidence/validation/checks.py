@@ -159,6 +159,8 @@ def validate_provenance(
     findings: list[Finding],
     blob_index: BlobIndex,
 ) -> ProvenanceResult:
+    # Verify referenced bytes and resolve any native JSON pointers. This establishes
+    # traceability, not whether the scanner's security claim is correct.
     descriptors = {descriptor.sha256: descriptor for descriptor in blob_index.blobs}
     checks: list[ValidationCheck] = []
     resolved = 0

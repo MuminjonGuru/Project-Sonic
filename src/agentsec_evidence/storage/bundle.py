@@ -171,6 +171,8 @@ class RunBundle:
         return destination
 
     def finalize(self, *, semantic_document: JsonValue) -> BundleManifest:
+        # Finalization seals evidence even for failed runs; terminal_state retains the outcome.
+        # File hashes check exact bytes, while the semantic hash compares meaningful results.
         if self.run.state not in {
             RunState.COMPLETE,
             RunState.PARTIAL,

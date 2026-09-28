@@ -71,6 +71,8 @@ class SemgrepScanRequest:
 
 
 def run_semgrep_scan(request: SemgrepScanRequest) -> PipelineResult:
+    # Preserve native bytes before parsing so failures remain inspectable.
+    # Normalization and validation must not turn an execution failure into a clean scan.
     project_root = request.project_root.resolve(strict=True)
     workspace_root = request.workspace_root.resolve()
     profile_loaded = load_toml_config(

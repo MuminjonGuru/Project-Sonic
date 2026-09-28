@@ -130,6 +130,8 @@ def producer_identity(tool: ToolIdentity) -> Producer:
 
 
 def minimal_environment(runtime_root: Path) -> dict[str, str]:
+    # Avoid inheriting host credentials and user-specific tool settings. Use an
+    # allowlisted environment with workspace-local home, temporary and Docker config paths.
     runtime_root.mkdir(parents=True, exist_ok=True)
     home = runtime_root / "home"
     temporary = runtime_root / "tmp"
@@ -336,6 +338,8 @@ def build_semantic_document(
     failures: list[FailureRecord],
     sarif: dict[str, JsonValue],
 ) -> JsonValue:
+    # Exclude per-run IDs, timestamps and raw-blob locators when comparing meaning.
+    # Exact bytes remain separately preserved and hash-checked in the evidence bundle.
     finding_values = [
         finding.model_dump(mode="json", exclude={"record_id", "run_id", "execution_id"})
         for finding in findings
@@ -495,6 +499,8 @@ def finish_run(
         failures=failures,
         blob_index=blob_index,
     )
+    # The requested outcome is provisional until schema, SARIF and provenance checks pass;
+    # invalid derived products cannot be finalized as a complete run.
     terminal_state = desired_state if products.passed else RunState.VALIDATION_FAILED
     if bundle.run.state is RunState.VALIDATING:
         bundle.transition(terminal_state, "derived products validated")

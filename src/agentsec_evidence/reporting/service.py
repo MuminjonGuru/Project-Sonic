@@ -114,6 +114,8 @@ def load_report_source(
 
 
 def write_common_report(*, project_root: Path, bundles: list[Path], output: Path) -> CommonReport:
+    # Build a new offline derivative only after validating the retained source bundles.
+    # Preserve per-source runs and counting units; do not rescan or invent a combined total.
     if not bundles:
         raise ValueError("At least one evidence bundle is required")
     roots = [path.resolve(strict=True) for path in bundles]
@@ -166,6 +168,8 @@ def write_common_report(*, project_root: Path, bundles: list[Path], output: Path
 
 
 def validate_common_report(project_root: Path, root: Path) -> dict[str, JsonValue]:
+    # Validate the derivative's bytes, source links and per-path result counts.
+    # Original bundles are not reopened here, so this does not revalidate their contents.
     root = root.resolve(strict=True)
     try:
         if (root / "report-manifest.json").is_symlink():

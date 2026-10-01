@@ -104,6 +104,11 @@ the sibling planning files and raw execution workspace are not distributed with 
   bundles. No target execution, live inspection, model calls or target dependency installation.
 - Baseline refresh passed 115 Windows tests; no fresh Ubuntu application-suite run in this batch.
   Contracts and reviewed finite expectations precede the integrated adapter and new source pilot.
+- The first contracts/case increment is described in `docs/agent-artifact-contracts.md`.
+  New `agents.models` records and `schemas/agent-v1` do not replace existing finding/run schemas.
+  The student approved the two finite conditions (tool parameter to eval; MCP root declaration)
+  and development case categories, not independent labels or a final benchmark. Keep these
+  authored cases out of held-out data; native mapping and CLI adapter execution remain pending.
 
 ## Safety Controls
 

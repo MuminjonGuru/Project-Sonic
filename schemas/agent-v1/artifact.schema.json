@@ -1,0 +1,124 @@
+{
+  "$defs": {
+    "InventoryEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "byte_length": {
+          "minimum": 0,
+          "title": "Byte Length",
+          "type": "integer"
+        },
+        "media_type": {
+          "minLength": 1,
+          "title": "Media Type",
+          "type": "string"
+        },
+        "path": {
+          "maxLength": 4096,
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "0.1.0",
+          "default": "0.1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "sha256",
+        "byte_length",
+        "media_type"
+      ],
+      "title": "InventoryEntry",
+      "type": "object"
+    }
+  },
+  "$id": "urn:agentsec-evidence:schema:agent-v1:artifact",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "One source occurrence; recognizing or parsing it is not security coverage.",
+  "properties": {
+    "contract": {
+      "const": "agent-artifact-v1",
+      "default": "agent-artifact-v1",
+      "title": "Contract",
+      "type": "string"
+    },
+    "format_id": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Format Id"
+    },
+    "kind": {
+      "enum": [
+        "python-source",
+        "mcp-config",
+        "agent-config",
+        "prompt",
+        "skill",
+        "memory-config",
+        "iac",
+        "other"
+      ],
+      "title": "Kind",
+      "type": "string"
+    },
+    "limitations": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Limitations",
+      "type": "array"
+    },
+    "parse_state": {
+      "enum": [
+        "not-run",
+        "parsed",
+        "malformed",
+        "unsupported",
+        "failed"
+      ],
+      "title": "Parse State",
+      "type": "string"
+    },
+    "reason": {
+      "minLength": 1,
+      "title": "Reason",
+      "type": "string"
+    },
+    "source": {
+      "$ref": "#/$defs/InventoryEntry"
+    },
+    "target_snapshot_id": {
+      "minLength": 1,
+      "title": "Target Snapshot Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "target_snapshot_id",
+    "source",
+    "kind",
+    "format_id",
+    "parse_state",
+    "reason"
+  ],
+  "title": "AgentArtifact",
+  "type": "object"
+}

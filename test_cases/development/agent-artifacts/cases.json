@@ -1,0 +1,163 @@
+{
+  "case_set": "agent-artifact-development-v1",
+  "role": "development-not-held-out",
+  "provenance": "AI-authored fixtures; student approved the two conditions and case categories on 2026-10-02. Exact fixture text is not independently adjudicated.",
+  "cases": [
+    {
+      "id": "python-positive",
+      "property_id": "python.tool-argument-to-eval",
+      "artifact_kind": "python-source",
+      "input_path": "agent.py",
+      "content": "from langchain_core.tools import tool\n\n@tool\ndef calculate(expression: str) -> object:\n    \"\"\"Authored static-only positive case.\"\"\"\n    return eval(expression)\n",
+      "expected_parse": "parsed",
+      "expected_condition": "present",
+      "policy_observation": "none",
+      "extra_files": {},
+      "rationale": "The string parameter is passed directly to eval; imports and function calls must never be executed."
+    },
+    {
+      "id": "python-corrected",
+      "property_id": "python.tool-argument-to-eval",
+      "artifact_kind": "python-source",
+      "input_path": "agent.py",
+      "content": "import ast\nfrom langchain_core.tools import tool\n\n@tool\ndef calculate(expression: str) -> object:\n    \"\"\"Authored correction for the eval condition only.\"\"\"\n    if not isinstance(expression, str) or len(expression) > 64:\n        raise ValueError(\"Invalid expression\")\n    return ast.literal_eval(expression)\n",
+      "expected_parse": "parsed",
+      "expected_condition": "absent",
+      "policy_observation": "none",
+      "extra_files": {},
+      "rationale": "No call to eval remains. literal_eval is not a general safety or resource-exhaustion guarantee."
+    },
+    {
+      "id": "python-near-miss",
+      "property_id": "python.tool-argument-to-eval",
+      "artifact_kind": "python-source",
+      "input_path": "agent.py",
+      "content": "from langchain_core.tools import tool\n\n@tool\ndef describe(expression: str) -> str:\n    \"\"\"Authored benign eval-shaped text.\"\"\"\n    return \"Example only: eval(expression)\"\n",
+      "expected_parse": "parsed",
+      "expected_condition": "absent",
+      "policy_observation": "none",
+      "extra_files": {},
+      "rationale": "The eval-shaped text is a string literal, not a call."
+    },
+    {
+      "id": "python-malformed",
+      "property_id": "python.tool-argument-to-eval",
+      "artifact_kind": "python-source",
+      "input_path": "agent.py",
+      "content": "def broken(:\n    return eval(expression)\n",
+      "expected_parse": "malformed",
+      "expected_condition": "not-assessable",
+      "policy_observation": "none",
+      "extra_files": {},
+      "rationale": "Invalid Python must be a parse failure, even when the native scanner exits zero."
+    },
+    {
+      "id": "python-inline-suppression",
+      "property_id": "python.tool-argument-to-eval",
+      "artifact_kind": "python-source",
+      "input_path": "agent.py",
+      "content": "from langchain_core.tools import tool\n\n@tool\ndef calculate(expression: str) -> object:\n    \"\"\"Authored suppressed positive case.\"\"\"\n    return eval(expression)  # noaudit\n",
+      "expected_parse": "parsed",
+      "expected_condition": "present",
+      "policy_observation": "inline-suppression",
+      "extra_files": {},
+      "rationale": "The source condition remains present despite a suppression marker; do not equate suppression with absence."
+    },
+    {
+      "id": "python-excluded-yaml",
+      "property_id": "python.tool-argument-to-eval",
+      "artifact_kind": "python-source",
+      "input_path": "agent.py",
+      "content": "from langchain_core.tools import tool\n\n@tool\ndef calculate(expression: str) -> object:\n    return eval(expression)\n",
+      "expected_parse": "parsed",
+      "expected_condition": "present",
+      "policy_observation": "target-exclusion",
+      "extra_files": {".agent-audit.yaml": "scan:\n  exclude:\n    - agent.py\n"},
+      "rationale": "Native target-local exclusion must be recorded or neutralized explicitly; source condition is unchanged."
+    },
+    {
+      "id": "python-excluded-yml",
+      "property_id": "python.tool-argument-to-eval",
+      "artifact_kind": "python-source",
+      "input_path": "agent.py",
+      "content": "from langchain_core.tools import tool\n\n@tool\ndef calculate(expression: str) -> object:\n    return eval(expression)\n",
+      "expected_parse": "parsed",
+      "expected_condition": "present",
+      "policy_observation": "target-exclusion",
+      "extra_files": {".agent-audit.yml": "scan:\n  exclude:\n    - agent.py\n"},
+      "rationale": "Alternative target-local config filename must not silently change coverage."
+    },
+    {
+      "id": "python-excluded-visible-yaml",
+      "property_id": "python.tool-argument-to-eval",
+      "artifact_kind": "python-source",
+      "input_path": "agent.py",
+      "content": "from langchain_core.tools import tool\n\n@tool\ndef calculate(expression: str) -> object:\n    return eval(expression)\n",
+      "expected_parse": "parsed",
+      "expected_condition": "present",
+      "policy_observation": "target-exclusion",
+      "extra_files": {"agent-audit.yaml": "scan:\n  exclude:\n    - agent.py\n"},
+      "rationale": "Non-dot config filename has the same evidence-accounting requirement."
+    },
+    {
+      "id": "mcp-positive",
+      "property_id": "mcp.filesystem-root-declaration",
+      "artifact_kind": "mcp-config",
+      "input_path": "mcp.json",
+      "content": "{\"mcpServers\": {\"local-files\": {\"command\": \"npx\", \"args\": [\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/\"]}}}\n",
+      "expected_parse": "parsed",
+      "expected_condition": "present",
+      "policy_observation": "none",
+      "extra_files": {},
+      "rationale": "Exact root path is an argument for the filesystem server. Package pinning is outside this condition."
+    },
+    {
+      "id": "mcp-corrected",
+      "property_id": "mcp.filesystem-root-declaration",
+      "artifact_kind": "mcp-config",
+      "input_path": "mcp.json",
+      "content": "{\"mcpServers\": {\"local-files\": {\"command\": \"npx\", \"args\": [\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/workspace/data\"]}}}\n",
+      "expected_parse": "parsed",
+      "expected_condition": "absent",
+      "policy_observation": "none",
+      "extra_files": {},
+      "rationale": "A specific directory replaces /. This is a correction of the root-declaration condition only."
+    },
+    {
+      "id": "mcp-near-miss",
+      "property_id": "mcp.filesystem-root-declaration",
+      "artifact_kind": "mcp-config",
+      "input_path": "mcp.json",
+      "content": "{\"mcpServers\": {\"local-files\": {\"command\": \"npx\", \"args\": [\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/workspace/data\"], \"description\": \"Never grant the root path /\"}}}\n",
+      "expected_parse": "parsed",
+      "expected_condition": "absent",
+      "policy_observation": "none",
+      "extra_files": {},
+      "rationale": "The slash in descriptive text is not an allowed-directory argument."
+    },
+    {
+      "id": "mcp-malformed",
+      "property_id": "mcp.filesystem-root-declaration",
+      "artifact_kind": "mcp-config",
+      "input_path": "mcp.json",
+      "content": "{\"mcpServers\":\n",
+      "expected_parse": "malformed",
+      "expected_condition": "not-assessable",
+      "policy_observation": "none",
+      "extra_files": {},
+      "rationale": "Invalid JSON is not a successful zero-finding scan."
+    },
+    {
+      "id": "unsupported-text",
+      "property_id": "python.tool-argument-to-eval",
+      "artifact_kind": "other",
+      "input_path": "notes.txt",
+      "content": "Authored unsupported text input.\n",
+      "expected_parse": "unsupported",
+      "expected_condition": "not-assessable",
+      "policy_observation": "none",
+      "extra_files": {},
+      "rationale": "Unsupported input is separate from a supported scan with no finding."
+    }
+  ]
+}

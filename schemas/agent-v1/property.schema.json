@@ -1,0 +1,77 @@
+{
+  "$id": "urn:agentsec-evidence:schema:agent-v1:property",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Finite observable condition, distinct from an upstream rule or proven exploit.",
+  "properties": {
+    "artifact_kind": {
+      "enum": [
+        "python-source",
+        "mcp-config",
+        "agent-config",
+        "prompt",
+        "skill",
+        "memory-config",
+        "iac",
+        "other"
+      ],
+      "title": "Artifact Kind",
+      "type": "string"
+    },
+    "candidate_native_rules": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Candidate Native Rules",
+      "type": "array"
+    },
+    "condition": {
+      "minLength": 1,
+      "title": "Condition",
+      "type": "string"
+    },
+    "contract": {
+      "const": "agent-property-v1",
+      "default": "agent-property-v1",
+      "title": "Contract",
+      "type": "string"
+    },
+    "evidence_domain": {
+      "const": "repository-static",
+      "default": "repository-static",
+      "title": "Evidence Domain",
+      "type": "string"
+    },
+    "limitations": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Limitations",
+      "type": "array"
+    },
+    "property_id": {
+      "minLength": 1,
+      "title": "Property Id",
+      "type": "string"
+    },
+    "scope": {
+      "minLength": 1,
+      "title": "Scope",
+      "type": "string"
+    }
+  },
+  "required": [
+    "property_id",
+    "artifact_kind",
+    "condition",
+    "scope",
+    "candidate_native_rules",
+    "limitations"
+  ],
+  "title": "AgentProperty",
+  "type": "object"
+}

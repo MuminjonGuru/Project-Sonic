@@ -1,5 +1,8 @@
 # Agent Artifact Contracts and Development Cases
 
+Historical first-increment record. The subsequent [input/parser increment](agent-input-parser.md)
+implements part of the remaining work listed below; CLI/report integration is still pending.
+
 ## Implemented Boundary
 
 This increment adds typed records, JSON Schemas, two finite property definitions and thirteen

@@ -44,6 +44,10 @@ The first agreed agent-specific integration scope is Python tool definitions and
 configurations. A pinned Agent Audit candidate completed a bounded container preflight on
 2 October 2026; its adapter is not yet implemented in this CLI. See the
 [preflight findings and required integration safeguards](docs/agent-audit-preflight.md).
+The [artifact contracts and controlled cases](docs/agent-artifact-contracts.md) are the first
+implementation increment; they do not yet add a scanner command or repository coverage.
+The follow-up [input guards and native parser](docs/agent-input-parser.md) are now implemented
+and tested as libraries; restricted runner, CLI and reporting integration remain pending.
 Prompts/instructions, skills, memory and other agent properties remain broader inventory/later
 check work, not implemented coverage. The local UI and held-out evaluation are also pending.
 

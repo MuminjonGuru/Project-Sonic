@@ -1,0 +1,30 @@
+[
+  {
+    "contract": "agent-property-v1",
+    "property_id": "python.tool-argument-to-eval",
+    "artifact_kind": "python-source",
+    "condition": "A directly decorated Python tool passes its string parameter directly to eval.",
+    "scope": "Authored @tool functions using a direct parameter reference in eval; no alias, interprocedural or framework-wide coverage claim.",
+    "evidence_domain": "repository-static",
+    "candidate_native_rules": ["AGENT-001", "AGENT-017", "AGENT-035"],
+    "limitations": [
+      "These overlapping rules are candidate evidence, not independent vulnerabilities or a scoring oracle.",
+      "The preflight's AGENT-001 command-injection/CWE-78 mapping is not validated for eval.",
+      "Source syntax does not establish attacker control, runtime reachability or exploitability."
+    ]
+  },
+  {
+    "contract": "agent-property-v1",
+    "property_id": "mcp.filesystem-root-declaration",
+    "artifact_kind": "mcp-config",
+    "condition": "A local filesystem-server entry declares the exact positional path argument /.",
+    "scope": "Authored mcpServers JSON with command/args; no claim about every MCP client format or actual filesystem authorization.",
+    "evidence_domain": "repository-static",
+    "candidate_native_rules": ["AGENT-029"],
+    "limitations": [
+      "A declared path is not proof of effective permissions or reachable host files.",
+      "The preflight AGENT-029 observation concerned filesystem scope, not package version pinning.",
+      "A scoped path removes this one condition only; it does not certify the server or its dependencies."
+    ]
+  }
+]

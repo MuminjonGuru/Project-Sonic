@@ -104,6 +104,21 @@ the sibling planning files and raw execution workspace are not distributed with 
   bundles. No target execution, live inspection, model calls or target dependency installation.
 - Baseline refresh passed 115 Windows tests; no fresh Ubuntu application-suite run in this batch.
   Contracts and reviewed finite expectations precede the integrated adapter and new source pilot.
+- The first contracts/case increment is described in `docs/agent-artifact-contracts.md`.
+  New `agents.models` records and `schemas/agent-v1` do not replace existing finding/run schemas.
+  The student approved the two finite conditions (tool parameter to eval; MCP root declaration)
+  and development case categories, not independent labels or a final benchmark. Keep these
+  authored cases out of held-out data; native mapping and CLI adapter execution remain pending.
+
+### Input/parser follow-up: 2026-10-02
+
+The second library increment implements bounded input validation, conservative policy refusal
+and Agent Audit 0.20.0 native parsing/normalization; see `docs/agent-input-parser.md`. The earlier
+contracts-only statement above describes its own increment, not the current parser status.
+Do not bypass policy blockers or treat parsing as admission/coverage. No public intake worker,
+integrated CLI runner or agent reporting path exists yet. Unknown per-file coverage stays unknown;
+suppressed findings stay in evidence. Run untrusted AST/JSON parsing inside a bounded worker,
+not directly on the host. The library guards do not themselves provide process isolation.
 
 ## Safety Controls
 

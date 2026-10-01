@@ -40,10 +40,12 @@ Both OSV treatments use explicit shared settings and the same frozen offline dat
 The public pilot is lockfile-only: it does not execute the agent, install dependencies, or
 establish runtime exploitability. A successful no-finding scan is not proof of safety.
 
-Agent-specific checks and evaluation remain pending, including coverage of configurations,
-prompts/instructions, tools, skills, memory settings and MCP artifacts. Their supported formats
-and observable conditions still need to be selected and validated; this list is not a claim of
-implemented coverage. The local UI and broader held-out evaluation are also pending.
+The first agreed agent-specific integration scope is Python tool definitions and MCP JSON
+configurations. A pinned Agent Audit candidate completed a bounded container preflight on
+2 October 2026; its adapter is not yet implemented in this CLI. See the
+[preflight findings and required integration safeguards](docs/agent-audit-preflight.md).
+Prompts/instructions, skills, memory and other agent properties remain broader inventory/later
+check work, not implemented coverage. The local UI and held-out evaluation are also pending.
 
 ### Evidence Walkthrough
 
@@ -63,6 +65,10 @@ include the private pilot bundles or meeting reports.
 - uv 0.12.6
 - Docker Desktop with Linux containers for scanner execution
 - Native Windows/PowerShell CLI development
+
+The documented uv baseline above is unchanged. The 2 October Windows refresh used installed
+uv 0.12.13: the frozen lock and installed-dependency checks passed without changing application
+dependencies. This observed host-version drift is recorded in the [preflight receipt](docs/agent-audit-preflight.md).
 
 ```powershell
 uv sync --frozen --all-groups
@@ -188,9 +194,10 @@ package summary and two SARIF runs for the direct and SBOM paths. Existing file-
 are unchanged. See [common reporting](docs/common-reporting.md) for commands and counting rules.
 The GUI, full G2 gate and coverage of all AI-agent artifacts remain open.
 
-The dated decision/protocol records live in the sibling `Project_Phase_02` planning folder,
-which is intentionally not distributed in this development checkout. `AGENTS.md` summarizes
-the implementation guardrails. Existing supported commands and result contracts are unchanged.
+The dependency decision/protocol records live in the sibling `Project_Phase_02` planning
+folder; active integration planning continues in `Project_Phase_03`. Neither planning folder
+is distributed in this development checkout. `AGENTS.md` and `docs/` summarize the relevant
+implementation guardrails. Existing supported commands and result contracts are unchanged.
 
 Shared code lives in `src/agentsec_evidence/orchestration/shared.py`; producer planning/parsing
 stays separate. `tools/verify_orchestration_regression.ps1` runs and validates the five existing
@@ -203,7 +210,8 @@ accuracy or confirmatory benchmark readiness.
 
 All implementation, tests, fixtures, benchmark definitions, runtime workspaces, and generated
 outputs live under this repository. Planning and decision history remains in the sibling
-`Project_Phase_02` folder.
+`Project_Phase_02` and `Project_Phase_03` folders. Runtime workspaces and generated outputs
+remain ignored; execution evidence is not automatically committed with implementation changes.
 
 ## Publication Status
 

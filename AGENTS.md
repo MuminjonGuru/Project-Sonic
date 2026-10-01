@@ -2,9 +2,15 @@
 
 ## Boundary
 
-This repository contains implementation and execution artifacts. Planning decisions, mentor
-notes, and academic provenance remain in `../Project_Phase_02/` and must not be rewritten from
-here. Development commits and release hashes may be referenced there.
+This repository contains implementation and execution artifacts. Phase 02 baseline decisions
+remain in `../Project_Phase_02/`; active integration and agent-specific planning continues in
+`../Project_Phase_03/` from 2026-10-02. Do not rewrite those planning/provenance records from
+implementation work. Development commits and release hashes may be referenced there.
+
+The handoff is recorded in Phase 02 `D-2026-10-02-01` and the Phase 03 execution plan. It
+prioritizes development and validation of the useful static core, not all candidate integrations.
+Existing tool/case admission gates remain in force; no new baseline, framework or detector is
+approved merely by opening Phase 03. Required human intervention is a question to measure.
 
 ## Current Development Contract
 
@@ -76,6 +82,28 @@ Never sum paired OSV paths or heterogeneous finding units into one vulnerability
 Missing evidence is null, not zero. Package SARIF uses logical locations, no fabricated source
 lines and no inferred severity. Existing evidence must remain byte-identical. A valid report
 does not establish successful analysis, consumer compatibility or public-release clearance.
+
+## Phase 03 Agent Integration: 2026-10-02
+
+Planning authority: Phase 03 decisions P3-D-2026-10-02-05/06 and
+`../Project_Phase_03/PREFLIGHT_AND_INTEGRATION_CONTRACT_2026-10-02.md`.
+The portable engineering summary is [docs/agent-audit-preflight.md](docs/agent-audit-preflight.md);
+the sibling planning files and raw execution workspace are not distributed with this checkout.
+
+- First user-confirmed scope: Python tool definitions and MCP JSON configurations. Skills,
+  prompts and memory remain broader inventory/later checks, not current detector coverage.
+- Agent Audit 0.20.0 at `8c4c5cb9bddd4758b064577c912ee8afcaf5330f` passed finite container
+  feasibility checks, not full adapter or research admission. Receipts and raw bytes are under
+  `workspace/phase3-preflight-2026-10-02/`; this is authored engineering data, not held-out evidence.
+- Before public source scanning, implement explicit input accounting, parse/error classification,
+  trusted policy and suppression handling. Native exit zero and aggregate `scanned_files` do not
+  establish complete successful analysis; target-local config can silently exclude files.
+- Preserve all native assertions, including overlapping rules and questionable mappings, without
+  treating upstream confidence/actionability/risk scores as validated platform measurements.
+- Continue via existing producer-neutral orchestration and reporting contracts; preserve old
+  bundles. No target execution, live inspection, model calls or target dependency installation.
+- Baseline refresh passed 115 Windows tests; no fresh Ubuntu application-suite run in this batch.
+  Contracts and reviewed finite expectations precede the integrated adapter and new source pilot.
 
 ## Safety Controls
 

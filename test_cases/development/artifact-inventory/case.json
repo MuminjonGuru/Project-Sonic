@@ -1,0 +1,39 @@
+{
+  "contract_version": "authored-artifact-inventory-case-v1",
+  "case_id": "repository-path-candidates",
+  "split": "development-only",
+  "review_status": "AI-authored engineering expectations; not independently adjudicated",
+  "files": [
+    {"path": "agent.py", "text": "raise RuntimeError('must not execute')\n", "expected_recognizers": ["python-source-suffix"]},
+    {"path": "tests/test_agent.py", "text": "invalid Python deliberately retained\n", "expected_recognizers": ["python-source-suffix"]},
+    {"path": "examples/tool.py", "text": "# Example only\n", "expected_recognizers": ["python-source-suffix"]},
+    {"path": "docs/example.py", "text": "# Documentation sample\n", "expected_recognizers": ["python-source-suffix"]},
+    {"path": ".github/scripts/check.py", "text": "# CI sample\n", "expected_recognizers": ["python-source-suffix"]},
+    {"path": "langgraph.json", "text": "{deliberately malformed", "expected_recognizers": ["langgraph-config-name"]},
+    {"path": "examples/mcp.json", "text": "{}\n", "expected_recognizers": ["project-mcp-config-name"]},
+    {"path": "config/claude_desktop_config.json", "text": "{}\n", "expected_recognizers": ["claude-desktop-config-name"]},
+    {"path": "AGENTS.md", "text": "# Authored inventory example\n", "expected_recognizers": ["agents-instructions-name"]},
+    {"path": "skills/example/SKILL.md", "text": "No frontmatter: candidate, not a validated skill.\n", "expected_recognizers": ["skill-manifest-name"]},
+    {"path": "uv.lock", "text": "version = 1\n", "expected_recognizers": ["uv-lock-name"]},
+    {"path": "infra/main.tf", "text": "# Not validated\n", "expected_recognizers": ["terraform-hcl-suffix"]},
+    {"path": "infra/example.tf.json", "text": "{}\n", "expected_recognizers": ["terraform-json-suffix"]},
+    {"path": "deploy.yaml", "text": "kind: Deployment\n", "expected_recognizers": []},
+    {"path": "memory.json", "text": "{\"shared\": true}\n", "expected_recognizers": []},
+    {"path": "permissions.json", "text": "{}\n", "expected_recognizers": []},
+    {"path": "prompts/task.txt", "text": "Authored text with no supported filename convention.\n", "expected_recognizers": []},
+    {"path": "README.md", "text": "# Inventory case\n", "expected_recognizers": []},
+    {"path": "near-miss/SKILL.md.txt", "text": "Not a SKILL.md filename.\n", "expected_recognizers": []}
+  ],
+  "expected_family_counts": {
+    "python-source": 5,
+    "mcp-config": 2,
+    "agent-config": 1,
+    "instructions": 1,
+    "skill": 1,
+    "memory-context": null,
+    "identity-permissions": null,
+    "dependencies": 1,
+    "iac": 2
+  },
+  "expected_unclassified_files": 6
+}

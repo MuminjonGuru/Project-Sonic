@@ -1,0 +1,536 @@
+{
+  "$defs": {
+    "ArtifactCandidate": {
+      "additionalProperties": false,
+      "properties": {
+        "analysis_state": {
+          "const": "not-run",
+          "default": "not-run",
+          "title": "Analysis State",
+          "type": "string"
+        },
+        "artifact_id": {
+          "minLength": 1,
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "evidence_origin": {
+          "const": "path-metadata",
+          "default": "path-metadata",
+          "title": "Evidence Origin",
+          "type": "string"
+        },
+        "finding_count": {
+          "default": null,
+          "title": "Finding Count",
+          "type": "null"
+        },
+        "parse_state": {
+          "const": "not-run",
+          "default": "not-run",
+          "title": "Parse State",
+          "type": "string"
+        },
+        "recognizer_ids": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Recognizer Ids",
+          "type": "array"
+        },
+        "source": {
+          "$ref": "#/$defs/InventoryEntry"
+        }
+      },
+      "required": [
+        "artifact_id",
+        "source",
+        "recognizer_ids"
+      ],
+      "title": "ArtifactCandidate",
+      "type": "object"
+    },
+    "FamilyInventory": {
+      "additionalProperties": false,
+      "properties": {
+        "candidate_file_count": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Candidate File Count"
+        },
+        "family": {
+          "enum": [
+            "python-source",
+            "mcp-config",
+            "agent-config",
+            "instructions",
+            "skill",
+            "memory-context",
+            "identity-permissions",
+            "dependencies",
+            "iac"
+          ],
+          "title": "Family",
+          "type": "string"
+        },
+        "interpretation": {
+          "enum": [
+            "candidates-observed",
+            "no-candidate-recognized",
+            "unknown"
+          ],
+          "title": "Interpretation",
+          "type": "string"
+        },
+        "recognition_support": {
+          "enum": [
+            "filename-candidates",
+            "no-recognizer"
+          ],
+          "title": "Recognition Support",
+          "type": "string"
+        }
+      },
+      "required": [
+        "family",
+        "recognition_support",
+        "candidate_file_count",
+        "interpretation"
+      ],
+      "title": "FamilyInventory",
+      "type": "object"
+    },
+    "InventoryEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "byte_length": {
+          "minimum": 0,
+          "title": "Byte Length",
+          "type": "integer"
+        },
+        "media_type": {
+          "minLength": 1,
+          "title": "Media Type",
+          "type": "string"
+        },
+        "path": {
+          "maxLength": 4096,
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "0.1.0",
+          "default": "0.1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "sha256",
+        "byte_length",
+        "media_type"
+      ],
+      "title": "InventoryEntry",
+      "type": "object"
+    },
+    "PathRecognizer": {
+      "additionalProperties": false,
+      "properties": {
+        "candidate_format": {
+          "minLength": 1,
+          "title": "Candidate Format",
+          "type": "string"
+        },
+        "checked_on": {
+          "const": "2026-10-02",
+          "default": "2026-10-02",
+          "title": "Checked On",
+          "type": "string"
+        },
+        "family": {
+          "enum": [
+            "python-source",
+            "mcp-config",
+            "agent-config",
+            "instructions",
+            "skill",
+            "memory-context",
+            "identity-permissions",
+            "dependencies",
+            "iac"
+          ],
+          "title": "Family",
+          "type": "string"
+        },
+        "framework_hint": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Framework Hint"
+        },
+        "limitation": {
+          "minLength": 1,
+          "title": "Limitation",
+          "type": "string"
+        },
+        "pattern": {
+          "minLength": 1,
+          "title": "Pattern",
+          "type": "string"
+        },
+        "recognizer_id": {
+          "minLength": 1,
+          "title": "Recognizer Id",
+          "type": "string"
+        },
+        "reference": {
+          "minLength": 1,
+          "title": "Reference",
+          "type": "string"
+        },
+        "reference_kind": {
+          "enum": [
+            "official-documentation",
+            "project-convention"
+          ],
+          "title": "Reference Kind",
+          "type": "string"
+        },
+        "selector": {
+          "enum": [
+            "basename",
+            "suffix"
+          ],
+          "title": "Selector",
+          "type": "string"
+        },
+        "version": {
+          "const": "1",
+          "default": "1",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "recognizer_id",
+        "family",
+        "selector",
+        "pattern",
+        "candidate_format",
+        "reference",
+        "reference_kind",
+        "limitation"
+      ],
+      "title": "PathRecognizer",
+      "type": "object"
+    },
+    "TargetSnapshot": {
+      "additionalProperties": false,
+      "properties": {
+        "content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Content Sha256",
+          "type": "string"
+        },
+        "file_count": {
+          "minimum": 0,
+          "title": "File Count",
+          "type": "integer"
+        },
+        "inventory_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Inventory Sha256",
+          "type": "string"
+        },
+        "license_status": {
+          "enum": [
+            "project-authored-private",
+            "identified",
+            "unknown"
+          ],
+          "title": "License Status",
+          "type": "string"
+        },
+        "retrieved_at": {
+          "format": "date-time",
+          "title": "Retrieved At",
+          "type": "string"
+        },
+        "revision": {
+          "minLength": 1,
+          "title": "Revision",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "0.1.0",
+          "default": "0.1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "snapshot_id": {
+          "minLength": 1,
+          "title": "Snapshot Id",
+          "type": "string"
+        },
+        "source_kind": {
+          "enum": [
+            "project-fixture",
+            "local",
+            "git"
+          ],
+          "title": "Source Kind",
+          "type": "string"
+        },
+        "source_label": {
+          "minLength": 1,
+          "title": "Source Label",
+          "type": "string"
+        },
+        "target_id": {
+          "minLength": 1,
+          "title": "Target Id",
+          "type": "string"
+        },
+        "total_bytes": {
+          "minimum": 0,
+          "title": "Total Bytes",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "target_id",
+        "snapshot_id",
+        "source_kind",
+        "source_label",
+        "revision",
+        "retrieved_at",
+        "license_status",
+        "content_sha256",
+        "inventory_sha256",
+        "file_count",
+        "total_bytes"
+      ],
+      "title": "TargetSnapshot",
+      "type": "object"
+    }
+  },
+  "$id": "urn:agentsec-evidence:schema:artifact-inventory-v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "catalog_sha256": {
+      "default": "be964c286b0053efb4ba09aee0024fa993ae1ee9140ecd70a8b4a184b31783d7",
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Catalog Sha256",
+      "type": "string"
+    },
+    "catalog_version": {
+      "const": "artifact-path-candidates-v1",
+      "default": "artifact-path-candidates-v1",
+      "title": "Catalog Version",
+      "type": "string"
+    },
+    "content_reverification": {
+      "const": "not-performed",
+      "default": "not-performed",
+      "title": "Content Reverification",
+      "type": "string"
+    },
+    "contract_version": {
+      "const": "artifact-inventory-v1",
+      "default": "artifact-inventory-v1",
+      "title": "Contract Version",
+      "type": "string"
+    },
+    "families": {
+      "items": {
+        "$ref": "#/$defs/FamilyInventory"
+      },
+      "title": "Families",
+      "type": "array"
+    },
+    "recognizers": {
+      "default": [
+        {
+          "candidate_format": "python-source",
+          "checked_on": "2026-10-02",
+          "family": "python-source",
+          "framework_hint": null,
+          "limitation": "No syntax, tool binding, framework or data-flow analysis.",
+          "pattern": ".py",
+          "recognizer_id": "python-source-suffix",
+          "reference": "https://docs.python.org/3.13/tutorial/modules.html",
+          "reference_kind": "official-documentation",
+          "selector": "suffix",
+          "version": "1"
+        },
+        {
+          "candidate_format": "langgraph-config-json",
+          "checked_on": "2026-10-02",
+          "family": "agent-config",
+          "framework_hint": "LangGraph filename convention only",
+          "limitation": "No schema validation or evidence that a deployment uses this file.",
+          "pattern": "langgraph.json",
+          "recognizer_id": "langgraph-config-name",
+          "reference": "https://docs.langchain.com/langsmith/cli",
+          "reference_kind": "official-documentation",
+          "selector": "basename",
+          "version": "1"
+        },
+        {
+          "candidate_format": "claude-desktop-config-json",
+          "checked_on": "2026-10-02",
+          "family": "mcp-config",
+          "framework_hint": null,
+          "limitation": "Client filename only; no mcpServers validation or protocol-wide convention.",
+          "pattern": "claude_desktop_config.json",
+          "recognizer_id": "claude-desktop-config-name",
+          "reference": "https://modelcontextprotocol.io/docs/2026-07-28/develop/connect-local-servers",
+          "reference_kind": "official-documentation",
+          "selector": "basename",
+          "version": "1"
+        },
+        {
+          "candidate_format": "project-mcp-json-candidate",
+          "checked_on": "2026-10-02",
+          "family": "mcp-config",
+          "framework_hint": null,
+          "limitation": "Authored fixture convention, not a universal MCP configuration filename.",
+          "pattern": "mcp.json",
+          "recognizer_id": "project-mcp-config-name",
+          "reference": "docs/agent-artifact-contracts.md",
+          "reference_kind": "project-convention",
+          "selector": "basename",
+          "version": "1"
+        },
+        {
+          "candidate_format": "agents-md",
+          "checked_on": "2026-10-02",
+          "family": "instructions",
+          "framework_hint": null,
+          "limitation": "No instruction interpretation, precedence resolution or safety judgment.",
+          "pattern": "AGENTS.md",
+          "recognizer_id": "agents-instructions-name",
+          "reference": "https://agents.md/",
+          "reference_kind": "official-documentation",
+          "selector": "basename",
+          "version": "1"
+        },
+        {
+          "candidate_format": "agent-skill-md",
+          "checked_on": "2026-10-02",
+          "family": "skill",
+          "framework_hint": null,
+          "limitation": "No frontmatter validation, permission inference or script execution.",
+          "pattern": "SKILL.md",
+          "recognizer_id": "skill-manifest-name",
+          "reference": "https://agentskills.io/specification",
+          "reference_kind": "official-documentation",
+          "selector": "basename",
+          "version": "1"
+        },
+        {
+          "candidate_format": "uv-lock",
+          "checked_on": "2026-10-02",
+          "family": "dependencies",
+          "framework_hint": null,
+          "limitation": "No package parsing or vulnerability matching; other lock formats unrecognized.",
+          "pattern": "uv.lock",
+          "recognizer_id": "uv-lock-name",
+          "reference": "https://docs.astral.sh/uv/concepts/projects/layout/",
+          "reference_kind": "official-documentation",
+          "selector": "basename",
+          "version": "1"
+        },
+        {
+          "candidate_format": "terraform-hcl",
+          "checked_on": "2026-10-02",
+          "family": "iac",
+          "framework_hint": null,
+          "limitation": "No HCL parsing, module resolution or effective infrastructure assessment.",
+          "pattern": ".tf",
+          "recognizer_id": "terraform-hcl-suffix",
+          "reference": "https://developer.hashicorp.com/terraform/language/files",
+          "reference_kind": "official-documentation",
+          "selector": "suffix",
+          "version": "1"
+        },
+        {
+          "candidate_format": "terraform-json",
+          "checked_on": "2026-10-02",
+          "family": "iac",
+          "framework_hint": null,
+          "limitation": "No JSON parsing, module resolution or effective infrastructure assessment.",
+          "pattern": ".tf.json",
+          "recognizer_id": "terraform-json-suffix",
+          "reference": "https://developer.hashicorp.com/terraform/language/files",
+          "reference_kind": "official-documentation",
+          "selector": "suffix",
+          "version": "1"
+        }
+      ],
+      "items": {
+        "$ref": "#/$defs/PathRecognizer"
+      },
+      "title": "Recognizers",
+      "type": "array"
+    },
+    "records": {
+      "items": {
+        "$ref": "#/$defs/ArtifactCandidate"
+      },
+      "maxItems": 10000,
+      "title": "Records",
+      "type": "array"
+    },
+    "repository_completeness": {
+      "const": "not-verified",
+      "default": "not-verified",
+      "title": "Repository Completeness",
+      "type": "string"
+    },
+    "scan_authorization": {
+      "const": "not-granted",
+      "default": "not-granted",
+      "title": "Scan Authorization",
+      "type": "string"
+    },
+    "scope": {
+      "const": "all-provided-snapshot-files",
+      "default": "all-provided-snapshot-files",
+      "title": "Scope",
+      "type": "string"
+    },
+    "snapshot": {
+      "$ref": "#/$defs/TargetSnapshot"
+    }
+  },
+  "required": [
+    "snapshot",
+    "records",
+    "families"
+  ],
+  "title": "ArtifactInventory",
+  "type": "object"
+}

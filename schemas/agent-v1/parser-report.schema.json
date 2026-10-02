@@ -1,0 +1,94 @@
+{
+  "$id": "urn:agentsec-evidence:schema:agent-v1:parser-report",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "complete": {
+      "title": "Complete",
+      "type": "boolean"
+    },
+    "contract": {
+      "const": "agent-parser-report-v1",
+      "default": "agent-parser-report-v1",
+      "title": "Contract",
+      "type": "string"
+    },
+    "execution_id": {
+      "minLength": 1,
+      "title": "Execution Id",
+      "type": "string"
+    },
+    "native_error_count": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Native Error Count",
+      "type": "integer"
+    },
+    "native_result_count": {
+      "minimum": 0,
+      "title": "Native Result Count",
+      "type": "integer"
+    },
+    "native_scanned_path_count": {
+      "minimum": 0,
+      "title": "Native Scanned Path Count",
+      "type": "integer"
+    },
+    "native_skipped_path_count": {
+      "default": null,
+      "title": "Native Skipped Path Count",
+      "type": "null"
+    },
+    "native_skipped_rule_count": {
+      "default": null,
+      "title": "Native Skipped Rule Count",
+      "type": "null"
+    },
+    "normalized_finding_count": {
+      "minimum": 0,
+      "title": "Normalized Finding Count",
+      "type": "integer"
+    },
+    "parsed_at": {
+      "format": "date-time",
+      "title": "Parsed At",
+      "type": "string"
+    },
+    "parser_id": {
+      "const": "agent-audit-json",
+      "default": "agent-audit-json",
+      "title": "Parser Id",
+      "type": "string"
+    },
+    "parser_version": {
+      "const": "0.1.0",
+      "default": "0.1.0",
+      "title": "Parser Version",
+      "type": "string"
+    },
+    "source_blob_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Source Blob Sha256",
+      "type": "string"
+    },
+    "unknown_top_level_fields": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Unknown Top Level Fields",
+      "type": "array"
+    }
+  },
+  "required": [
+    "execution_id",
+    "source_blob_sha256",
+    "parsed_at",
+    "native_result_count",
+    "native_scanned_path_count",
+    "normalized_finding_count",
+    "unknown_top_level_fields",
+    "complete"
+  ],
+  "title": "AgentParserReport",
+  "type": "object"
+}

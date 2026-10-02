@@ -14,6 +14,7 @@ from agentsec_evidence.adapters.semgrep import (
     normalize_semgrep,
     parse_semgrep_json,
 )
+from agentsec_evidence.agents.records import AgentParserReport
 from agentsec_evidence.analysis.summary import build_summary
 from agentsec_evidence.core.identity import sha256_file
 from agentsec_evidence.core.io import (
@@ -61,7 +62,7 @@ class ExistingRun:
     execution: ExecutionRecord
     target: TargetSnapshot
     blobs: BlobIndex
-    parser_report: ParserReport | None
+    parser_report: ParserReport | AgentParserReport | None
     findings: tuple[Finding, ...]
     coverage: tuple[CoverageRecord, ...]
     failures: tuple[FailureRecord, ...]
@@ -110,14 +111,18 @@ def load_existing_run(workspace_root: Path, run_id: str) -> ExistingRun:
     execution_id = run.execution_ids[0]
     prefix = root / "executions" / execution_id
     parser_path = prefix / "parser-report.json"
+    execution = ExecutionRecord.model_validate_json((prefix / "execution.json").read_bytes())
+    parser_model = (
+        AgentParserReport if execution.producer.tool_id == "agent-audit" else ParserReport
+    )
     return ExistingRun(
         root=root,
         run=run,
-        execution=ExecutionRecord.model_validate_json((prefix / "execution.json").read_bytes()),
+        execution=execution,
         target=TargetSnapshot.model_validate_json((root / "target" / "snapshot.json").read_bytes()),
         blobs=BlobIndex.model_validate_json((prefix / "blobs.json").read_bytes()),
         parser_report=(
-            ParserReport.model_validate_json(parser_path.read_bytes())
+            parser_model.model_validate_json(parser_path.read_bytes())
             if parser_path.is_file()
             else None
         ),
@@ -136,7 +141,7 @@ def _load_sarif(path: Path) -> dict[str, JsonValue]:
 
 def _schema_products(existing: ExistingRun) -> list[ProductSchema]:
     prefix = f"executions/{existing.execution.execution_id}"
-    return [
+    products = [
         ProductSchema("run.json", "run.schema.json"),
         ProductSchema("events.jsonl", "run-event.schema.json", json_lines=True),
         ProductSchema("target/snapshot.json", "target-snapshot.schema.json"),
@@ -145,7 +150,9 @@ def _schema_products(existing: ExistingRun) -> list[ProductSchema]:
         ProductSchema(f"{prefix}/blobs.json", "blob-index.schema.json"),
         ProductSchema(
             f"{prefix}/parser-report.json",
-            "parser-report.schema.json",
+            "../agent-v1/parser-report.schema.json"
+            if existing.execution.producer.tool_id == "agent-audit"
+            else "parser-report.schema.json",
             required=existing.parser_report is not None,
         ),
         ProductSchema("normalized/findings.jsonl", "finding.schema.json", json_lines=True),
@@ -157,6 +164,11 @@ def _schema_products(existing: ExistingRun) -> list[ProductSchema]:
         ProductSchema("validation/provenance.json", "validation-report.schema.json"),
         ProductSchema("bundle-manifest.json", "bundle-manifest.schema.json"),
     ]
+    if existing.execution.producer.tool_id == "agent-audit":
+        products.append(
+            ProductSchema("normalized/agent-details.json", "../agent-v1/run-details.schema.json")
+        )
+    return products
 
 
 def validate_existing_run(
@@ -182,6 +194,10 @@ def validate_existing_run(
         findings=list(existing.findings),
         blob_index=existing.blobs,
     )
+    if existing.execution.producer.tool_id == "agent-audit":
+        from agentsec_evidence.agents.bundle_validation import validate_agent_bundle
+
+        validate_agent_bundle(existing)
     return ValidationSuite(
         bundle=validate_bundle(existing.root),
         schema=schema_report,
@@ -194,6 +210,10 @@ def rebuild_sarif(
     *, project_root: Path, workspace_root: Path, run_id: str, output: Path
 ) -> ValidationReport:
     existing = load_existing_run(workspace_root, run_id)
+    if existing.execution.producer.tool_id == "agent-audit":
+        from agentsec_evidence.agents.bundle_validation import validate_agent_bundle
+
+        validate_agent_bundle(existing)
     resolved_output = output.resolve()
     if resolved_output.is_relative_to(existing.root):
         raise ValueError("Derived export cannot modify a finalized run bundle")
@@ -222,6 +242,10 @@ def _represented_results(document: dict[str, JsonValue]) -> int:
 
 def rebuild_summary(*, project_root: Path, workspace_root: Path, run_id: str) -> Summary:
     existing = load_existing_run(workspace_root, run_id)
+    if existing.execution.producer.tool_id == "agent-audit":
+        from agentsec_evidence.agents.bundle_validation import validate_agent_bundle
+
+        validate_agent_bundle(existing)
     document = _load_sarif(existing.root / "exports" / "results.sarif")
     sarif_report = validate_sarif(
         run_id=run_id,
@@ -289,6 +313,10 @@ def normalize_existing_run(
         bundled_config = config_path.read_bytes()
 
     tool_id = existing.execution.producer.tool_id
+    if tool_id == "agent-audit":
+        from agentsec_evidence.agents.bundle_validation import reparse_agent_bundle
+
+        return reparse_agent_bundle(existing, resolved_output)
     normalized: NormalizedSemgrep | NormalizedKics
     if tool_id == "semgrep":
         semgrep_tool = (

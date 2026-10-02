@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
+from agentsec_evidence.agents.records import AgentParserReport
 from agentsec_evidence.core.time import utc_now
 from agentsec_evidence.models.contracts import (
     CoverageRecord,
@@ -16,7 +17,7 @@ from agentsec_evidence.models.contracts import (
 def build_summary(
     *,
     execution: ExecutionRecord,
-    parser_report: ParserReport | None,
+    parser_report: ParserReport | AgentParserReport | None,
     findings: Sequence[Finding],
     coverage: Sequence[CoverageRecord],
     failures: Sequence[FailureRecord],

@@ -3,11 +3,21 @@ from __future__ import annotations
 from pydantic import BaseModel, JsonValue
 
 from agentsec_evidence.agents.models import AgentArtifact, AgentAssessment, AgentProperty
+from agentsec_evidence.agents.records import (
+    AgentInputReport,
+    AgentInputRequest,
+    AgentParserReport,
+    AgentRunDetails,
+)
 
 SCHEMA_MODELS: dict[str, type[BaseModel]] = {
     "artifact": AgentArtifact,
     "assessment": AgentAssessment,
     "property": AgentProperty,
+    "input-request": AgentInputRequest,
+    "input-report": AgentInputReport,
+    "run-details": AgentRunDetails,
+    "parser-report": AgentParserReport,
 }
 
 

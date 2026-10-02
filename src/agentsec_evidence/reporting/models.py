@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from typing import Annotated, Literal
 
-from pydantic import AwareDatetime, Field, JsonValue
+from pydantic import AwareDatetime, Field, JsonValue, model_validator
 
+from agentsec_evidence.agents.records import AgentRunDetails
 from agentsec_evidence.dependencies.models import DependencyModel, StageComparison
 from agentsec_evidence.models.contracts import CoverageRecord, FailureRecord, Sha256, Summary
 
@@ -62,11 +63,30 @@ class DependencySource(SourceBase):
     summary: DependencySummary
 
 
-type ReportSource = Annotated[StaticSource | DependencySource, Field(discriminator="kind")]
+class AgentSource(SourceBase):
+    kind: Literal["agent-static"] = "agent-static"
+    summary: Summary
+    coverage: list[CoverageRecord]
+    failures: list[FailureRecord]
+    agent_details: AgentRunDetails
+
+    @model_validator(mode="after")
+    def validate_source(self) -> AgentSource:
+        if self.run_id != self.agent_details.run_id or self.run_id != self.summary.run_id:
+            raise ValueError("Agent source identity differs from its details")
+        count = self.agent_details.native_result_count
+        if self.summary.normalized_finding_count != (count if count is not None else 0):
+            raise ValueError("Agent stored-record count differs from native evidence")
+        return self
+
+
+type ReportSource = Annotated[
+    StaticSource | DependencySource | AgentSource, Field(discriminator="kind")
+]
 
 
 class CommonReport(DependencyModel):
-    contract: Literal["common-report-v1"] = "common-report-v1"
+    contract: Literal["common-report-v1", "common-report-v2"] = "common-report-v1"
     generated_at: AwareDatetime
     sensitivity: Literal["internal"] = "internal"
     sources: list[ReportSource]
@@ -84,3 +104,14 @@ class CommonReport(DependencyModel):
     )
     exporter: str = "agentsec-evidence-common-report/1"
     provenance: dict[str, JsonValue] = Field(default_factory=dict)
+
+    @model_validator(mode="after")
+    def validate_agent_version(self) -> CommonReport:
+        expected = (
+            "common-report-v2"
+            if any(isinstance(source, AgentSource) for source in self.sources)
+            else "common-report-v1"
+        )
+        if self.contract != expected:
+            raise ValueError("Agent source details require common-report-v2")
+        return self

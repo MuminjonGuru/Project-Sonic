@@ -11,6 +11,7 @@ from rich.console import Console
 from rich.table import Table
 
 from agentsec_evidence import __version__
+from agentsec_evidence.agents.records import AgentRunDetails
 from agentsec_evidence.core.doctor import collect_doctor_report
 from agentsec_evidence.core.io import json_bytes
 from agentsec_evidence.dependencies.mutations import Mutation
@@ -29,6 +30,7 @@ from agentsec_evidence.operations.offline import (
     rebuild_summary,
     validate_existing_run,
 )
+from agentsec_evidence.orchestration.agent_pipeline import AgentScanRequest, run_agent_scan
 from agentsec_evidence.orchestration.kics_pipeline import KicsScanRequest, run_kics_scan
 from agentsec_evidence.orchestration.pipeline import SemgrepScanRequest, run_semgrep_scan
 from agentsec_evidence.reporting.dependency import (
@@ -233,6 +235,38 @@ def target_inspect(
         console.print_json(data=snapshot.model_dump(mode="json"))
 
 
+@scan_app.command("agent-audit")
+def scan_agent_audit(
+    case_id: Annotated[str, typer.Argument(help="Approved authored development case ID only.")],
+    project_root: Annotated[Path | None, typer.Option()] = None,
+    workspace: Annotated[Path | None, typer.Option()] = None,
+    json_output: Annotated[bool, typer.Option("--json")] = False,
+) -> None:
+    """Validate inputs in a bounded worker, then capture offline Agent Audit evidence."""
+    try:
+        root = _find_project_root(project_root)
+        result = run_agent_scan(AgentScanRequest(root, _workspace_root(root, workspace), case_id))
+        details = AgentRunDetails.model_validate_json(
+            (result.run_root / "normalized/agent-details.json").read_bytes()
+        )
+    except (OSError, ValueError, SnapshotError) as exc:
+        _emit_error(exc)
+        raise typer.Exit(code=2) from exc
+    payload: JsonValue = {
+        "run_id": result.run_id,
+        "run_root": str(result.run_root),
+        "terminal_state": result.terminal_state.value,
+        "semantic_sha256": result.semantic_sha256,
+        "summary": result.summary.model_dump(mode="json"),
+        "agent_details": details.model_dump(mode="json"),
+    }
+    if json_output:
+        _emit_json(payload)
+    else:
+        console.print_json(data=payload)
+    raise typer.Exit(code=_terminal_exit_code(result.terminal_state))
+
+
 @scan_app.command("semgrep")
 def scan_semgrep(
     source: Annotated[Path, typer.Argument(exists=True, file_okay=False, resolve_path=True)],
@@ -397,6 +431,10 @@ def inspect_run(
             _emit_json(source.model_dump(mode="json"))
             return
         existing = load_existing_run(_workspace_root(root, workspace), run_id)
+        if existing.execution.producer.tool_id == "agent-audit":
+            source, _ = load_report_source(root, existing.root)
+            _emit_json(source.model_dump(mode="json"))
+            return
         summary = Summary.model_validate_json(
             (existing.root / "exports" / "summary.json").read_bytes()
         )
@@ -584,6 +622,11 @@ def summarize_run(
             workspace_root=_workspace_root(root, workspace),
             run_id=run_id,
         )
+        existing = load_existing_run(_workspace_root(root, workspace), run_id)
+        if existing.execution.producer.tool_id == "agent-audit":
+            source, _ = load_report_source(root, existing.root)
+            _emit_json(source.model_dump(mode="json"))
+            return
     except (OSError, ValueError) as exc:
         _emit_error(exc)
         raise typer.Exit(code=5) from exc

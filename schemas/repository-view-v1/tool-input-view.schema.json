@@ -1,0 +1,128 @@
+{
+  "$defs": {
+    "GitTreeEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "title": "Mode",
+          "type": "string"
+        },
+        "path": {
+          "maxLength": 4096,
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "sha": {
+          "pattern": "^[0-9a-f]{40}$",
+          "title": "Sha",
+          "type": "string"
+        },
+        "size": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Size"
+        },
+        "type": {
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "mode",
+        "type",
+        "sha"
+      ],
+      "title": "GitTreeEntry",
+      "type": "object"
+    },
+    "VerifiedGitFile": {
+      "additionalProperties": false,
+      "properties": {
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "source": {
+          "$ref": "#/$defs/GitTreeEntry"
+        }
+      },
+      "required": [
+        "source",
+        "sha256"
+      ],
+      "title": "VerifiedGitFile",
+      "type": "object"
+    }
+  },
+  "$id": "urn:agentsec-evidence:schema:repository-view-v1:tool-input-view",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "contract": {
+      "const": "tool-input-view-v1",
+      "default": "tool-input-view-v1",
+      "title": "Contract",
+      "type": "string"
+    },
+    "execution_authorization": {
+      "const": "not-granted",
+      "default": "not-granted",
+      "title": "Execution Authorization",
+      "type": "string"
+    },
+    "files": {
+      "items": {
+        "$ref": "#/$defs/VerifiedGitFile"
+      },
+      "maxItems": 10000,
+      "title": "Files",
+      "type": "array"
+    },
+    "git_verification_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Git Verification Sha256",
+      "type": "string"
+    },
+    "input_plan_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Input Plan Sha256",
+      "type": "string"
+    },
+    "parent_snapshot_id": {
+      "minLength": 1,
+      "title": "Parent Snapshot Id",
+      "type": "string"
+    },
+    "policy_context": {
+      "const": "full-parent-inventory-required",
+      "default": "full-parent-inventory-required",
+      "title": "Policy Context",
+      "type": "string"
+    },
+    "selected_content_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Selected Content Sha256",
+      "type": "string"
+    }
+  },
+  "required": [
+    "parent_snapshot_id",
+    "input_plan_sha256",
+    "git_verification_sha256",
+    "selected_content_sha256",
+    "files"
+  ],
+  "title": "ToolInputView",
+  "type": "object"
+}

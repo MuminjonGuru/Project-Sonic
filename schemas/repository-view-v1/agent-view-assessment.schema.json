@@ -1,0 +1,109 @@
+{
+  "$id": "urn:agentsec-evidence:schema:repository-view-v1:agent-view-assessment",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "blocked_policy_paths": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Blocked Policy Paths",
+      "type": "array"
+    },
+    "blockers": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Blockers",
+      "type": "array"
+    },
+    "contract": {
+      "const": "agent-view-assessment-v1",
+      "default": "agent-view-assessment-v1",
+      "title": "Contract",
+      "type": "string"
+    },
+    "eligible_paths": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Eligible Paths",
+      "type": "array"
+    },
+    "execution_authorization": {
+      "const": "not-granted",
+      "default": "not-granted",
+      "title": "Execution Authorization",
+      "type": "string"
+    },
+    "input_gate_passed": {
+      "title": "Input Gate Passed",
+      "type": "boolean"
+    },
+    "input_plan_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Input Plan Sha256",
+      "type": "string"
+    },
+    "limitations": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Limitations",
+      "type": "array"
+    },
+    "policy_context": {
+      "const": "full-parent-inventory",
+      "default": "full-parent-inventory",
+      "title": "Policy Context",
+      "type": "string"
+    },
+    "policy_version": {
+      "const": "agent-input-policy-v1",
+      "default": "agent-input-policy-v1",
+      "title": "Policy Version",
+      "type": "string"
+    },
+    "request_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Request Sha256",
+      "type": "string"
+    },
+    "scanner_executed": {
+      "const": false,
+      "default": false,
+      "title": "Scanner Executed",
+      "type": "boolean"
+    },
+    "validation_state": {
+      "const": "complete",
+      "default": "complete",
+      "title": "Validation State",
+      "type": "string"
+    },
+    "view_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "View Sha256",
+      "type": "string"
+    },
+    "worker_report_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Worker Report Sha256",
+      "type": "string"
+    }
+  },
+  "required": [
+    "input_plan_sha256",
+    "view_sha256",
+    "request_sha256",
+    "worker_report_sha256",
+    "input_gate_passed",
+    "eligible_paths",
+    "blocked_policy_paths",
+    "blockers",
+    "limitations"
+  ],
+  "title": "AgentViewAssessment",
+  "type": "object"
+}

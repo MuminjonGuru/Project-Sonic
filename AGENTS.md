@@ -163,6 +163,18 @@ policy/suppression checks; plans confer no execution permission. Public acquisit
 materialization and research scanner profiles remain gated. Do not retrospectively upgrade the
 legacy public dependency archive receipt or change historical evidence hashes.
 
+### Selected-view follow-up: 2 October 2026
+
+PR #9 is merged at `fe6b64dee769cec2d5fed10da6157e4e4c528bce`. The next local increment is
+described in `docs/verified-input-views.md`: exact-byte selected views plus the existing isolated
+Python/MCP syntax worker, exercised only with four fixed controlled cases. Earlier no-view
+statements describe their own increments. Replay full parent evidence before and after validation;
+check policy filenames against the full inventory, never only the mounted subset. Selected-input
+suppression checks remain mandatory. Do not parse untrusted Python/MCP content on the host.
+`input_gate_passed` is not scanner admission, treatment approval, coverage or a security verdict.
+New derivative schemas live in `schemas/repository-view-v1/`; legacy contracts remain unchanged.
+No public acquisition, arbitrary-path CLI or new security scan is authorized by this bridge.
+
 ## Safety Controls
 
 - Build subprocess commands as argument arrays. Never invoke scanner commands through a shell.

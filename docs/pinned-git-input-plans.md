@@ -11,6 +11,11 @@ The student confirmed that initial intake must refuse repositories containing sy
 submodules or Git LFS pointers. This is a support boundary, not a finding that such repositories
 are insecure. Refusal means no verified receipt is returned; it must not become a clean scan.
 
+Later increment: [verified input views](verified-input-views.md) now implements selected-byte
+materialization and isolated input validation with full parent policy context for controlled
+cases. Statements below about future materialization describe this earlier library increment.
+Public acquisition, research treatment admission and scanner execution remain separate gates.
+
 ```mermaid
 flowchart TD
     A[Supplied raw commit + recursive tree metadata + file bytes] --> B[Verify pinned commit identity and root tree]

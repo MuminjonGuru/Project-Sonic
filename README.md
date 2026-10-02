@@ -18,6 +18,7 @@ and reported. It does not implement a replacement SAST engine.
 | Agent artifacts | Bounded validation worker -> pinned Agent Audit -> normalized evidence and SARIF | Thirteen authored Python/MCP cases only; public source intake gated |
 | Artifact inventory | Versioned filename candidates over complete supplied snapshot metadata | Authored checks only; no content parsing, security verdict or Git-tree completeness claim |
 | Git evidence and input plans | Offline commit/tree/blob verification and all-file per-tool decisions | Authored walkthrough; separate proof, no acquisition CLI or scanner authorization |
+| Selected input views | Verified selected-byte copies and isolated Python/MCP input-policy validation | Four controlled cases; full parent policy context retained; no scanner authorization |
 | Common reporting | Validated static/dependency/agent evidence in common JSON and SARIF | Offline derivatives; no new scans or combined vulnerability total |
 
 The static evidence path is:
@@ -57,6 +58,9 @@ The [Git verification and input-plan library](docs/pinned-git-input-plans.md) no
 separate offline completeness check for supplied Git evidence and explicit selected/excluded
 decisions for every file. Loaded receipts require raw-evidence replay. Symlinks, submodules and
 Git LFS pointers are refused; a valid plan does not authorize execution or bypass policy checks.
+The [selected-view bridge](docs/verified-input-views.md) now materializes exact selected bytes and
+connects the bounded validation worker without discarding the full inventory's policy context.
+Passing this input gate does not grant scanner permission or establish security coverage.
 Public source intake, the local UI and held-out evaluation are also pending.
 
 ### Evidence Walkthrough

@@ -17,6 +17,7 @@ and reported. It does not implement a replacement SAST engine.
 | Dependencies | Direct OSV analysis compared with Syft -> CycloneDX -> OSV | Controlled PyPI cases and one pinned public-repository lockfile |
 | Agent artifacts | Bounded validation worker -> pinned Agent Audit -> normalized evidence and SARIF | Thirteen authored Python/MCP cases only; public source intake gated |
 | Artifact inventory | Versioned filename candidates over complete supplied snapshot metadata | Authored checks only; no content parsing, security verdict or Git-tree completeness claim |
+| Git evidence and input plans | Offline commit/tree/blob verification and all-file per-tool decisions | Authored walkthrough; separate proof, no acquisition CLI or scanner authorization |
 | Common reporting | Validated static/dependency/agent evidence in common JSON and SARIF | Offline derivatives; no new scans or combined vulnerability total |
 
 The static evidence path is:
@@ -52,6 +53,10 @@ This path requires two pinned local images; fresh-checkout image distribution re
 The [repository inventory library](docs/repository-artifact-inventory.md) now retains all supplied
 files and identifies limited filename candidates, including instructions and skills. Memory and
 identity recognition remain explicitly unknown; filename matching is not security-check coverage.
+The [Git verification and input-plan library](docs/pinned-git-input-plans.md) now provides a
+separate offline completeness check for supplied Git evidence and explicit selected/excluded
+decisions for every file. Loaded receipts require raw-evidence replay. Symlinks, submodules and
+Git LFS pointers are refused; a valid plan does not authorize execution or bypass policy checks.
 Public source intake, the local UI and held-out evaluation are also pending.
 
 ### Evidence Walkthrough

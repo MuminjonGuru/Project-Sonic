@@ -1,5 +1,13 @@
 # Common Evidence Reporting
 
+## Agent Extension: 2 October 2026
+
+The [bounded agent runner](agent-static-runner.md) adds an `agent-static` source with explicit
+admission, blockers, unknown per-file coverage and native suppression accounting. Reports that
+include it use `common-report-v2`; legacy-only reports remain v1. The schema directory retains
+its historical name and its common-report schema accepts both discriminated versions. Original
+Semgrep/KICS/dependency bundles are unchanged. The sections below describe the earlier v1 scope.
+
 ## Purpose and Boundary
 
 This is an offline view over finalized evidence, not another scan. It integrates static

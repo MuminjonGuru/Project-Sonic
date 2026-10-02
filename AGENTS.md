@@ -120,6 +120,20 @@ integrated CLI runner or agent reporting path exists yet. Unknown per-file cover
 suppressed findings stay in evidence. Run untrusted AST/JSON parsing inside a bounded worker,
 not directly on the host. The library guards do not themselves provide process isolation.
 
+### Bounded runner follow-up: 2 October 2026
+
+The authored-case runner, CLI and reporting path now exist; see `docs/agent-static-runner.md`.
+The preceding no-runner statements describe earlier increments. The only admitted inputs for
+`scan agent-audit` are the thirteen registered development case IDs, never arbitrary repository
+paths. Use the pinned, offline validation worker before native execution. Policy refusal remains
+mandatory; no host AST parsing, target imports, config neutralization or model calls.
+Native aggregate counts do not establish per-file completion: admitted agent runs remain partial.
+Unknown/unexecuted counts remain null in agent details. Preserve native suppressed records as
+unreviewed evidence. Agent-containing common reports use v2; legacy-only reports stay v1.
+Agent runs use `agent-run-semantic-v1`; existing static runs keep `run-semantic-v2`.
+Public source intake, exact-case adjudication, image distribution and wider research profiles
+remain separate gates. Do not treat this integration as completion of the 60-point checkpoint.
+
 ## Safety Controls
 
 - Build subprocess commands as argument arrays. Never invoke scanner commands through a shell.

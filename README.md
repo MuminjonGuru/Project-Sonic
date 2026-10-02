@@ -15,7 +15,8 @@ and reported. It does not implement a replacement SAST engine.
 | Code | Pinned Semgrep execution, normalization and SARIF | Project-authored development fixtures |
 | Infrastructure-as-Code | Pinned KICS execution, normalization and SARIF | Selected Terraform/Kubernetes queries and authored fixtures |
 | Dependencies | Direct OSV analysis compared with Syft -> CycloneDX -> OSV | Controlled PyPI cases and one pinned public-repository lockfile |
-| Common reporting | Validated static/dependency evidence in common JSON and SARIF | Offline derivatives; no new scans or combined vulnerability total |
+| Agent artifacts | Bounded validation worker -> pinned Agent Audit -> normalized evidence and SARIF | Thirteen authored Python/MCP cases only; public source intake gated |
+| Common reporting | Validated static/dependency/agent evidence in common JSON and SARIF | Offline derivatives; no new scans or combined vulnerability total |
 
 The static evidence path is:
 
@@ -41,13 +42,12 @@ The public pilot is lockfile-only: it does not execute the agent, install depend
 establish runtime exploitability. A successful no-finding scan is not proof of safety.
 
 The first agreed agent-specific integration scope is Python tool definitions and MCP JSON
-configurations. A pinned Agent Audit candidate completed a bounded container preflight on
-2 October 2026; its adapter is not yet implemented in this CLI. See the
-[preflight findings and required integration safeguards](docs/agent-audit-preflight.md).
-The [artifact contracts and controlled cases](docs/agent-artifact-contracts.md) are the first
-implementation increment; they do not yet add a scanner command or repository coverage.
-The follow-up [input guards and native parser](docs/agent-input-parser.md) are now implemented
-and tested as libraries; restricted runner, CLI and reporting integration remain pending.
+configurations. The [bounded agent CLI and reporting path](docs/agent-static-runner.md) now
+connects the [artifact contracts](docs/agent-artifact-contracts.md) and
+[input guards/native parser](docs/agent-input-parser.md) to isolated execution. It refuses
+unhandled policy, malformed and unsupported inputs before scanning. Native per-file completion
+is not observable, so admitted runs remain explicitly partial, including zero-finding runs.
+This path requires two pinned local images; fresh-checkout image distribution remains open.
 Prompts/instructions, skills, memory and other agent properties remain broader inventory/later
 check work, not implemented coverage. The local UI and held-out evaluation are also pending.
 

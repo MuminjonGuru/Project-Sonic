@@ -134,6 +134,14 @@ Agent runs use `agent-run-semantic-v1`; existing static runs keep `run-semantic-
 Public source intake, exact-case adjudication, image distribution and wider research profiles
 remain separate gates. Do not treat this integration as completion of the 60-point checkpoint.
 
+### Image recovery follow-up: 2 October 2026
+
+PR #6 is merged at `4d310165a4a91d0df8053b5bff460c636f6142d9`. Private exact-image transfer
+is described in `docs/agent-image-reproduction.md`. Preserve the OCI index identities and the
+original tool configuration. Transfer is not a source rebuild or new admission. Never commit
+image archives, private receipts or raw upstream evidence. Independent-machine reproduction and
+public distribution clearance remain open; verify controlled cases separately after recovery.
+
 ## Safety Controls
 
 - Build subprocess commands as argument arrays. Never invoke scanner commands through a shell.

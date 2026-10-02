@@ -32,7 +32,9 @@ Both images in `configs/tools/agent-audit.toml` must already exist. They are **l
 not downloadable registry references**. Preflight source, compatibility lock, wheelhouse and
 Dockerfile remain under private `workspace/phase3-preflight-2026-10-02/`; the validator uses
 the existing locked regression image. Fresh-checkout image preparation/distribution and
-dependency-license clearance remain open. No helper downloads images, refreshes rules,
+dependency-license clearance remain open. The later [private image recovery helper](agent-image-reproduction.md)
+can export and verify/import the exact existing image IDs without rebuilding them. This is not
+public distribution or an independent-machine/source-build reproduction claim. No helper downloads images, refreshes rules,
 installs target dependencies or invokes a model.
 
 ## Invocation Flow

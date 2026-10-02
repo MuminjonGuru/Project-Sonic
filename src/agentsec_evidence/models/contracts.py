@@ -317,7 +317,7 @@ class RunRecord(ContractModel):
     finalized_at: AwareDatetime | None = None
     execution_ids: list[str] = Field(default_factory=list)
     config_sha256: Sha256
-    semantic_hash_version: Literal["run-semantic-v2"] = "run-semantic-v2"
+    semantic_hash_version: Literal["run-semantic-v2", "agent-run-semantic-v1"] = "run-semantic-v2"
     semantic_sha256: Sha256 | None = None
 
 

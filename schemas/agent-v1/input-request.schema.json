@@ -1,0 +1,92 @@
+{
+  "$defs": {
+    "InventoryEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "byte_length": {
+          "minimum": 0,
+          "title": "Byte Length",
+          "type": "integer"
+        },
+        "media_type": {
+          "minLength": 1,
+          "title": "Media Type",
+          "type": "string"
+        },
+        "path": {
+          "maxLength": 4096,
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "0.1.0",
+          "default": "0.1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "sha256",
+        "byte_length",
+        "media_type"
+      ],
+      "title": "InventoryEntry",
+      "type": "object"
+    }
+  },
+  "$id": "urn:agentsec-evidence:schema:agent-v1:input-request",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "contract": {
+      "const": "agent-input-request-v1",
+      "default": "agent-input-request-v1",
+      "title": "Contract",
+      "type": "string"
+    },
+    "inventory": {
+      "items": {
+        "$ref": "#/$defs/InventoryEntry"
+      },
+      "maxItems": 64,
+      "title": "Inventory",
+      "type": "array"
+    },
+    "selected": {
+      "additionalProperties": {
+        "enum": [
+          "python-source",
+          "mcp-config",
+          "agent-config",
+          "prompt",
+          "skill",
+          "memory-config",
+          "iac",
+          "other"
+        ],
+        "type": "string"
+      },
+      "title": "Selected",
+      "type": "object"
+    },
+    "target_snapshot_id": {
+      "minLength": 1,
+      "title": "Target Snapshot Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "target_snapshot_id",
+    "inventory",
+    "selected"
+  ],
+  "title": "AgentInputRequest",
+  "type": "object"
+}

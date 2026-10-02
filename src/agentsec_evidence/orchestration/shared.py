@@ -10,6 +10,7 @@ from typing import Literal, Protocol, cast
 
 from pydantic import JsonValue
 
+from agentsec_evidence.agents.records import AgentParserReport
 from agentsec_evidence.analysis.summary import build_summary
 from agentsec_evidence.core.identity import new_opaque_id, sha256_file
 from agentsec_evidence.core.io import json_bytes
@@ -332,7 +333,7 @@ def build_semantic_document(
     *,
     snapshot: TargetSnapshot,
     execution: ExecutionRecord,
-    parser_report: ParserReport | None,
+    parser_report: ParserReport | AgentParserReport | None,
     findings: list[Finding],
     coverage: list[CoverageRecord],
     failures: list[FailureRecord],
@@ -407,7 +408,7 @@ def persist_products(
     project_root: Path,
     bundle: RunBundle,
     execution: ExecutionRecord,
-    parser_report: ParserReport | None,
+    parser_report: ParserReport | AgentParserReport | None,
     findings: list[Finding],
     coverage: list[CoverageRecord],
     failures: list[FailureRecord],
@@ -453,7 +454,9 @@ def persist_products(
         ProductSchema(f"{execution_prefix}/blobs.json", "blob-index.schema.json"),
         ProductSchema(
             f"{execution_prefix}/parser-report.json",
-            "parser-report.schema.json",
+            "../agent-v1/parser-report.schema.json"
+            if execution.producer.tool_id == "agent-audit"
+            else "parser-report.schema.json",
             required=parser_report is not None,
         ),
         ProductSchema("normalized/findings.jsonl", "finding.schema.json", json_lines=True),
@@ -461,6 +464,10 @@ def persist_products(
         ProductSchema("normalized/failures.jsonl", "failure.schema.json", json_lines=True),
         ProductSchema("exports/summary.json", "summary.schema.json"),
     ]
+    if execution.producer.tool_id == "agent-audit":
+        products.append(
+            ProductSchema("normalized/agent-details.json", "../agent-v1/run-details.schema.json")
+        )
     schema_report = validate_product_schemas(
         run_id=execution.run_id,
         bundle_root=bundle.root,
@@ -482,12 +489,13 @@ def finish_run(
     bundle: RunBundle,
     snapshot: TargetSnapshot,
     execution: ExecutionRecord,
-    parser_report: ParserReport | None,
+    parser_report: ParserReport | AgentParserReport | None,
     findings: list[Finding],
     coverage: list[CoverageRecord],
     failures: list[FailureRecord],
     blob_index: BlobIndex,
     desired_state: RunState,
+    semantic_override: JsonValue = None,
 ) -> PipelineResult:
     products, sarif_document = persist_products(
         project_root=project_root,
@@ -517,7 +525,9 @@ def finish_run(
         failures=failures,
         sarif=sarif_document,
     )
-    bundle.finalize(semantic_document=semantic_document)
+    bundle.finalize(
+        semantic_document=semantic_override if semantic_override is not None else semantic_document
+    )
     assert bundle.run.semantic_sha256 is not None
     return PipelineResult(
         run_id=bundle.run.run_id,

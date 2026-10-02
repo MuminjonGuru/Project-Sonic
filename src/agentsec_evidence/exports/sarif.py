@@ -22,6 +22,7 @@ _LEVELS: dict[NormalizedSeverity, str] = {
 }
 
 _TOOL_METADATA = {
+    "agent-audit": ("Agent Audit", "https://github.com/HeadyZhang/agent-audit"),
     "semgrep": ("Semgrep", "https://semgrep.dev/"),
     "kics": ("KICS", "https://www.kics.io/"),
 }
@@ -96,6 +97,19 @@ def build_sarif(findings: Sequence[Finding], *, execution: ExecutionRecord) -> d
         }
         if evidence.json_pointer is not None:
             properties["agentsecEvidence/jsonPointer"] = evidence.json_pointer
+        if execution.producer.tool_id == "agent-audit":
+            native = finding.native_extension.get("agent_audit")
+            if not isinstance(native, dict):
+                raise ValueError("Agent evidence requires retained native assertions")
+            properties.update(
+                {
+                    "agentsecEvidence/nativeSuppressed": native.get("suppressed"),
+                    "agentsecEvidence/nativeTier": native.get("tier"),
+                    "agentsecEvidence/nativeSuppressionReason": native.get("suppressed_reason"),
+                    "agentsecEvidence/limitations": list(finding.limitations),
+                    "agentsecEvidence/verificationState": "unreviewed",
+                }
+            )
 
         result: dict[str, JsonValue] = {
             "ruleId": finding.rule.native_id,
@@ -111,6 +125,21 @@ def build_sarif(findings: Sequence[Finding], *, execution: ExecutionRecord) -> d
             },
             "properties": properties,
         }
+        if execution.producer.tool_id == "agent-audit":
+            result["kind"] = "review"
+            if (
+                properties.get("agentsecEvidence/nativeSuppressed")
+                or properties.get("agentsecEvidence/nativeTier") == "SUPPRESSED"
+            ):
+                result["suppressions"] = [
+                    {
+                        "kind": "external",
+                        "status": "underReview",
+                        "justification": (
+                            "Native suppression retained; not approved by this platform"
+                        ),
+                    }
+                ]
         if finding.fingerprints.native is not None:
             result["fingerprints"] = {
                 f"{execution.producer.tool_id}/v1": finding.fingerprints.native
@@ -150,6 +179,13 @@ def build_sarif(findings: Sequence[Finding], *, execution: ExecutionRecord) -> d
             "agentsecEvidence/exporter": "agentsec-evidence-sarif/0.1.0",
         },
     }
+    if execution.producer.tool_id == "agent-audit":
+        cast(dict[str, JsonValue], run["properties"]).update(
+            {
+                "agentsecEvidence/perFileCompletion": "not-observable",
+                "agentsecEvidence/evidenceDomain": "repository-static-unreviewed",
+            }
+        )
     return cast(
         dict[str, JsonValue],
         {"$schema": SARIF_SCHEMA_URI, "version": "2.1.0", "runs": [run]},

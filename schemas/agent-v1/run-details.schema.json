@@ -1,0 +1,511 @@
+{
+  "$defs": {
+    "AgentArtifact": {
+      "additionalProperties": false,
+      "description": "One source occurrence; recognizing or parsing it is not security coverage.",
+      "properties": {
+        "contract": {
+          "const": "agent-artifact-v1",
+          "default": "agent-artifact-v1",
+          "title": "Contract",
+          "type": "string"
+        },
+        "format_id": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Format Id"
+        },
+        "kind": {
+          "enum": [
+            "python-source",
+            "mcp-config",
+            "agent-config",
+            "prompt",
+            "skill",
+            "memory-config",
+            "iac",
+            "other"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "limitations": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Limitations",
+          "type": "array"
+        },
+        "parse_state": {
+          "enum": [
+            "not-run",
+            "parsed",
+            "malformed",
+            "unsupported",
+            "failed"
+          ],
+          "title": "Parse State",
+          "type": "string"
+        },
+        "reason": {
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        },
+        "source": {
+          "$ref": "#/$defs/InventoryEntry"
+        },
+        "target_snapshot_id": {
+          "minLength": 1,
+          "title": "Target Snapshot Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "target_snapshot_id",
+        "source",
+        "kind",
+        "format_id",
+        "parse_state",
+        "reason"
+      ],
+      "title": "AgentArtifact",
+      "type": "object"
+    },
+    "AgentAssessment": {
+      "additionalProperties": false,
+      "description": "Accounting for one artifact/property/producer, not a vulnerability verdict.",
+      "properties": {
+        "artifact": {
+          "$ref": "#/$defs/AgentArtifact"
+        },
+        "contract": {
+          "const": "agent-assessment-v1",
+          "default": "agent-assessment-v1",
+          "title": "Contract",
+          "type": "string"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/EvidenceReference"
+          },
+          "title": "Evidence",
+          "type": "array"
+        },
+        "execution_id": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Execution Id"
+        },
+        "finding_count": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Finding Count"
+        },
+        "limitations": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Limitations",
+          "type": "array"
+        },
+        "native_exit_code": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Native Exit Code"
+        },
+        "producer": {
+          "$ref": "#/$defs/Producer"
+        },
+        "property_id": {
+          "minLength": 1,
+          "title": "Property Id",
+          "type": "string"
+        },
+        "reason": {
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        },
+        "run_id": {
+          "minLength": 1,
+          "title": "Run Id",
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "not-run",
+            "complete",
+            "partial",
+            "failed",
+            "unsupported",
+            "skipped",
+            "unknown"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "support": {
+          "enum": [
+            "supported",
+            "partial",
+            "unsupported",
+            "unknown"
+          ],
+          "title": "Support",
+          "type": "string"
+        }
+      },
+      "required": [
+        "run_id",
+        "artifact",
+        "property_id",
+        "producer",
+        "support",
+        "state",
+        "reason"
+      ],
+      "title": "AgentAssessment",
+      "type": "object"
+    },
+    "EvidenceReference": {
+      "additionalProperties": false,
+      "properties": {
+        "blob_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Blob Sha256",
+          "type": "string"
+        },
+        "byte_end": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Byte End"
+        },
+        "byte_start": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Byte Start"
+        },
+        "json_pointer": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Json Pointer"
+        },
+        "origin": {
+          "enum": [
+            "native-observed",
+            "mechanically-derived",
+            "researcher-adjudicated"
+          ],
+          "title": "Origin",
+          "type": "string"
+        }
+      },
+      "required": [
+        "origin",
+        "blob_sha256"
+      ],
+      "title": "EvidenceReference",
+      "type": "object"
+    },
+    "InventoryEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "byte_length": {
+          "minimum": 0,
+          "title": "Byte Length",
+          "type": "integer"
+        },
+        "media_type": {
+          "minLength": 1,
+          "title": "Media Type",
+          "type": "string"
+        },
+        "path": {
+          "maxLength": 4096,
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "0.1.0",
+          "default": "0.1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "sha256",
+        "byte_length",
+        "media_type"
+      ],
+      "title": "InventoryEntry",
+      "type": "object"
+    },
+    "Producer": {
+      "additionalProperties": false,
+      "properties": {
+        "adapter_id": {
+          "minLength": 1,
+          "title": "Adapter Id",
+          "type": "string"
+        },
+        "adapter_version": {
+          "minLength": 1,
+          "title": "Adapter Version",
+          "type": "string"
+        },
+        "tool_id": {
+          "minLength": 1,
+          "title": "Tool Id",
+          "type": "string"
+        },
+        "tool_version": {
+          "minLength": 1,
+          "title": "Tool Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "tool_id",
+        "tool_version",
+        "adapter_id",
+        "adapter_version"
+      ],
+      "title": "Producer",
+      "type": "object"
+    }
+  },
+  "$id": "urn:agentsec-evidence:schema:agent-v1:run-details",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "admitted": {
+      "title": "Admitted",
+      "type": "boolean"
+    },
+    "assessments": {
+      "items": {
+        "$ref": "#/$defs/AgentAssessment"
+      },
+      "title": "Assessments",
+      "type": "array"
+    },
+    "blockers": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Blockers",
+      "type": "array"
+    },
+    "case_id": {
+      "minLength": 1,
+      "title": "Case Id",
+      "type": "string"
+    },
+    "contract": {
+      "const": "agent-run-details-v1",
+      "default": "agent-run-details-v1",
+      "title": "Contract",
+      "type": "string"
+    },
+    "execution_id": {
+      "minLength": 1,
+      "title": "Execution Id",
+      "type": "string"
+    },
+    "input_unchanged": {
+      "title": "Input Unchanged",
+      "type": "boolean"
+    },
+    "limitations": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Limitations",
+      "type": "array"
+    },
+    "native_result_count": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Native Result Count"
+    },
+    "native_scanned_files": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Native Scanned Files"
+    },
+    "native_suppressed_count": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Native Suppressed Count"
+    },
+    "native_tier_suppressed_count": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Native Tier Suppressed Count"
+    },
+    "per_file_completion": {
+      "const": "not-observable",
+      "default": "not-observable",
+      "title": "Per File Completion",
+      "type": "string"
+    },
+    "policy_version": {
+      "const": "agent-input-policy-v1",
+      "default": "agent-input-policy-v1",
+      "title": "Policy Version",
+      "type": "string"
+    },
+    "run_id": {
+      "minLength": 1,
+      "title": "Run Id",
+      "type": "string"
+    },
+    "scanner_duration_ns": {
+      "minimum": 0,
+      "title": "Scanner Duration Ns",
+      "type": "integer"
+    },
+    "scanner_launched": {
+      "title": "Scanner Launched",
+      "type": "boolean"
+    },
+    "target_snapshot_id": {
+      "minLength": 1,
+      "title": "Target Snapshot Id",
+      "type": "string"
+    },
+    "total_duration_ns": {
+      "minimum": 0,
+      "title": "Total Duration Ns",
+      "type": "integer"
+    },
+    "validation_duration_ns": {
+      "minimum": 0,
+      "title": "Validation Duration Ns",
+      "type": "integer"
+    },
+    "validation_state": {
+      "enum": [
+        "complete",
+        "failed",
+        "not-run"
+      ],
+      "title": "Validation State",
+      "type": "string"
+    }
+  },
+  "required": [
+    "run_id",
+    "execution_id",
+    "target_snapshot_id",
+    "case_id",
+    "admitted",
+    "blockers",
+    "validation_state",
+    "scanner_launched",
+    "input_unchanged",
+    "validation_duration_ns",
+    "scanner_duration_ns",
+    "total_duration_ns",
+    "native_result_count",
+    "native_scanned_files",
+    "native_suppressed_count",
+    "native_tier_suppressed_count",
+    "assessments",
+    "limitations"
+  ],
+  "title": "AgentRunDetails",
+  "type": "object"
+}

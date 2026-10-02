@@ -81,8 +81,11 @@
       "type": "string"
     },
     "semantic_hash_version": {
-      "const": "run-semantic-v2",
       "default": "run-semantic-v2",
+      "enum": [
+        "run-semantic-v2",
+        "agent-run-semantic-v1"
+      ],
       "title": "Semantic Hash Version",
       "type": "string"
     },

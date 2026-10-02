@@ -6,6 +6,7 @@ from typing import cast
 
 from pydantic import JsonValue
 
+from agentsec_evidence.agents.records import AgentRunDetails
 from agentsec_evidence.core.identity import sha256_file
 from agentsec_evidence.core.io import json_bytes
 from agentsec_evidence.core.time import utc_now
@@ -18,6 +19,7 @@ from agentsec_evidence.reporting.dependency import (
     summarize_dependency,
 )
 from agentsec_evidence.reporting.models import (
+    AgentSource,
     CommonReport,
     DependencySource,
     ReportSource,
@@ -98,6 +100,13 @@ def load_report_source(
             coverage=list(static.coverage),
             failures=list(static.failures),
         )
+        if static.execution.producer.tool_id == "agent-audit":
+            source = AgentSource(
+                **source.model_dump(exclude={"kind"}),
+                agent_details=AgentRunDetails.model_validate_json(
+                    (root / "normalized/agent-details.json").read_bytes()
+                ),
+            )
         document = cast(
             dict[str, JsonValue], json.loads((root / "exports/results.sarif").read_bytes())
         )
@@ -133,6 +142,9 @@ def write_common_report(*, project_root: Path, bundles: list[Path], output: Path
     document = {"$schema": SARIF_SCHEMA_URI, "version": "2.1.0", "runs": runs}
     validate_report_sarif(project_root, document)
     report = CommonReport(
+        contract="common-report-v2"
+        if any(isinstance(source, AgentSource) for source in sources)
+        else "common-report-v1",
         generated_at=utc_now(),
         sources=sources,
         sarif_runs=len(runs),
@@ -250,7 +262,7 @@ def validate_common_report(project_root: Path, root: Path) -> dict[str, JsonValu
         raise ValueError("Malformed common reporting structure") from exc
     return {
         "passed": True,
-        "contract": "common-report-v1",
+        "contract": report.contract,
         "sources": len(report.sources),
         "sarif_runs": len(runs),
     }

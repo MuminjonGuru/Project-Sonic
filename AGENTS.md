@@ -142,6 +142,16 @@ original tool configuration. Transfer is not a source rebuild or new admission. 
 image archives, private receipts or raw upstream evidence. Independent-machine reproduction and
 public distribution clearance remain open; verify controlled cases separately after recovery.
 
+### Artifact inventory follow-up: 2 October 2026
+
+The student confirmed full pinned-revision inventory with separately approved per-tool views.
+The first implementation is metadata-only; see `docs/repository-artifact-inventory.md`. Preserve
+all supplied entries including tests/examples/docs/CI and unclassified files. Filename candidates
+are not parsed artifacts, confirmed framework support, vulnerabilities or scanner admission.
+Memory/identity recognition remains unknown. This derivative validates metadata consistency, not
+Git-tree completeness or content on disk. The existing public pilot remains dependency-only.
+Do not silently expand the catalog or change legacy snapshot/run schemas to connect this layer.
+
 ## Safety Controls
 
 - Build subprocess commands as argument arrays. Never invoke scanner commands through a shell.

@@ -16,6 +16,7 @@ and reported. It does not implement a replacement SAST engine.
 | Infrastructure-as-Code | Pinned KICS execution, normalization and SARIF | Selected Terraform/Kubernetes queries and authored fixtures |
 | Dependencies | Direct OSV analysis compared with Syft -> CycloneDX -> OSV | Controlled PyPI cases and one pinned public-repository lockfile |
 | Agent artifacts | Bounded validation worker -> pinned Agent Audit -> normalized evidence and SARIF | Thirteen authored Python/MCP cases only; public source intake gated |
+| Artifact inventory | Versioned filename candidates over complete supplied snapshot metadata | Authored checks only; no content parsing, security verdict or Git-tree completeness claim |
 | Common reporting | Validated static/dependency/agent evidence in common JSON and SARIF | Offline derivatives; no new scans or combined vulnerability total |
 
 The static evidence path is:
@@ -48,8 +49,10 @@ connects the [artifact contracts](docs/agent-artifact-contracts.md) and
 unhandled policy, malformed and unsupported inputs before scanning. Native per-file completion
 is not observable, so admitted runs remain explicitly partial, including zero-finding runs.
 This path requires two pinned local images; fresh-checkout image distribution remains open.
-Prompts/instructions, skills, memory and other agent properties remain broader inventory/later
-check work, not implemented coverage. The local UI and held-out evaluation are also pending.
+The [repository inventory library](docs/repository-artifact-inventory.md) now retains all supplied
+files and identifies limited filename candidates, including instructions and skills. Memory and
+identity recognition remain explicitly unknown; filename matching is not security-check coverage.
+Public source intake, the local UI and held-out evaluation are also pending.
 
 ### Evidence Walkthrough
 

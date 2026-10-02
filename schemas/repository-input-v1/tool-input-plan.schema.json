@@ -1,0 +1,120 @@
+{
+  "$defs": {
+    "InputSelection": {
+      "additionalProperties": false,
+      "properties": {
+        "disposition": {
+          "enum": [
+            "selected",
+            "excluded"
+          ],
+          "title": "Disposition",
+          "type": "string"
+        },
+        "path": {
+          "maxLength": 4096,
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "reason": {
+          "maxLength": 1000,
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        },
+        "source_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "source_sha256",
+        "disposition",
+        "reason"
+      ],
+      "title": "InputSelection",
+      "type": "object"
+    }
+  },
+  "$id": "urn:agentsec-evidence:schema:repository-input-v1:tool-input-plan",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "artifact_inventory_semantic_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Artifact Inventory Semantic Sha256",
+      "type": "string"
+    },
+    "contract": {
+      "const": "tool-input-plan-v1",
+      "default": "tool-input-plan-v1",
+      "title": "Contract",
+      "type": "string"
+    },
+    "execution_authorization": {
+      "const": "not-granted",
+      "default": "not-granted",
+      "title": "Execution Authorization",
+      "type": "string"
+    },
+    "git_verification_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Git Verification Sha256",
+      "type": "string"
+    },
+    "parser_validation": {
+      "const": "not-run",
+      "default": "not-run",
+      "title": "Parser Validation",
+      "type": "string"
+    },
+    "policy_and_suppression_review": {
+      "const": "not-performed",
+      "default": "not-performed",
+      "title": "Policy And Suppression Review",
+      "type": "string"
+    },
+    "profile_id": {
+      "minLength": 1,
+      "title": "Profile Id",
+      "type": "string"
+    },
+    "profile_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Profile Sha256",
+      "type": "string"
+    },
+    "selections": {
+      "items": {
+        "$ref": "#/$defs/InputSelection"
+      },
+      "maxItems": 10000,
+      "title": "Selections",
+      "type": "array"
+    },
+    "target_snapshot_id": {
+      "minLength": 1,
+      "title": "Target Snapshot Id",
+      "type": "string"
+    },
+    "tool_id": {
+      "minLength": 1,
+      "title": "Tool Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "target_snapshot_id",
+    "artifact_inventory_semantic_sha256",
+    "git_verification_sha256",
+    "tool_id",
+    "profile_id",
+    "profile_sha256",
+    "selections"
+  ],
+  "title": "ToolInputPlan",
+  "type": "object"
+}

@@ -1,0 +1,325 @@
+{
+  "contract": "authored-pinned-git-case-v1",
+  "split": "development-only",
+  "review_status": "AI-authored; Git encodes object expectations; not independent semantic labels",
+  "encoding_tool": "git version 2.55.0.windows.5",
+  "revision": "3320a4620c57670428ba2cfa21837d8529bf9d86",
+  "raw_commit": "tree a992c161bf17eb5e0f85940841f9e7444c8bf059\nauthor Authored Fixture <fixture@example.invalid> 1700000000 +0000\ncommitter Authored Fixture <fixture@example.invalid> 1700000000 +0000\n\nAuthored Git verification case; not research evidence.\n",
+  "tree": {
+    "sha": "a992c161bf17eb5e0f85940841f9e7444c8bf059",
+    "truncated": false,
+    "tree": [
+      {
+        "path": ".agent-audit.yaml",
+        "mode": "100644",
+        "type": "blob",
+        "sha": "7e631402e15866185e95a35dfd8413737e388fc2",
+        "size": 48
+      },
+      {
+        "path": ".github",
+        "mode": "040000",
+        "type": "tree",
+        "sha": "b43a3598ff20dd537c8d1fba826afd2ae4a9696a"
+      },
+      {
+        "path": ".github/scripts",
+        "mode": "040000",
+        "type": "tree",
+        "sha": "f72296dcddcfce114bae4f482dac9c5652a05c38"
+      },
+      {
+        "path": ".github/scripts/check.py",
+        "mode": "100644",
+        "type": "blob",
+        "sha": "2074ae16bf3a802824ccb1fdb3039d65839e0ab3",
+        "size": 12
+      },
+      {
+        "path": "AGENTS.md",
+        "mode": "100644",
+        "type": "blob",
+        "sha": "b89f97e78236a6fa5d86615332dbcec7dd7ca34a",
+        "size": 29
+      },
+      {
+        "path": "README.md",
+        "mode": "100644",
+        "type": "blob",
+        "sha": "c7ca4821c653c6cf4db5a5ffe5c75b7480745909",
+        "size": 17
+      },
+      {
+        "path": "agent.py",
+        "mode": "100755",
+        "type": "blob",
+        "sha": "5e31851703132e4b2507676884c5ce5610ec1403",
+        "size": 39
+      },
+      {
+        "path": "config",
+        "mode": "040000",
+        "type": "tree",
+        "sha": "3097da2c72d9dfc649aa9f0cfdbbd81beefeded1"
+      },
+      {
+        "path": "config/claude_desktop_config.json",
+        "mode": "100644",
+        "type": "blob",
+        "sha": "0967ef424bce6791893e9a57bb952f80fd536e93",
+        "size": 3
+      },
+      {
+        "path": "deploy.yaml",
+        "mode": "100644",
+        "type": "blob",
+        "sha": "6c24b02fa77b35d6dbac97cab22e75e6021b674b",
+        "size": 17
+      },
+      {
+        "path": "docs",
+        "mode": "040000",
+        "type": "tree",
+        "sha": "e9cab14f47423ea6114bf90721d05cecc3504c5f"
+      },
+      {
+        "path": "docs/example.py",
+        "mode": "100644",
+        "type": "blob",
+        "sha": "87f28e6b9a928fb808db53d12770159b4d6dd7b6",
+        "size": 23
+      },
+      {
+        "path": "examples",
+        "mode": "040000",
+        "type": "tree",
+        "sha": "917bb29d1f42471cb4fec915051689a36eae7e22"
+      },
+      {
+        "path": "examples/mcp.json",
+        "mode": "100644",
+        "type": "blob",
+        "sha": "0967ef424bce6791893e9a57bb952f80fd536e93",
+        "size": 3
+      },
+      {
+        "path": "examples/tool.py",
+        "mode": "100644",
+        "type": "blob",
+        "sha": "4fa21471c440806e9a3bea6ca95aa0737dc77e64",
+        "size": 15
+      },
+      {
+        "path": "infra",
+        "mode": "040000",
+        "type": "tree",
+        "sha": "a01f98fb4901cfd455e12a267aeeedbc802f5ec8"
+      },
+      {
+        "path": "infra/example.tf.json",
+        "mode": "100644",
+        "type": "blob",
+        "sha": "0967ef424bce6791893e9a57bb952f80fd536e93",
+        "size": 3
+      },
+      {
+        "path": "infra/main.tf",
+        "mode": "100644",
+        "type": "blob",
+        "sha": "c522711e0053665c7623955f1d7947f39d36eb8e",
+        "size": 16
+      },
+      {
+        "path": "langgraph.json",
+        "mode": "100644",
+        "type": "blob",
+        "sha": "f2a4e855f382f199b609f3d46059aa2b0fa1f3fc",
+        "size": 23
+      },
+      {
+        "path": "memory.json",
+        "mode": "100644",
+        "type": "blob",
+        "sha": "218d226b2d50e534e5fc1baee0aebce63768de30",
+        "size": 17
+      },
+      {
+        "path": "near-miss",
+        "mode": "040000",
+        "type": "tree",
+        "sha": "0eb9fba6072ff7d348896a3e3c53b58169fa7e34"
+      },
+      {
+        "path": "near-miss/SKILL.md.txt",
+        "mode": "100644",
+        "type": "blob",
+        "sha": "c542096d938f8f543ae3033c72e052ed39f50be2",
+        "size": 25
+      },
+      {
+        "path": "permissions.json",
+        "mode": "100644",
+        "type": "blob",
+        "sha": "0967ef424bce6791893e9a57bb952f80fd536e93",
+        "size": 3
+      },
+      {
+        "path": "prompts",
+        "mode": "040000",
+        "type": "tree",
+        "sha": "36df402f8d63763e84c451d8c16b0f1effb6d9a1"
+      },
+      {
+        "path": "prompts/task.txt",
+        "mode": "100644",
+        "type": "blob",
+        "sha": "faa278d5bda3931e95d965947730505b64c7218c",
+        "size": 53
+      },
+      {
+        "path": "skills.txt",
+        "mode": "100644",
+        "type": "blob",
+        "sha": "7f22d5d425fb513c1dd5cf7c60d0f9505030c336",
+        "size": 35
+      },
+      {
+        "path": "skills",
+        "mode": "040000",
+        "type": "tree",
+        "sha": "4325f04f222db868bd32d62affdde24cdf69ffd3"
+      },
+      {
+        "path": "skills/example",
+        "mode": "040000",
+        "type": "tree",
+        "sha": "2e93247afed3e62039f3a2e6602f71483ebc4ab7"
+      },
+      {
+        "path": "skills/example/SKILL.md",
+        "mode": "100644",
+        "type": "blob",
+        "sha": "9f01c8685e2d72f525acd1691c23069ff9299cb0",
+        "size": 50
+      },
+      {
+        "path": "tests",
+        "mode": "040000",
+        "type": "tree",
+        "sha": "eb1604aa78b714b769a36c38efbf6553a5fad333"
+      },
+      {
+        "path": "tests/test_agent.py",
+        "mode": "100644",
+        "type": "blob",
+        "sha": "6f8d07d72797075dc755992128e6c127b7ebadc1",
+        "size": 37
+      },
+      {
+        "path": "uv.lock",
+        "mode": "100644",
+        "type": "blob",
+        "sha": "d9914dfa61771d8523ac1bb864d520ea0f33303a",
+        "size": 12
+      }
+    ]
+  },
+  "files": [
+    {
+      "path": "agent.py",
+      "text": "raise RuntimeError('must not execute')\n"
+    },
+    {
+      "path": "tests/test_agent.py",
+      "text": "invalid Python deliberately retained\n"
+    },
+    {
+      "path": "examples/tool.py",
+      "text": "# Example only\n"
+    },
+    {
+      "path": "docs/example.py",
+      "text": "# Documentation sample\n"
+    },
+    {
+      "path": ".github/scripts/check.py",
+      "text": "# CI sample\n"
+    },
+    {
+      "path": "langgraph.json",
+      "text": "{deliberately malformed"
+    },
+    {
+      "path": "examples/mcp.json",
+      "text": "{}\n"
+    },
+    {
+      "path": "config/claude_desktop_config.json",
+      "text": "{}\n"
+    },
+    {
+      "path": "AGENTS.md",
+      "text": "# Authored inventory example\n"
+    },
+    {
+      "path": "skills/example/SKILL.md",
+      "text": "No frontmatter: candidate, not a validated skill.\n"
+    },
+    {
+      "path": "uv.lock",
+      "text": "version = 1\n"
+    },
+    {
+      "path": "infra/main.tf",
+      "text": "# Not validated\n"
+    },
+    {
+      "path": "infra/example.tf.json",
+      "text": "{}\n"
+    },
+    {
+      "path": "deploy.yaml",
+      "text": "kind: Deployment\n"
+    },
+    {
+      "path": "memory.json",
+      "text": "{\"shared\": true}\n"
+    },
+    {
+      "path": "permissions.json",
+      "text": "{}\n"
+    },
+    {
+      "path": "prompts/task.txt",
+      "text": "Authored text with no supported filename convention.\n"
+    },
+    {
+      "path": "README.md",
+      "text": "# Inventory case\n"
+    },
+    {
+      "path": "near-miss/SKILL.md.txt",
+      "text": "Not a SKILL.md filename.\n"
+    },
+    {
+      "path": "skills.txt",
+      "text": "Authored prefix-ordering boundary.\n"
+    },
+    {
+      "path": ".agent-audit.yaml",
+      "text": "# Policy file remains visible, not neutralized.\n"
+    }
+  ],
+  "expected_file_count": 21,
+  "selected_python_paths": [
+    "agent.py",
+    "tests/test_agent.py",
+    "examples/tool.py",
+    "docs/example.py",
+    ".github/scripts/check.py"
+  ],
+  "profile": {
+    "profile_id": "authored-python-input-selection-v1",
+    "purpose": "selection-only"
+  }
+}

@@ -1,0 +1,140 @@
+{
+  "$defs": {
+    "GitTreeEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "title": "Mode",
+          "type": "string"
+        },
+        "path": {
+          "maxLength": 4096,
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "sha": {
+          "pattern": "^[0-9a-f]{40}$",
+          "title": "Sha",
+          "type": "string"
+        },
+        "size": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Size"
+        },
+        "type": {
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "mode",
+        "type",
+        "sha"
+      ],
+      "title": "GitTreeEntry",
+      "type": "object"
+    },
+    "VerifiedGitFile": {
+      "additionalProperties": false,
+      "properties": {
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "source": {
+          "$ref": "#/$defs/GitTreeEntry"
+        }
+      },
+      "required": [
+        "source",
+        "sha256"
+      ],
+      "title": "VerifiedGitFile",
+      "type": "object"
+    }
+  },
+  "$id": "urn:agentsec-evidence:schema:repository-input-v1:git-source-verification",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "author_signature_verification": {
+      "const": "not-performed",
+      "default": "not-performed",
+      "title": "Author Signature Verification",
+      "type": "string"
+    },
+    "contract": {
+      "const": "git-source-verification-v1",
+      "default": "git-source-verification-v1",
+      "title": "Contract",
+      "type": "string"
+    },
+    "execution_authorization": {
+      "const": "not-granted",
+      "default": "not-granted",
+      "title": "Execution Authorization",
+      "type": "string"
+    },
+    "files": {
+      "items": {
+        "$ref": "#/$defs/VerifiedGitFile"
+      },
+      "maxItems": 10000,
+      "title": "Files",
+      "type": "array"
+    },
+    "origin_authentication": {
+      "const": "not-established",
+      "default": "not-established",
+      "title": "Origin Authentication",
+      "type": "string"
+    },
+    "raw_commit_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Raw Commit Sha256",
+      "type": "string"
+    },
+    "revision": {
+      "pattern": "^[0-9a-f]{40}$",
+      "title": "Revision",
+      "type": "string"
+    },
+    "root_tree": {
+      "pattern": "^[0-9a-f]{40}$",
+      "title": "Root Tree",
+      "type": "string"
+    },
+    "tree_response_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Tree Response Sha256",
+      "type": "string"
+    },
+    "verification_scope": {
+      "const": "complete-regular-file-git-tree",
+      "default": "complete-regular-file-git-tree",
+      "title": "Verification Scope",
+      "type": "string"
+    }
+  },
+  "required": [
+    "revision",
+    "root_tree",
+    "raw_commit_sha256",
+    "tree_response_sha256",
+    "files"
+  ],
+  "title": "GitSourceVerification",
+  "type": "object"
+}

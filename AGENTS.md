@@ -152,6 +152,17 @@ Memory/identity recognition remains unknown. This derivative validates metadata 
 Git-tree completeness or content on disk. The existing public pilot remains dependency-only.
 Do not silently expand the catalog or change legacy snapshot/run schemas to connect this layer.
 
+### Git verification and selection follow-up: 2 October 2026
+
+The offline library and authored walkthrough are in `docs/pinned-git-input-plans.md`.
+Reconstruct commit/tree/blob identities before binding the full inventory; replay loaded receipts
+against retained raw evidence and actual bytes. The user confirmed refusal of symlinks,
+submodules and Git LFS pointers, not silent omission or resolution. Record a selected/excluded
+decision and reason for every file in each per-tool plan. An exclusion does not bypass full-context
+policy/suppression checks; plans confer no execution permission. Public acquisition, selected-view
+materialization and research scanner profiles remain gated. Do not retrospectively upgrade the
+legacy public dependency archive receipt or change historical evidence hashes.
+
 ## Safety Controls
 
 - Build subprocess commands as argument arrays. Never invoke scanner commands through a shell.

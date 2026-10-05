@@ -1,0 +1,503 @@
+{
+  "contract": "semgrep-research-profile-v1",
+  "profile_id": "gitlab-python-68-development-v1",
+  "status": "development-candidate",
+  "tool_id": "semgrep",
+  "tool_version": "1.174.0",
+  "image": "semgrep/semgrep@sha256:f1f7b71861c7b28b6e0f661225a2c4f58a484f5d0f182465c6d6b3b22f972ade",
+  "source_repository": "https://gitlab.com/gitlab-org/security-products/sast-rules",
+  "source_revision": "53bf5cf6df3c51b6c02110f5a638b5e6213666cd",
+  "source_license_sha256": "33acf42afdd03163d75fe856cb431e70710e0b5deede3362e6d1c4697cfe1c6a",
+  "rules": [
+    {
+      "source_path": "python/assert/rule-assert-used.yml",
+      "sha256": "75bf2c385362bd942562948c46e4ca06962fe0267c42234e577a6a5b7a5214f6",
+      "native_rule_id": "python_assert_rule-assert-used",
+      "license_expression": "MIT",
+      "upstream_test_state": "passed"
+    },
+    {
+      "source_path": "python/bind_all_interfaces/rule-general-bindall-interfaces.yml",
+      "sha256": "f0e93ecf57e8deb595c013ff1a9133223ff5aa3552e18c610cf93302b7dd0b86",
+      "native_rule_id": "python_bind-all-interfaces_rule-general-bindall-interfaces",
+      "license_expression": "MIT",
+      "upstream_test_state": "passed"
+    },
+    {
+      "source_path": "python/crypto/rule-cipher-modes.yml",
+      "sha256": "579be41611e34d423691c9341ea6e9b5471d35ac934b09d119646ad2bb04b779",
+      "native_rule_id": "python_crypto_rule-cipher-modes",
+      "license_expression": "MIT",
+      "upstream_test_state": "passed"
+    },
+    {
+      "source_path": "python/crypto/rule-crypto-cipher-blowfish.yml",
+      "sha256": "98432fc326baaeedf04ce105093d30593777e9c50db378bbfb56de606096f349",
+      "native_rule_id": "python_crypto_rule-crypto-cipher-blowfish",
+      "license_expression": "MIT",
+      "upstream_test_state": "passed"
+    },
+    {
+      "source_path": "python/crypto/rule-crypto-cipher-des.yml",
+      "sha256": "c4a72951ba44060b5957566aed08086242a7755d256fa791df87b8ffc861b138",
+      "native_rule_id": "python_crypto_rule-crypto-cipher-des",
+      "license_expression": "MIT",
+      "upstream_test_state": "passed"
+    },
+    {
+      "source_path": "python/crypto/rule-crypto-cipher-rc2.yml",
+      "sha256": "4c6b7354a6b6990c37406ff457054b4a1513c654ad0c9a97a7ccca765238ee46",
+      "native_rule_id": "python_crypto_rule-crypto-cipher-rc2",
+      "license_expression": "MIT",
+      "upstream_test_state": "passed"
+    },
+    {
+      "source_path": "python/crypto/rule-crypto-cipher-rc4.yml",
+      "sha256": "1a152e8a7f9fa44f6639df7e199023906983402f434732ae1b9200377aee92dc",
+      "native_rule_id": "python_crypto_rule-crypto-cipher-rc4",
+      "license_expression": "MIT",
+      "upstream_test_state": "passed"
+    },
+    {
+      "source_path": "python/crypto/rule-crypto-cipher-xor.yml",
+      "sha256": "a94a1eb095d2c8b4ac1ed9e0c7e118c0fb5a4412edd02fa72e6a57ad6ea0cda6",
+      "native_rule_id": "python_crypto_rule-crypto-cipher-xor",
+      "license_expression": "MIT",
+      "upstream_test_state": "passed"
+    },
+    {
+      "source_path": "python/crypto/rule-crypto-encrypt-dsa-rsa.yml",
+      "sha256": "9fadf035dac3736e3de1d6d1463cda3659fb7a4281c3cfc19ac3146034f0f517",
+      "native_rule_id": "python_crypto_rule-crypto-encrypt-dsa-rsa",
+      "license_expression": "MIT",
+      "upstream_test_state": "passed"
+    },
+    {
+      "source_path": "python/crypto/rule-crypto-encrypt-ec.yml",
+      "sha256": "c2e7a1c70a6730c575af68b8c0d0a2de803a5f291303f7147f9aa4f62a9c2f6f",
+      "native_rule_id": "python_crypto_rule-crypto-encrypt-ec",
+      "license_expression": "MIT",
+      "upstream_test_state": "passed"
+    },
+    {
+      "source_path": "python/crypto/rule-crypto-hash-md5.yml",
+      "sha256": "d2df42348852a44fcc61bb02a39de831c0940bad9e0069809404cc412f3d7e8a",
+      "native_rule_id": "python_crypto_rule-crypto-hash-md5",
+      "license_expression": "MIT",
+      "upstream_test_state": "passed"
+    },
+    {
+      "source_path": "python/crypto/rule-crypto-hash-sha1.yml",
+      "sha256": "576a2466dab13cb4cf3d7ab1a034b83c31b12ddf4f077baf25a856ddeb07555b",
+      "native_rule_id": "python_crypto_rule-crypto-hash-sha1",
+      "license_expression": "MIT",
+      "upstream_test_state": "passed"
+    },
+    {
+      "source_path": "python/crypto/rule-crypto-hazmat-cipher-arc4.yml",
+      "sha256": "86a2fcd4d721ba5050168e6d00b653b8ff8eb14c9847b91dc58db9dec5b120a4",
+      "native_rule_id": "python_crypto_rule-crypto-hazmat-cipher-arc4",
+      "license_expression": "MIT",
+      "upstream_test_state": "passed"
+    },
+    {
+      "source_path": "python/crypto/rule-crypto-hazmat-cipher-blowfish.yml",
+      "sha256": "6664d107499416988b11b624e85fa3158191d0cec5bae71754df6405d62d90e1",
+      "native_rule_id": "python_crypto_rule-crypto-hazmat-cipher-blowfish",
+      "license_expression": "MIT",
+      "upstream_test_state": "passed"
+    },
+    {
+      "source_path": "python/crypto/rule-crypto-hazmat-cipher-idea.yml",
+      "sha256": "37e222953c38028e03a1d0c8f595dc87cf694a95a38c8b802aa7acf2af1da657",
+      "native_rule_id": "python_crypto_rule-crypto-hazmat-cipher-idea",
+      "license_expression": "MIT",
+      "upstream_test_state": "passed"
+    },
+    {
+      "source_path": "python/crypto/rule-crypto-hazmat-hash-md5.yml",
+      "sha256": "d65341d672ab0679e48d063fd026418ea45fb6644b8a3f2f004be18d2d61e9c6",
+      "native_rule_id": "python_crypto_rule-crypto.hazmat-hash-md5",
+      "license_expression": "MIT",
+      "upstream_test_state": "passed"
+    },
+    {
+      "source_path": "python/crypto/rule-crypto-hazmat-hash-sha1.yml",
+      "sha256": "2e49a98758c396b7936efc6f6faed848a00f93220319878ed2af5a320d294c34",
+      "native_rule_id": "python_crypto_rule-crypto.hazmat-hash-sha1",
+      "license_expression": "MIT",
+      "upstream_test_state": "passed"
+    },
+    {
+      "source_path": "python/crypto/rule-hash-md2.yml",
+      "sha256": "ce8e79cb18041ef60d38012ba0002525d4db8036e90acd944584f0ef9436f24f",
+      "native_rule_id": "python_crypto_rule-hash-md2",
+      "license_expression": "MIT",
+      "upstream_test_state": "passed"
+    },
+    {
+      "source_path": "python/crypto/rule-hash-md4.yml",
+      "sha256": "a1c01385a5604c3ec52ffb52a1782cc3d1803f42d8bb92e2ac8b1b9375774822",
+      "native_rule_id": "python_crypto_rule-hash-md4",
+      "license_expression": "MIT",
+      "upstream_test_state": "passed"
+    },
+    {
+      "source_path": "python/crypto/rule-hash-md5.yml",
+      "sha256": "a1ea675f50c0404e7dcc1c94630a18cfae6251afdcdc17a23922309beb15d09c",
+      "native_rule_id": "python_crypto_rule-hash-md5",
+      "license_expression": "MIT",
+      "upstream_test_state": "passed"
+    },
+    {
+      "source_path": "python/crypto/rule-hash-sha1.yml",
+      "sha256": "31cbaf048f10d1937c434ff461c962b24336213c1455c3f20cdb0498b3a968da",
+      "native_rule_id": "python_crypto_rule-hash-sha1",
+      "license_expression": "MIT",
+      "upstream_test_state": "passed"
+    },
+    {
+      "source_path": "python/crypto/rule-hashlib-new-insecure-functions.yml",
+      "sha256": "894ff7b3a25230c15572c24ab7872afcf357ac29965482cf1a36d7ac21ecc43c",
+      "native_rule_id": "python_crypto_rule-hashlib-new-insecure-functions",
+      "license_expression": "MIT",
+      "upstream_test_state": "passed"
+    },
+    {
+      "source_path": "python/crypto/rule-import-pycrypto.yml",
+      "sha256": "b78ad33eb3f0c485638d92e028cf42cf12466e7978fd1f49eda3c5dc2786c919",
+      "native_rule_id": "python_crypto_rule-import-pycrypto",
+      "license_expression": "MIT",
+      "upstream_test_state": "passed"
+    },
+    {
+      "source_path": "python/deserialization/rule-cpickle.yml",
+      "sha256": "6f481a1ad60a0b17d23747518da2e884e4642e9c505f17b50eeb4c6db9aadaf8",
+      "native_rule_id": "python_deserialization_rule-cpickle",
+      "license_expression": "MIT",
+      "upstream_test_state": "passed"
+    },
+    {
+      "source_path": "python/deserialization/rule-dill.yml",
+      "sha256": "33c5f3b59b33ba8eb1b8f68b6e404d821d5c1c9eda5f3c919784ab4e2ec87fef",
+      "native_rule_id": "python_deserialization_rule-dill",
+      "license_expression": "MIT",
+      "upstream_test_state": "passed"
+    },
+    {
+      "source_path": "python/deserialization/rule-marshal.yml",
+      "sha256": "0a028a60ea0453bafe18c0eb865b9a72a200a5b13aa7d2dd49efb13870ca0dfb",
+      "native_rule_id": "python_deserialization_rule-marshal",
+      "license_expression": "MIT",
+      "upstream_test_state": "passed"
+    },
+    {
+      "source_path": "python/deserialization/rule-pickle.yml",
+      "sha256": "604febbd00d5d0aec6f12b515330aa99cb39af30e237afa64415fcc70c8a2a8d",
+      "native_rule_id": "python_deserialization_rule-pickle",
+      "license_expression": "MIT",
+      "upstream_test_state": "passed"
+    },
+    {
+      "source_path": "python/deserialization/rule-shelve.yml",
+      "sha256": "c7e2ac0f2571009e65d9596adeffed22ab962270774a046a0cdd5afd9857d1bb",
+      "native_rule_id": "python_deserialization_rule-shelve",
+      "license_expression": "MIT",
+      "upstream_test_state": "passed"
+    },
+    {
+      "source_path": "python/deserialization/rule-yaml-load.yml",
+      "sha256": "f356f893e9b58b637209f0079bc3f60ff4d84b4b3c46858333682d2682e50572",
+      "native_rule_id": "python_deserialization_rule-yaml-load",
+      "license_expression": "MIT",
+      "upstream_test_state": "passed"
+    },
+    {
+      "source_path": "python/django/rule-django-extra-used.yml",
+      "sha256": "37dcc477c25cc1cd092581ec2efc629ca221f4a11675f161e563d276bc3c8576",
+      "native_rule_id": "python_django_rule-django-extra-used",
+      "license_expression": "MIT",
+      "upstream_test_state": "passed"
+    },
+    {
+      "source_path": "python/escaping/rule-jinja2-autoescape-false.yml",
+      "sha256": "4a6273aa13150b0e0a7810e601ccac7fbf24e4b26add58a638424f0789112826",
+      "native_rule_id": "python_escaping_rule-jinja2-autoescape-false",
+      "license_expression": "MIT",
+      "upstream_test_state": "passed"
+    },
+    {
+      "source_path": "python/escaping/rule-use-of-mako-templates.yml",
+      "sha256": "00a0ebcb5cf8a8b3d02fb21c7d9c3c06ef16f6e272430a9b1c4bb82600326e94",
+      "native_rule_id": "python_escaping_rule-use-of-mako-templates",
+      "license_expression": "MIT",
+      "upstream_test_state": "passed"
+    },
+    {
+      "source_path": "python/eval/rule-eval.yml",
+      "sha256": "f0ef96a45a2d432e7cd364883653c35a96acdca162180c7a45c30b9551e9e87d",
+      "native_rule_id": "python_eval_rule-eval",
+      "license_expression": "MIT",
+      "upstream_test_state": "passed"
+    },
+    {
+      "source_path": "python/exec/rule-exec-used.yml",
+      "sha256": "00cc80d176a1a801801fb8412894c150902b9e3c29466cd574df2f5d846859a2",
+      "native_rule_id": "python_exec_rule-exec-used",
+      "license_expression": "MIT",
+      "upstream_test_state": "passed"
+    },
+    {
+      "source_path": "python/exec/rule-linux-command-wildcard-injection.yml",
+      "sha256": "c78b58400f82dfb4b16f6d84549d0a587fc7ee00323159fdbee87e7991deb045",
+      "native_rule_id": "python_exec_rule-linux-command-wildcard-injection",
+      "license_expression": "MIT",
+      "upstream_test_state": "passed"
+    },
+    {
+      "source_path": "python/exec/rule-os-path.yml",
+      "sha256": "e02a31e93847850dbcd0d02f5f8aed8fd86a004c62c62729b4bcd9d5c8fd9346",
+      "native_rule_id": "python_exec_rule-os-path",
+      "license_expression": "MIT",
+      "upstream_test_state": "no-active-assertions"
+    },
+    {
+      "source_path": "python/exec/rule-os-popen2.yml",
+      "sha256": "2dc4551679a2636582dd8c518c3632929e480629ed23fe27352df7383de9218e",
+      "native_rule_id": "python_exec_rule-os-popen2",
+      "license_expression": "MIT",
+      "upstream_test_state": "passed"
+    },
+    {
+      "source_path": "python/exec/rule-start-process-with-no-shell.yml",
+      "sha256": "0538e647b62caee1348d18633b17aaa20a8fc0d2d03ec5113ad450db5e5b34e0",
+      "native_rule_id": "python_exec_rule-start-process-with-no-shell",
+      "license_expression": "MIT",
+      "upstream_test_state": "passed"
+    },
+    {
+      "source_path": "python/exec/rule-subprocess-call.yml",
+      "sha256": "874386052dc293105a222211f15e28c3cab47592000682aa6706401033098f5f",
+      "native_rule_id": "python_exec_rule-subprocess-call",
+      "license_expression": "MIT",
+      "upstream_test_state": "passed"
+    },
+    {
+      "source_path": "python/exec/rule-subprocess-popen-shell-true.yml",
+      "sha256": "697dc9cf925703ca91cba0231bfb07c44d9a61e8ec159e93bd2263ec6cae251b",
+      "native_rule_id": "python_exec_rule-subprocess-popen-shell-true",
+      "license_expression": "MIT",
+      "upstream_test_state": "passed"
+    },
+    {
+      "source_path": "python/exec/rule-subprocess-shell-TRUE.yml",
+      "sha256": "ed5b254f615cff63a2d390d7c21b3b3e54e14ed5a0994b840d77e5e12fea1046",
+      "native_rule_id": "python_exec_rule-subprocess-shell-TRUE",
+      "license_expression": "MIT",
+      "upstream_test_state": "passed"
+    },
+    {
+      "source_path": "python/file_permissions/rule-general-bad-permission.yml",
+      "sha256": "2b34fbb865d85916558a8388a9bb5bbe0874293b47e0e7f4d6b0d7e56a156437",
+      "native_rule_id": "python_file-permissions_rule-general-bad-permission",
+      "license_expression": "MIT",
+      "upstream_test_state": "passed"
+    },
+    {
+      "source_path": "python/files/rule-tarfile-unsafe-members.yml",
+      "sha256": "01d488fa3f0b7de5643e5bf5289e3201c9078ed3334f7f874ad0121609e86531",
+      "native_rule_id": "python_files_rule-tarfile-unsafe-members",
+      "license_expression": "MIT",
+      "upstream_test_state": "passed"
+    },
+    {
+      "source_path": "python/flask/rule-app-debug.yml",
+      "sha256": "6dfa6301da8474b8f57c319bdc4f114decd8ffc08aea393ce51749a9cd42b0cf",
+      "native_rule_id": "python_flask_rule-app-debug",
+      "license_expression": "MIT",
+      "upstream_test_state": "passed"
+    },
+    {
+      "source_path": "python/ftp/rule-ftplib.yml",
+      "sha256": "da0a9b91bf9396837a0edf87c63af697322c22148981107a25814df58e0bf3d8",
+      "native_rule_id": "python_ftp_rule-ftplib",
+      "license_expression": "MIT",
+      "upstream_test_state": "passed"
+    },
+    {
+      "source_path": "python/log/rule-logging-config-insecure-listen.yml",
+      "sha256": "581ff4351a7333e103c735f47f8f1a8f9c6e94981eddc0b789e5e44cd10c0994",
+      "native_rule_id": "python_log_rule-logging-config-insecure-listen",
+      "license_expression": "MIT",
+      "upstream_test_state": "passed"
+    },
+    {
+      "source_path": "python/random/rule-random.yml",
+      "sha256": "06610ca04152d6eb2627c169b833df95acfa660e6cc00fd605b6f786847e1a6e",
+      "native_rule_id": "python_random_rule-random",
+      "license_expression": "MIT",
+      "upstream_test_state": "passed"
+    },
+    {
+      "source_path": "python/requests/rule-request-without-timeout.yml",
+      "sha256": "fd3940d67788d0695a019c6e4d4678ebce74428a65919dfefea445ee4a840ef7",
+      "native_rule_id": "python_requests_rule-request-without-timeout",
+      "license_expression": "MIT",
+      "upstream_test_state": "passed"
+    },
+    {
+      "source_path": "python/snmp/rule-insecure-snmp-version.yml",
+      "sha256": "0030cb025c25a44f291983628ff3459ecf174d6bc693a3e634afaf4170044034",
+      "native_rule_id": "python_snmp_rule-insecure-snmp-version",
+      "license_expression": "MIT",
+      "upstream_test_state": "passed"
+    },
+    {
+      "source_path": "python/snmp/rule-snmp-weak-cryptography.yml",
+      "sha256": "31c1f1375f4515d8410204387fd07e67d49435faa862f86701aa3f842ea8fc83",
+      "native_rule_id": "python_snmp_rule-snmp-weak-cryptography",
+      "license_expression": "MIT",
+      "upstream_test_state": "passed"
+    },
+    {
+      "source_path": "python/sql/rule-hardcoded-sql-expression.yml",
+      "sha256": "0b3efb24d1e631ba2704bf2af3edef7a173990f12f46b107b9128b9ec0ce2323",
+      "native_rule_id": "python_sql_rule-hardcoded-sql-expression",
+      "license_expression": "MIT",
+      "upstream_test_state": "passed"
+    },
+    {
+      "source_path": "python/ssh/rule-ssh-nohost-key-verification.yml",
+      "sha256": "eeb3ea435e58b03e1dc7e1dadbf904a6533d8cddd18900c5b126a48686142b7b",
+      "native_rule_id": "python_ssh_rule-ssh-nohost-key-verification",
+      "license_expression": "MIT",
+      "upstream_test_state": "passed"
+    },
+    {
+      "source_path": "python/ssl/rule-req-no-certvalid.yml",
+      "sha256": "cf653caeafd1a007a964d2083be04c6b530ac8aee25de567ea34c42c7c6a94ff",
+      "native_rule_id": "python_ssl_rule-req-no-certvalid",
+      "license_expression": "MIT",
+      "upstream_test_state": "passed"
+    },
+    {
+      "source_path": "python/ssl/rule-ssl-no-version.yml",
+      "sha256": "202672f5b1b6668a1991b1945b48a73f359343c4ee8f1ca3a12cb595f1c004c7",
+      "native_rule_id": "python_ssl_rule-ssl-no-version",
+      "license_expression": "MIT",
+      "upstream_test_state": "passed"
+    },
+    {
+      "source_path": "python/ssl/rule-ssl-with-bad-version.yml",
+      "sha256": "63fb951999b114edf2a9d1a0d32955833adaed93b298f6d6b0dffa726d497917",
+      "native_rule_id": "python_ssl_rule-ssl-with-bad-version",
+      "license_expression": "MIT",
+      "upstream_test_state": "passed"
+    },
+    {
+      "source_path": "python/ssl/rule-unverified-context.yml",
+      "sha256": "b895b4fa102fc0362652c0c6b59a52468c61a38fc9bf6ca5249267968eeb7bc4",
+      "native_rule_id": "python_ssl_rule-unverified-context",
+      "license_expression": "MIT",
+      "upstream_test_state": "passed"
+    },
+    {
+      "source_path": "python/telnet/rule-import-telnib.yml",
+      "sha256": "1ecb890e46adfb29bb1580e7f1f7f471e85137c32ad6dda913a940e644351228",
+      "native_rule_id": "python_telnet_rule-import-telnib",
+      "license_expression": "MIT",
+      "upstream_test_state": "passed"
+    },
+    {
+      "source_path": "python/tmpdir/rule-hardcodedtmp.yml",
+      "sha256": "bc7fdab58f75607050580350026e62e31f394e8ac3936475d0ac46009d68884c",
+      "native_rule_id": "python_tmpdir_rule-hardcodedtmp",
+      "license_expression": "MIT",
+      "upstream_test_state": "passed"
+    },
+    {
+      "source_path": "python/tmpdir/rule-mktemp-q.yml",
+      "sha256": "fd2b4caafbdfa0a867faf7ea8ed75d563eaa9a02f26844e851fb398e93185f90",
+      "native_rule_id": "python_tmpdir_rule-mktemp-q",
+      "license_expression": "MIT",
+      "upstream_test_state": "passed"
+    },
+    {
+      "source_path": "python/urlopen/rule-urllib-urlopen.yml",
+      "sha256": "f76f741b217c7dd7823596785a4180dc5e7ab2d68c8d21d3970bb4ab6c4ba2f4",
+      "native_rule_id": "python_urlopen_rule-urllib-urlopen",
+      "license_expression": "MIT",
+      "upstream_test_state": "passed"
+    },
+    {
+      "source_path": "python/xml/rule-celement.yml",
+      "sha256": "b006aa121ecfd7a068fe48853fba6d3c01173906ec7f9b1880ea9c7aad59dd99",
+      "native_rule_id": "python_xml_rule-celement",
+      "license_expression": "MIT",
+      "upstream_test_state": "passed"
+    },
+    {
+      "source_path": "python/xml/rule-element.yml",
+      "sha256": "52f546c49625a51bc7dfd99e259adc28edfda8f840a264abbe0bf567fb73b4a5",
+      "native_rule_id": "python_xml_rule-element",
+      "license_expression": "MIT",
+      "upstream_test_state": "passed"
+    },
+    {
+      "source_path": "python/xml/rule-etree.yml",
+      "sha256": "081a39e7afb105af4abc826dcddf904965ab969c4f41ac7bdc175a0ffd7af2dd",
+      "native_rule_id": "python_xml_rule-etree",
+      "license_expression": "MIT",
+      "upstream_test_state": "passed"
+    },
+    {
+      "source_path": "python/xml/rule-expatbuilder.yml",
+      "sha256": "90f209120fd1b7d2920c533cc88af2e2b98be7b0ecc67408eab12d17039bf437",
+      "native_rule_id": "python_xml_rule-expatbuilder",
+      "license_expression": "MIT",
+      "upstream_test_state": "no-active-assertions"
+    },
+    {
+      "source_path": "python/xml/rule-expatreader.yml",
+      "sha256": "06ca936c5fdb0cf79983e198fcfa1af35a2fab5e34da12b921744f91ab54a761",
+      "native_rule_id": "python_xml_rule-expatreader",
+      "license_expression": "MIT",
+      "upstream_test_state": "no-active-assertions"
+    },
+    {
+      "source_path": "python/xml/rule-minidom.yml",
+      "sha256": "c386a666a6b96c06f85ef3eb213d2b5774e09114621bef5e9e4ebc0fc13e0900",
+      "native_rule_id": "python_xml_rule-minidom",
+      "license_expression": "MIT",
+      "upstream_test_state": "passed"
+    },
+    {
+      "source_path": "python/xml/rule-pulldom.yml",
+      "sha256": "932d143eff3e8a95d6be0b0f0acb025c281b2b464019d150e83a978154942c0f",
+      "native_rule_id": "python_xml_rule-pulldom",
+      "license_expression": "MIT",
+      "upstream_test_state": "passed"
+    },
+    {
+      "source_path": "python/xml/rule-sax.yml",
+      "sha256": "d1b194d9f5037b89bdd2b8034ac47b5a884da855b1577b6c33e6f578a8b8dd8a",
+      "native_rule_id": "python_xml_rule-sax",
+      "license_expression": "MIT",
+      "upstream_test_state": "no-active-assertions"
+    }
+  ],
+  "views": "research-and-repository-policy",
+  "native_formats": [
+    "json",
+    "sarif"
+  ],
+  "public_source_admission": "not-granted",
+  "limitations": [
+    "Candidate selection is not public-source admission or a representative effectiveness benchmark.",
+    "64 active upstream annotation checks passed during preflight; four paired examples were placeholders. Authored controls are separate evidence.",
+    "Native advisory, severity and taxonomy assertions remain unreviewed. API use does not prove attacker control, exploitability or runtime exposure.",
+    "The YAML unsafe_load miss, archive filter sensitivity and TLS message discrepancy remain documented; source rules are not modified.",
+    "Source includes test/example/CI roles. Broad file inventory does not mean all agent-security properties have supported checks.",
+    "Rule notices do not relicense third-party examples. Raw source, annotations and native reports are not distributed with this manifest."
+  ]
+}

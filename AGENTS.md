@@ -186,6 +186,22 @@ Use fresh output directories and retain failures. Do not fetch replacements for 
 cached inputs or infer tool coverage from filename candidates. Research profiles, isolated
 input/policy validation and source admission still precede same-repository scanner execution.
 
+### Research Semgrep contract follow-up: 5 October 2026
+
+The student approved all 68 pinned GitLab Python rules as the candidate and a research view
+plus repository-policy view (Phase 03 P3-D-2026-10-05-07). The first implementation is in
+[docs/semgrep-research-contracts.md](docs/semgrep-research-contracts.md): separate versioned
+contracts, paired native reconciliation, controlled cases and an offline verification helper.
+There is no new public-source CLI or common-report integration. Legacy contracts stay unchanged.
+
+Retain all native suppressions as unreviewed evidence; never synthesize accepted status. Keep
+file exclusions separate from size/internal skips and missing evidence. Semgrep can list a file
+as both scanned and affected by an error; preserve findings with `reported-with-native-issue`.
+The controlled unmatched-rule marker produces exit 2 even with `--disable-nosem`. Verification
+of that expected warning is not successful complete analysis. Loaded derivatives require native
+replay; scope models do not prove Git acquisition or grant scanner permission. Candidate rules
+and private native reports are not redistributed by this increment. No public profile is frozen.
+
 ## Safety Controls
 
 - Build subprocess commands as argument arrays. Never invoke scanner commands through a shell.

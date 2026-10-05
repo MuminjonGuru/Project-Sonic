@@ -1,0 +1,373 @@
+{
+  "$defs": {
+    "FindingAnchor": {
+      "additionalProperties": false,
+      "properties": {
+        "end_column": {
+          "minimum": 1,
+          "title": "End Column",
+          "type": "integer"
+        },
+        "end_line": {
+          "minimum": 1,
+          "title": "End Line",
+          "type": "integer"
+        },
+        "path": {
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "rule_id": {
+          "maxLength": 256,
+          "pattern": "^[A-Za-z0-9_.-]+$",
+          "title": "Rule Id",
+          "type": "string"
+        },
+        "start_column": {
+          "minimum": 1,
+          "title": "Start Column",
+          "type": "integer"
+        },
+        "start_line": {
+          "minimum": 1,
+          "title": "Start Line",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "rule_id",
+        "path",
+        "start_line",
+        "start_column",
+        "end_line",
+        "end_column"
+      ],
+      "title": "FindingAnchor",
+      "type": "object"
+    },
+    "JsonValue": {},
+    "PolicyFindingView": {
+      "additionalProperties": false,
+      "properties": {
+        "policy_index": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Policy Index"
+        },
+        "research_index": {
+          "minimum": 0,
+          "title": "Research Index",
+          "type": "integer"
+        },
+        "state": {
+          "enum": [
+            "reported",
+            "native-suppression-marked",
+            "file-excluded",
+            "not-observed",
+            "unknown"
+          ],
+          "title": "State",
+          "type": "string"
+        }
+      },
+      "required": [
+        "research_index",
+        "policy_index",
+        "state"
+      ],
+      "title": "PolicyFindingView",
+      "type": "object"
+    },
+    "ResearchFileObservation": {
+      "additionalProperties": false,
+      "properties": {
+        "native_reason": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Native Reason"
+        },
+        "path": {
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "reported",
+            "reported-with-native-issue",
+            "native-skipped",
+            "unreported"
+          ],
+          "title": "State",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "state"
+      ],
+      "title": "ResearchFileObservation",
+      "type": "object"
+    },
+    "ResearchFinding": {
+      "additionalProperties": false,
+      "properties": {
+        "anchor": {
+          "$ref": "#/$defs/FindingAnchor"
+        },
+        "json_pointer": {
+          "anyOf": [
+            {
+              "pattern": "^/results/(0|[1-9][0-9]*)$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Json Pointer"
+        },
+        "message": {
+          "minLength": 1,
+          "title": "Message",
+          "type": "string"
+        },
+        "native_suppressions": {
+          "default": [],
+          "items": {
+            "additionalProperties": {
+              "$ref": "#/$defs/JsonValue"
+            },
+            "type": "object"
+          },
+          "title": "Native Suppressions",
+          "type": "array"
+        },
+        "review_state": {
+          "const": "unreviewed",
+          "default": "unreviewed",
+          "title": "Review State",
+          "type": "string"
+        },
+        "sarif_pointer": {
+          "pattern": "^/runs/0/results/(0|[1-9][0-9]*)$",
+          "title": "Sarif Pointer",
+          "type": "string"
+        }
+      },
+      "required": [
+        "anchor",
+        "message",
+        "json_pointer",
+        "sarif_pointer"
+      ],
+      "title": "ResearchFinding",
+      "type": "object"
+    },
+    "SemgrepPassEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "analysis_completeness": {
+          "const": "not-established",
+          "default": "not-established",
+          "title": "Analysis Completeness",
+          "type": "string"
+        },
+        "contract": {
+          "const": "semgrep-pass-evidence-v1",
+          "default": "semgrep-pass-evidence-v1",
+          "title": "Contract",
+          "type": "string"
+        },
+        "execution_id": {
+          "minLength": 1,
+          "title": "Execution Id",
+          "type": "string"
+        },
+        "files": {
+          "items": {
+            "$ref": "#/$defs/ResearchFileObservation"
+          },
+          "maxItems": 64,
+          "minItems": 1,
+          "title": "Files",
+          "type": "array"
+        },
+        "findings": {
+          "items": {
+            "$ref": "#/$defs/ResearchFinding"
+          },
+          "maxItems": 10000,
+          "title": "Findings",
+          "type": "array"
+        },
+        "native_declared_rule_ids": {
+          "items": {
+            "maxLength": 256,
+            "pattern": "^[A-Za-z0-9_.-]+$",
+            "type": "string"
+          },
+          "title": "Native Declared Rule Ids",
+          "type": "array"
+        },
+        "native_errors": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Native Errors",
+          "type": "array"
+        },
+        "native_execution_successful": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Native Execution Successful"
+        },
+        "native_json_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Native Json Sha256",
+          "type": "string"
+        },
+        "native_notifications": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Native Notifications",
+          "type": "array"
+        },
+        "native_sarif_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Native Sarif Sha256",
+          "type": "string"
+        },
+        "native_skip_details_available": {
+          "title": "Native Skip Details Available",
+          "type": "boolean"
+        },
+        "native_skipped_rules": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Native Skipped Rules",
+          "type": "array"
+        },
+        "profile_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Profile Sha256",
+          "type": "string"
+        },
+        "role": {
+          "enum": [
+            "research",
+            "repository-policy"
+          ],
+          "title": "Role",
+          "type": "string"
+        },
+        "scope_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Scope Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "profile_sha256",
+        "scope_sha256",
+        "execution_id",
+        "role",
+        "native_json_sha256",
+        "native_sarif_sha256",
+        "files",
+        "findings",
+        "native_skip_details_available",
+        "native_declared_rule_ids"
+      ],
+      "title": "SemgrepPassEvidence",
+      "type": "object"
+    }
+  },
+  "$id": "urn:agentsec-evidence:schema:semgrep-research-v1:dual-view",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "analysis_completeness": {
+      "const": "not-established",
+      "default": "not-established",
+      "title": "Analysis Completeness",
+      "type": "string"
+    },
+    "contract": {
+      "const": "semgrep-dual-view-v1",
+      "default": "semgrep-dual-view-v1",
+      "title": "Contract",
+      "type": "string"
+    },
+    "findings": {
+      "items": {
+        "$ref": "#/$defs/PolicyFindingView"
+      },
+      "title": "Findings",
+      "type": "array"
+    },
+    "policy_state": {
+      "enum": [
+        "not-run",
+        "observed"
+      ],
+      "title": "Policy State",
+      "type": "string"
+    },
+    "repository_policy": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/SemgrepPassEvidence"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "research": {
+      "$ref": "#/$defs/SemgrepPassEvidence"
+    },
+    "vulnerability_total": {
+      "default": null,
+      "title": "Vulnerability Total",
+      "type": "null"
+    }
+  },
+  "required": [
+    "research",
+    "repository_policy",
+    "findings",
+    "policy_state"
+  ],
+  "title": "SemgrepDualView",
+  "type": "object"
+}

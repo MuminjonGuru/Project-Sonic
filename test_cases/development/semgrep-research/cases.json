@@ -1,0 +1,249 @@
+{
+  "contract": "semgrep-research-development-cases-v1",
+  "role": "development-not-held-out",
+  "expectation_provenance": "AI-authored engineering source-condition labels; user approved candidate scope, not independent exact outcomes.",
+  "target_execution": false,
+  "conditions": [
+    {
+      "id": "literal-shell",
+      "rule_id": "python_exec_rule-os-path",
+      "condition_present": true,
+      "source": "import os\nos.system('echo demo')\n",
+      "condition": "Literal shell-command use, not established command injection."
+    },
+    {
+      "id": "literal-shell-replaced",
+      "rule_id": "python_exec_rule-os-path",
+      "condition_present": false,
+      "source": "print('demo')\n",
+      "condition": "No process launch."
+    },
+    {
+      "id": "custom-popen",
+      "rule_id": "python_exec_rule-os-path",
+      "condition_present": false,
+      "source": "class Renderer:\n    def popen(self, value):\n        return value\nRenderer().popen('preview')\n",
+      "condition": "Unrelated method named popen; not os process execution."
+    },
+    {
+      "id": "expatbuilder-api",
+      "rule_id": "python_xml_rule-expatbuilder",
+      "condition_present": true,
+      "source": "import xml.dom.expatbuilder\ndef parse(value, handler=None):\n    return xml.dom.expatbuilder.parseString(value)\n",
+      "condition": "Named XML API use only; parser version, input trust and exploitability are not established."
+    },
+    {
+      "id": "expatbuilder-replaced",
+      "rule_id": "python_xml_rule-expatbuilder",
+      "condition_present": false,
+      "source": "import json\ndef parse(value):\n    return json.loads(value)\n",
+      "condition": "Different data format; not a drop-in XML remediation claim."
+    },
+    {
+      "id": "expatbuilder-text",
+      "rule_id": "python_xml_rule-expatbuilder",
+      "condition_present": false,
+      "source": "description = 'xml.dom.expatbuilder.parseString(value)'\n",
+      "condition": "Documentation text, not an API invocation."
+    },
+    {
+      "id": "expatreader-api",
+      "rule_id": "python_xml_rule-expatreader",
+      "condition_present": true,
+      "source": "import xml.sax.expatreader\ndef parse(value, handler=None):\n    return xml.sax.expatreader.create_parser()\n",
+      "condition": "Named XML API use only; parser version, input trust and exploitability are not established."
+    },
+    {
+      "id": "expatreader-replaced",
+      "rule_id": "python_xml_rule-expatreader",
+      "condition_present": false,
+      "source": "import json\ndef parse(value):\n    return json.loads(value)\n",
+      "condition": "Different data format; not a drop-in XML remediation claim."
+    },
+    {
+      "id": "expatreader-text",
+      "rule_id": "python_xml_rule-expatreader",
+      "condition_present": false,
+      "source": "description = 'xml.sax.expatreader.create_parser()'\n",
+      "condition": "Documentation text, not an API invocation."
+    },
+    {
+      "id": "sax-api",
+      "rule_id": "python_xml_rule-sax",
+      "condition_present": true,
+      "source": "import xml.sax\ndef parse(value, handler=None):\n    return xml.sax.parseString(value, handler)\n",
+      "condition": "Named XML API use only; parser version, input trust and exploitability are not established."
+    },
+    {
+      "id": "sax-replaced",
+      "rule_id": "python_xml_rule-sax",
+      "condition_present": false,
+      "source": "import json\ndef parse(value):\n    return json.loads(value)\n",
+      "condition": "Different data format; not a drop-in XML remediation claim."
+    },
+    {
+      "id": "sax-text",
+      "rule_id": "python_xml_rule-sax",
+      "condition_present": false,
+      "source": "description = 'xml.sax.parseString(value, handler)'\n",
+      "condition": "Documentation text, not an API invocation."
+    },
+    {
+      "id": "permissions-open",
+      "rule_id": "python_file-permissions_rule-general-bad-permission",
+      "condition_present": true,
+      "source": "import os\nos.chmod('example', 0o777)\n",
+      "condition": "World-writable mode declaration; target is never accessed."
+    },
+    {
+      "id": "permissions-restricted",
+      "rule_id": "python_file-permissions_rule-general-bad-permission",
+      "condition_present": false,
+      "source": "import os\nos.chmod('example', 0o600)\n",
+      "condition": "No world-write declaration."
+    },
+    {
+      "id": "permissions-custom",
+      "rule_id": "python_file-permissions_rule-general-bad-permission",
+      "condition_present": false,
+      "source": "class Display:\n    def chmod(self, label, value):\n        return value\nDisplay().chmod('preview', 0o777)\n",
+      "condition": "Unrelated method, not filesystem permissions."
+    },
+    {
+      "id": "bind-all",
+      "rule_id": "python_bind-all-interfaces_rule-general-bindall-interfaces",
+      "condition_present": true,
+      "source": "import socket\ns = socket.socket()\ns.bind(('0.0.0.0', 9000))\n",
+      "condition": "Unrestricted bind declaration; no socket is executed."
+    },
+    {
+      "id": "bind-loopback",
+      "rule_id": "python_bind-all-interfaces_rule-general-bindall-interfaces",
+      "condition_present": false,
+      "source": "import socket\ns = socket.socket()\ns.bind(('127.0.0.1', 9000))\n",
+      "condition": "Loopback declaration only, not a deployment security verdict."
+    },
+    {
+      "id": "bind-text",
+      "rule_id": "python_bind-all-interfaces_rule-general-bindall-interfaces",
+      "condition_present": false,
+      "source": "description = '0.0.0.0'\n",
+      "condition": "String alone is not a binding operation."
+    },
+    {
+      "id": "random-token",
+      "rule_id": "python_random_rule-random",
+      "condition_present": true,
+      "source": "import random\ndef token():\n    return str(random.randint(0, 999999))\n",
+      "condition": "Noncryptographic random API proposed for a token."
+    },
+    {
+      "id": "random-secrets",
+      "rule_id": "python_random_rule-random",
+      "condition_present": false,
+      "source": "import secrets\ndef token():\n    return secrets.token_hex(16)\n",
+      "condition": "Different API; not complete token-system security."
+    },
+    {
+      "id": "random-visual",
+      "rule_id": "python_random_rule-random",
+      "condition_present": false,
+      "source": "import random\ndef visual_offset():\n    return random.randint(0, 100)\n",
+      "condition": "Non-security visual randomness; API-based rule may still report it."
+    },
+    {
+      "id": "assert-guard",
+      "rule_id": "python_assert_rule-assert-used",
+      "condition_present": true,
+      "source": "def authorize(is_admin):\n    assert is_admin\n    return 'allowed'\n",
+      "condition": "Assertion used as an access condition."
+    },
+    {
+      "id": "assert-replaced",
+      "rule_id": "python_assert_rule-assert-used",
+      "condition_present": false,
+      "source": "def authorize(is_admin):\n    if not is_admin:\n        raise PermissionError('denied')\n    return 'allowed'\n",
+      "condition": "Explicit branch replaces assertion; authentication remains outside scope."
+    },
+    {
+      "id": "assert-test",
+      "rule_id": "python_assert_rule-assert-used",
+      "condition_present": false,
+      "source": "def test_sum():\n    assert 1 + 1 == 2\n",
+      "condition": "Test assertion without pytest import; not an authorization check."
+    },
+    {
+      "id": "hash-weak",
+      "rule_id": "python_crypto_rule-hashlib-new-insecure-functions",
+      "condition_present": true,
+      "source": "import hashlib\ndef security_digest(value):\n    return hashlib.new('md5', value).hexdigest()\n",
+      "condition": "Weak-hash API in a security-labeled example, not an application exploit."
+    },
+    {
+      "id": "hash-alternative",
+      "rule_id": "python_crypto_rule-hashlib-new-insecure-functions",
+      "condition_present": false,
+      "source": "import hashlib\ndef digest(value):\n    return hashlib.sha256(value).hexdigest()\n",
+      "condition": "Different digest API; no claim of password-storage suitability."
+    },
+    {
+      "id": "hash-checksum",
+      "rule_id": "python_crypto_rule-hashlib-new-insecure-functions",
+      "condition_present": false,
+      "source": "import hashlib\ndef accidental_corruption_checksum(value):\n    return hashlib.new('md5', value, usedforsecurity=False).hexdigest()\n",
+      "condition": "Non-security checksum context; distinguish advisory API evidence."
+    },
+    {
+      "id": "url-variable",
+      "rule_id": "python_urlopen_rule-urllib-urlopen",
+      "condition_present": true,
+      "source": "import urllib.request\ndef fetch(url):\n    return urllib.request.urlopen(url)\n",
+      "condition": "Variable URL access, not demonstrated SSRF."
+    },
+    {
+      "id": "url-fixed",
+      "rule_id": "python_urlopen_rule-urllib-urlopen",
+      "condition_present": false,
+      "source": "import urllib.request\nresponse = urllib.request.urlopen('https://example.invalid/reference')\n",
+      "condition": "Literal URL outside the defined variable-URL condition."
+    },
+    {
+      "id": "url-text",
+      "rule_id": "python_urlopen_rule-urllib-urlopen",
+      "condition_present": false,
+      "source": "description = 'urllib.request.urlopen(user_url)'\n",
+      "condition": "Instruction text, not executable call."
+    }
+  ],
+  "policy_case": {
+    "id": "policy-observability",
+    "files": {
+      "active.py": "def convert(value):\n    return eval(value)\n",
+      "inline.py": "def convert(value):\n    return eval(value)  # nosemgrep: python_eval_rule-eval\n",
+      "preceding.py": "def convert(value):\n    # nosemgrep: python_eval_rule-eval\n    return eval(value)\n",
+      "generic.py": "def convert(value):\n    return eval(value)  # nosemgrep\n",
+      "unknown-rule.py": "def convert(value):\n    return eval(value)  # nosemgrep: unrelated.rule\n",
+      "marker-text.py": "note = '# nosemgrep: python_eval_rule-eval'\ndef convert(value):\n    return eval(value)\n",
+      "benign.py": "import json\ndef convert(value):\n    return json.loads(value)  # nosemgrep\n",
+      "excluded.py": "def convert(value):\n    return eval(value)\n",
+      "nested/excluded.py": "def convert(value):\n    return eval(value)\n",
+      "tests/check.py": "def convert(value):\n    return eval(value)\n",
+      ".semgrepignore": "excluded.py\n",
+      "nested/.semgrepignore": "excluded.py\n"
+    },
+    "expected_excluded_paths": [
+      "excluded.py",
+      "nested/excluded.py"
+    ],
+    "expected_inline_marked_paths": [
+      "generic.py",
+      "inline.py",
+      "preceding.py"
+    ],
+    "notes": [
+      "All .py files remain in the research denominator.",
+      "Native scanner behavior is recorded, not used to rewrite the authored condition labels.",
+      "Unknown-rule annotations and string-literal markers require explicit observed outcomes, not assumed semantics."
+    ]
+  }
+}

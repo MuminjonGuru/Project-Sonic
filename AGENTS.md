@@ -175,6 +175,17 @@ suppression checks remain mandatory. Do not parse untrusted Python/MCP content o
 New derivative schemas live in `schemas/repository-view-v1/`; legacy contracts remain unchanged.
 No public acquisition, arbitrary-path CLI or new security scan is authorized by this bridge.
 
+### Cached source preparation follow-up: 5 October 2026
+
+The bounded cached-evidence path is in `docs/pinned-source-preparation.md`. It verifies the
+fixed pilot's commit/tree/blob identities and binds all regular source files to a new inventory.
+This is preparation, not new acquisition, author/origin authentication, a security scan or
+source-scanning admission. Preserve the old dependency admission and archive receipts unchanged.
+The student confirmed Dockerfile remains inventoried but unsupported by the first KICS profile.
+Use fresh output directories and retain failures. Do not fetch replacements for mismatched
+cached inputs or infer tool coverage from filename candidates. Research profiles, isolated
+input/policy validation and source admission still precede same-repository scanner execution.
+
 ## Safety Controls
 
 - Build subprocess commands as argument arrays. Never invoke scanner commands through a shell.

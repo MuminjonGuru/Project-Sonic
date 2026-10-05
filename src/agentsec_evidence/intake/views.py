@@ -139,11 +139,24 @@ def _read_files(root: Path, expected: tuple[VerifiedGitFile, ...]) -> dict[str, 
 
 def replay_parent_source(context: ToolViewContext, source_root: Path) -> dict[str, bytes]:
     expected_tool_view(context)
-    files = _read_files(source_root, context.verification.files)
-    replay_git_verification(
+    return read_verified_source(
         context.verification,
         raw_commit=context.raw_commit,
         raw_tree=context.raw_tree,
+        source_root=source_root,
+    )
+
+
+def read_verified_source(
+    verification: GitSourceVerification, *, raw_commit: bytes, raw_tree: bytes, source_root: Path
+) -> dict[str, bytes]:
+    """Replay a full source tree without inventing a scanner-selection plan or permission."""
+    verification = GitSourceVerification.model_validate(verification.model_dump(mode="json"))
+    files = _read_files(source_root, verification.files)
+    replay_git_verification(
+        verification,
+        raw_commit=raw_commit,
+        raw_tree=raw_tree,
         files=files,
     )
     return files

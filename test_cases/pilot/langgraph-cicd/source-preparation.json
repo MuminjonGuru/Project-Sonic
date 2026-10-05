@@ -1,0 +1,14 @@
+{
+  "contract": "source-preparation-spec-v1",
+  "source_label": "https://github.com/langchain-samples/cicd-pipeline-example",
+  "revision": "5ab0d0a0f3c90999f786f834d9c05484dfe5f2bf",
+  "root_tree": "8e70659fafab833ceaec4f250d3a0652fadf8dd7",
+  "archive_sha256": "dfe96a7b55561084dd5550ecc2f9573e72e714d951677726907504f6e5658e58",
+  "commit_response_sha256": "4e12798c5741c1746489904c19fbd655bb5c8fe64abdf1f282550b36afd76fd3",
+  "tree_response_sha256": "aac1ad12c1e51aa9302112ed5cfa25cb5dee07734dee28498d17f9fe408b7c2b",
+  "expected_files": 47,
+  "expected_bytes": 2481730,
+  "license_status": "identified",
+  "split": "pilot-not-held-out",
+  "source_scanning_authorization": "not-granted"
+}

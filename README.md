@@ -222,6 +222,14 @@ Docker fixtures and can compare against a saved baseline. Use a fresh directory 
 `containers/verification/`. These checks establish engineering compatibility, not detection
 accuracy or confirmatory benchmark readiness.
 
+## Complete Source Preparation
+
+[Pinned source preparation](docs/pinned-source-preparation.md) connects the existing cached
+pilot archive to complete Git object verification, a copied snapshot and the full artifact
+inventory. It retains failures and refuses unsupported input. This is intake verification,
+not source scanning or a vulnerability result. Research profiles and source-pilot admission
+remain separate gates; the existing dependency experiment and its evidence are unchanged.
+
 ## Repository Boundary
 
 All implementation, tests, fixtures, benchmark definitions, runtime workspaces, and generated

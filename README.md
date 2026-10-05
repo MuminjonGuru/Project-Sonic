@@ -20,6 +20,7 @@ and reported. It does not implement a replacement SAST engine.
 | Git evidence and input plans | Offline commit/tree/blob verification and all-file per-tool decisions | Authored walkthrough; separate proof, no acquisition CLI or scanner authorization |
 | Selected input views | Verified selected-byte copies and isolated Python/MCP input-policy validation | Four controlled cases; full parent policy context retained; no scanner authorization |
 | Research Semgrep contracts | Hash-pinned 68-rule candidate, paired native JSON/SARIF and separate research/policy views | Controlled development verification only; no public scan runner or final profile freeze |
+| Guarded research bridge | Full-parent Git replay, policy include guards, isolated syntax validation and dual-pass execution | Fifteen controlled Git cases; no public-source admission or common-report integration |
 | Common reporting | Validated static/dependency/agent evidence in common JSON and SARIF | Offline derivatives; no new scans or combined vulnerability total |
 
 The static evidence path is:
@@ -69,6 +70,11 @@ native suppression and incomplete-analysis evidence without altering the first-s
 All 68 pinned GitLab Python rules remain a candidate, not a claim of comprehensive detection.
 This library and its controlled verification helper are not yet connected to a public-source
 scan command or common reporting.
+
+The [guarded research bridge](docs/guarded-research-runner.md) connects verified inputs to the
+candidate on registered development cases. Both views disable implicit Git ignore filtering;
+the policy view applies Semgrep ignore files and inline suppressions only. Policy exclusions,
+syntax refusal, process failure and incomplete native analysis remain distinct evidence.
 
 ### Evidence Walkthrough
 

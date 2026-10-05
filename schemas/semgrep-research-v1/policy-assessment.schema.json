@@ -1,0 +1,193 @@
+{
+  "$defs": {
+    "PolicyInclude": {
+      "additionalProperties": false,
+      "properties": {
+        "line": {
+          "minimum": 1,
+          "title": "Line",
+          "type": "integer"
+        },
+        "owner": {
+          "minLength": 1,
+          "title": "Owner",
+          "type": "string"
+        },
+        "target": {
+          "minLength": 1,
+          "title": "Target",
+          "type": "string"
+        }
+      },
+      "required": [
+        "owner",
+        "line",
+        "target"
+      ],
+      "title": "PolicyInclude",
+      "type": "object"
+    },
+    "PolicyIssue": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "enum": [
+            "policy-budget",
+            "policy-encoding",
+            "unsupported-directive",
+            "unsafe-include",
+            "missing-include",
+            "nested-include",
+            "python-policy-input"
+          ],
+          "title": "Code",
+          "type": "string"
+        },
+        "line": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Line"
+        },
+        "path": {
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "code"
+      ],
+      "title": "PolicyIssue",
+      "type": "object"
+    },
+    "ResearchInput": {
+      "additionalProperties": false,
+      "properties": {
+        "byte_length": {
+          "minimum": 0,
+          "title": "Byte Length",
+          "type": "integer"
+        },
+        "media_type": {
+          "minLength": 1,
+          "title": "Media Type",
+          "type": "string"
+        },
+        "path": {
+          "maxLength": 4096,
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "0.1.0",
+          "default": "0.1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "sha256",
+        "byte_length",
+        "media_type"
+      ],
+      "title": "ResearchInput",
+      "type": "object"
+    }
+  },
+  "$id": "urn:agentsec-evidence:schema:semgrep-research-v1:policy-assessment",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "blockers": {
+      "items": {
+        "$ref": "#/$defs/PolicyIssue"
+      },
+      "title": "Blockers",
+      "type": "array"
+    },
+    "contract": {
+      "const": "semgrep-policy-assessment-v1",
+      "default": "semgrep-policy-assessment-v1",
+      "title": "Contract",
+      "type": "string"
+    },
+    "execution_authorization": {
+      "const": "not-granted",
+      "default": "not-granted",
+      "title": "Execution Authorization",
+      "type": "string"
+    },
+    "files": {
+      "items": {
+        "$ref": "#/$defs/ResearchInput"
+      },
+      "title": "Files",
+      "type": "array"
+    },
+    "implicit_gitignore": {
+      "const": "disabled",
+      "default": "disabled",
+      "title": "Implicit Gitignore",
+      "type": "string"
+    },
+    "includes": {
+      "items": {
+        "$ref": "#/$defs/PolicyInclude"
+      },
+      "title": "Includes",
+      "type": "array"
+    },
+    "label": {
+      "const": "Semgrep ignore files and inline suppressions; Git ignore filtering disabled",
+      "default": "Semgrep ignore files and inline suppressions; Git ignore filtering disabled",
+      "title": "Label",
+      "type": "string"
+    },
+    "pattern_evaluation": {
+      "const": "delegated-to-pinned-semgrep",
+      "default": "delegated-to-pinned-semgrep",
+      "title": "Pattern Evaluation",
+      "type": "string"
+    },
+    "root_defaults": {
+      "enum": [
+        "pinned-native-defaults",
+        "root-file-overrides-defaults"
+      ],
+      "title": "Root Defaults",
+      "type": "string"
+    },
+    "semgrepignore_paths": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Semgrepignore Paths",
+      "type": "array"
+    }
+  },
+  "required": [
+    "root_defaults",
+    "semgrepignore_paths",
+    "files",
+    "includes",
+    "blockers"
+  ],
+  "title": "SemgrepPolicyAssessment",
+  "type": "object"
+}

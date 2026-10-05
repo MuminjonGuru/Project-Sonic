@@ -1,0 +1,22 @@
+{
+  "role": "development-not-held-out",
+  "target_execution": false,
+  "expectation_provenance": "Authored engineering expectations, not independent security labels",
+  "cases": [
+    {"id": "defaults", "files": {"agent.py": "value = eval(input())\n", "tests/check.py": "value = eval(input())\n", "unselected.py": "value = eval(input())\n", ".gitignore": "agent.py\n"}, "selected": ["agent.py", "tests/check.py"], "policy_excluded": ["tests/check.py"], "suppressed": [], "gate": "scan", "repeat": true},
+    {"id": "empty-root", "files": {".semgrepignore": "", "tests/check.py": "value = eval(input())\n"}, "selected": ["tests/check.py"], "policy_excluded": [], "suppressed": [], "gate": "scan"},
+    {"id": "nested-only", "files": {"tests/check.py": "value = eval(input())\n", "pkg/agent.py": "value = eval(input())\n", "pkg/.semgrepignore": "agent.py\n"}, "selected": ["pkg/agent.py", "tests/check.py"], "policy_excluded": ["pkg/agent.py", "tests/check.py"], "suppressed": [], "gate": "scan"},
+    {"id": "negation", "files": {".semgrepignore": "*.py\n!keep.py\n", "drop.py": "value = eval(input())\n", "keep.py": "value = eval(input())\n"}, "selected": ["drop.py", "keep.py"], "policy_excluded": ["drop.py"], "suppressed": [], "gate": "scan"},
+    {"id": "local-include", "files": {".semgrepignore": "", "pkg/.semgrepignore": ":include local.ignore\n", "pkg/local.ignore": "/drop.py\n", "pkg/drop.py": "value = eval(input())\n", "drop.py": "value = eval(input())\n"}, "selected": ["drop.py", "pkg/drop.py"], "policy_excluded": ["pkg/drop.py"], "suppressed": [], "gate": "scan"},
+    {"id": "explicit-gitignore", "files": {".semgrepignore": ":include .gitignore\n", ".gitignore": "drop.py\n", "drop.py": "value = eval(input())\n", "keep.py": "value = eval(input())\n"}, "selected": ["drop.py", "keep.py"], "policy_excluded": ["drop.py"], "suppressed": [], "gate": "scan"},
+    {"id": "inline", "files": {"agent.py": "value = eval(input())  # nosemgrep: python_eval_rule-eval\n"}, "selected": ["agent.py"], "policy_excluded": [], "suppressed": ["agent.py"], "gate": "scan", "repeat": true},
+    {"id": "unknown-rule", "files": {"agent.py": "value = eval(input())  # nosemgrep: unrelated.rule\n"}, "selected": ["agent.py"], "policy_excluded": [], "suppressed": [], "gate": "scan", "native_issue": true},
+    {"id": "missing-include", "files": {".semgrepignore": ":include missing.ignore\n", "agent.py": "value = eval(input())\n"}, "selected": ["agent.py"], "gate": "policy-refused", "blocker": "missing-include"},
+    {"id": "escaping-include", "files": {".semgrepignore": ":include ../outside\n", "agent.py": "value = eval(input())\n"}, "selected": ["agent.py"], "gate": "policy-refused", "blocker": "unsafe-include"},
+    {"id": "absolute-include", "files": {".semgrepignore": ":include /etc/passwd\n", "agent.py": "value = eval(input())\n"}, "selected": ["agent.py"], "gate": "policy-refused", "blocker": "unsafe-include"},
+    {"id": "include-cycle", "files": {".semgrepignore": ":include rules.ignore\n", "rules.ignore": ":include .semgrepignore\n", "agent.py": "value = eval(input())\n"}, "selected": ["agent.py"], "gate": "policy-refused", "blocker": "nested-include"},
+    {"id": "self-include", "files": {".semgrepignore": ":include .semgrepignore\n", "agent.py": "value = eval(input())\n"}, "selected": ["agent.py"], "gate": "policy-refused", "blocker": "nested-include"},
+    {"id": "unknown-directive", "files": {".semgrepignore": ":other filename\n", "agent.py": "value = eval(input())\n"}, "selected": ["agent.py"], "gate": "policy-refused", "blocker": "unsupported-directive"},
+    {"id": "malformed-python", "files": {"agent.py": "def broken(:\n"}, "selected": ["agent.py"], "gate": "syntax-refused"}
+  ]
+}

@@ -202,6 +202,18 @@ of that expected warning is not successful complete analysis. Loaded derivatives
 replay; scope models do not prove Git acquisition or grant scanner permission. Candidate rules
 and private native reports are not redistributed by this increment. No public profile is frozen.
 
+### Guarded research bridge follow-up: 5 October 2026
+
+The user confirmed implicit Git ignore filtering stays disabled in both research views.
+The policy view means Semgrep ignore files and inline suppressions only, not project CI.
+The additive bridge is described in [docs/guarded-research-runner.md](docs/guarded-research-runner.md).
+Use full-parent Git replay, safe local policy includes, exact-byte mounted views and the pinned
+syntax worker before the controlled scanner. Missing/escaping/recursive includes are explicit
+refusals; do not silently rewrite them or implement host glob matching. An explicit local
+`:include .gitignore` is retained as Semgrep policy, not implicit Git exclusion discovery.
+Keep process failures and native incomplete analysis distinct. No public-source CLI or common
+report integration is granted by this increment; legacy Agent Audit guards remain unchanged.
+
 ## Safety Controls
 
 - Build subprocess commands as argument arrays. Never invoke scanner commands through a shell.

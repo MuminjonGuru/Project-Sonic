@@ -1,0 +1,66 @@
+{
+  "$id": "urn:agentsec-evidence:schema:semgrep-research-v1:execution-assessment",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "analysis_state": {
+      "enum": [
+        "not-established",
+        "incomplete",
+        "failed"
+      ],
+      "title": "Analysis State",
+      "type": "string"
+    },
+    "cleanup_succeeded": {
+      "title": "Cleanup Succeeded",
+      "type": "boolean"
+    },
+    "contract": {
+      "const": "semgrep-execution-assessment-v1",
+      "default": "semgrep-execution-assessment-v1",
+      "title": "Contract",
+      "type": "string"
+    },
+    "process_state": {
+      "enum": [
+        "completed",
+        "nonzero",
+        "timed-out",
+        "output-limited",
+        "exit-unavailable"
+      ],
+      "title": "Process State",
+      "type": "string"
+    },
+    "reasons": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Reasons",
+      "type": "array"
+    },
+    "report_state": {
+      "enum": [
+        "reconciled",
+        "missing-or-invalid"
+      ],
+      "title": "Report State",
+      "type": "string"
+    },
+    "vulnerability_total": {
+      "default": null,
+      "title": "Vulnerability Total",
+      "type": "null"
+    }
+  },
+  "required": [
+    "process_state",
+    "cleanup_succeeded",
+    "report_state",
+    "analysis_state",
+    "reasons"
+  ],
+  "title": "ResearchExecutionAssessment",
+  "type": "object"
+}

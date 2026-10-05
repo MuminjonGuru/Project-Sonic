@@ -1,0 +1,661 @@
+{
+  "role": "development-not-held-out",
+  "target_execution": false,
+  "expectation_provenance": "Authored engineering expectations, not independent security labels",
+  "cases": [
+    {
+      "id": "defaults",
+      "files": {
+        "agent.py": "value = eval(input())\n",
+        "tests/check.py": "value = eval(input())\n",
+        "unselected.py": "value = eval(input())\n",
+        ".gitignore": "agent.py\n"
+      },
+      "selected": [
+        "agent.py",
+        "tests/check.py"
+      ],
+      "policy_excluded": [
+        "tests/check.py"
+      ],
+      "suppressed": [],
+      "gate": "scan",
+      "repeat": true,
+      "git": {
+        "revision": "aada0ffa0c1210772fd61f96b768be52f7bbb56a",
+        "raw_commit": "tree 0a9f0424984b57461c20439ebc1888c54aa34b33\nauthor Controlled Development Fixture <fixture@example.invalid> 1791158400 +0000\ncommitter Controlled Development Fixture <fixture@example.invalid> 1791158400 +0000\n\nControlled case: defaults\n",
+        "tree": {
+          "sha": "0a9f0424984b57461c20439ebc1888c54aa34b33",
+          "truncated": false,
+          "tree": [
+            {
+              "path": ".gitignore",
+              "mode": "100644",
+              "type": "blob",
+              "sha": "48360ca879a2cede7ea865670374c14a0ff33e2b",
+              "size": 9
+            },
+            {
+              "path": "agent.py",
+              "mode": "100644",
+              "type": "blob",
+              "sha": "2410bc335e0990be22b85b4ec7f7e0c78b934420",
+              "size": 22
+            },
+            {
+              "path": "tests",
+              "mode": "040000",
+              "type": "tree",
+              "sha": "8400d8a84bca1484c7b17bad0a68a7b229bd6c33"
+            },
+            {
+              "path": "tests/check.py",
+              "mode": "100644",
+              "type": "blob",
+              "sha": "2410bc335e0990be22b85b4ec7f7e0c78b934420",
+              "size": 22
+            },
+            {
+              "path": "unselected.py",
+              "mode": "100644",
+              "type": "blob",
+              "sha": "2410bc335e0990be22b85b4ec7f7e0c78b934420",
+              "size": 22
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "empty-root",
+      "files": {
+        ".semgrepignore": "",
+        "tests/check.py": "value = eval(input())\n"
+      },
+      "selected": [
+        "tests/check.py"
+      ],
+      "policy_excluded": [],
+      "suppressed": [],
+      "gate": "scan",
+      "git": {
+        "revision": "1a1e0991b786d943d2cac9f0275cc06777752087",
+        "raw_commit": "tree a1fadba34dd33804fb80a05376c2878e520c3320\nauthor Controlled Development Fixture <fixture@example.invalid> 1791158400 +0000\ncommitter Controlled Development Fixture <fixture@example.invalid> 1791158400 +0000\n\nControlled case: empty-root\n",
+        "tree": {
+          "sha": "a1fadba34dd33804fb80a05376c2878e520c3320",
+          "truncated": false,
+          "tree": [
+            {
+              "path": ".semgrepignore",
+              "mode": "100644",
+              "type": "blob",
+              "sha": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+              "size": 0
+            },
+            {
+              "path": "tests",
+              "mode": "040000",
+              "type": "tree",
+              "sha": "8400d8a84bca1484c7b17bad0a68a7b229bd6c33"
+            },
+            {
+              "path": "tests/check.py",
+              "mode": "100644",
+              "type": "blob",
+              "sha": "2410bc335e0990be22b85b4ec7f7e0c78b934420",
+              "size": 22
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "nested-only",
+      "files": {
+        "tests/check.py": "value = eval(input())\n",
+        "pkg/agent.py": "value = eval(input())\n",
+        "pkg/.semgrepignore": "agent.py\n"
+      },
+      "selected": [
+        "pkg/agent.py",
+        "tests/check.py"
+      ],
+      "policy_excluded": [
+        "pkg/agent.py",
+        "tests/check.py"
+      ],
+      "suppressed": [],
+      "gate": "scan",
+      "git": {
+        "revision": "b655dd05d8f36868b579dedfadf49d42d1d8facc",
+        "raw_commit": "tree 83b2d6d71cd720f2caa830be4e5976bb279b8182\nauthor Controlled Development Fixture <fixture@example.invalid> 1791158400 +0000\ncommitter Controlled Development Fixture <fixture@example.invalid> 1791158400 +0000\n\nControlled case: nested-only\n",
+        "tree": {
+          "sha": "83b2d6d71cd720f2caa830be4e5976bb279b8182",
+          "truncated": false,
+          "tree": [
+            {
+              "path": "pkg",
+              "mode": "040000",
+              "type": "tree",
+              "sha": "f4658a280a3ad08f57423d55c1706da5a0beed30"
+            },
+            {
+              "path": "pkg/.semgrepignore",
+              "mode": "100644",
+              "type": "blob",
+              "sha": "48360ca879a2cede7ea865670374c14a0ff33e2b",
+              "size": 9
+            },
+            {
+              "path": "pkg/agent.py",
+              "mode": "100644",
+              "type": "blob",
+              "sha": "2410bc335e0990be22b85b4ec7f7e0c78b934420",
+              "size": 22
+            },
+            {
+              "path": "tests",
+              "mode": "040000",
+              "type": "tree",
+              "sha": "8400d8a84bca1484c7b17bad0a68a7b229bd6c33"
+            },
+            {
+              "path": "tests/check.py",
+              "mode": "100644",
+              "type": "blob",
+              "sha": "2410bc335e0990be22b85b4ec7f7e0c78b934420",
+              "size": 22
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "negation",
+      "files": {
+        ".semgrepignore": "*.py\n!keep.py\n",
+        "drop.py": "value = eval(input())\n",
+        "keep.py": "value = eval(input())\n"
+      },
+      "selected": [
+        "drop.py",
+        "keep.py"
+      ],
+      "policy_excluded": [
+        "drop.py"
+      ],
+      "suppressed": [],
+      "gate": "scan",
+      "git": {
+        "revision": "1a756ee6cd58a3017b6f3c449a0e0eb57434b7fc",
+        "raw_commit": "tree 58b65f6315a0eb03f8d3b498f13ee7aa244dc88d\nauthor Controlled Development Fixture <fixture@example.invalid> 1791158400 +0000\ncommitter Controlled Development Fixture <fixture@example.invalid> 1791158400 +0000\n\nControlled case: negation\n",
+        "tree": {
+          "sha": "58b65f6315a0eb03f8d3b498f13ee7aa244dc88d",
+          "truncated": false,
+          "tree": [
+            {
+              "path": ".semgrepignore",
+              "mode": "100644",
+              "type": "blob",
+              "sha": "17e48366eebbead2266ec68972c85d9f57a64f0f",
+              "size": 14
+            },
+            {
+              "path": "drop.py",
+              "mode": "100644",
+              "type": "blob",
+              "sha": "2410bc335e0990be22b85b4ec7f7e0c78b934420",
+              "size": 22
+            },
+            {
+              "path": "keep.py",
+              "mode": "100644",
+              "type": "blob",
+              "sha": "2410bc335e0990be22b85b4ec7f7e0c78b934420",
+              "size": 22
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "local-include",
+      "files": {
+        ".semgrepignore": "",
+        "pkg/.semgrepignore": ":include local.ignore\n",
+        "pkg/local.ignore": "/drop.py\n",
+        "pkg/drop.py": "value = eval(input())\n",
+        "drop.py": "value = eval(input())\n"
+      },
+      "selected": [
+        "drop.py",
+        "pkg/drop.py"
+      ],
+      "policy_excluded": [
+        "pkg/drop.py"
+      ],
+      "suppressed": [],
+      "gate": "scan",
+      "git": {
+        "revision": "b98751590d535902f22b9c3da27ddc37460f1295",
+        "raw_commit": "tree 33da004bddb289268429b22c5b66846f6d104e27\nauthor Controlled Development Fixture <fixture@example.invalid> 1791158400 +0000\ncommitter Controlled Development Fixture <fixture@example.invalid> 1791158400 +0000\n\nControlled case: local-include\n",
+        "tree": {
+          "sha": "33da004bddb289268429b22c5b66846f6d104e27",
+          "truncated": false,
+          "tree": [
+            {
+              "path": ".semgrepignore",
+              "mode": "100644",
+              "type": "blob",
+              "sha": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+              "size": 0
+            },
+            {
+              "path": "drop.py",
+              "mode": "100644",
+              "type": "blob",
+              "sha": "2410bc335e0990be22b85b4ec7f7e0c78b934420",
+              "size": 22
+            },
+            {
+              "path": "pkg",
+              "mode": "040000",
+              "type": "tree",
+              "sha": "44a8c86c1c0e23479a1f9977171df9cffe3ad599"
+            },
+            {
+              "path": "pkg/.semgrepignore",
+              "mode": "100644",
+              "type": "blob",
+              "sha": "d753a57773b0c6423c243636bad69d71bf77b86a",
+              "size": 22
+            },
+            {
+              "path": "pkg/drop.py",
+              "mode": "100644",
+              "type": "blob",
+              "sha": "2410bc335e0990be22b85b4ec7f7e0c78b934420",
+              "size": 22
+            },
+            {
+              "path": "pkg/local.ignore",
+              "mode": "100644",
+              "type": "blob",
+              "sha": "38e1f5ad6a583431a2e7f5fe6db8dc54e93f6539",
+              "size": 9
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "explicit-gitignore",
+      "files": {
+        ".semgrepignore": ":include .gitignore\n",
+        ".gitignore": "drop.py\n",
+        "drop.py": "value = eval(input())\n",
+        "keep.py": "value = eval(input())\n"
+      },
+      "selected": [
+        "drop.py",
+        "keep.py"
+      ],
+      "policy_excluded": [
+        "drop.py"
+      ],
+      "suppressed": [],
+      "gate": "scan",
+      "git": {
+        "revision": "8d526916579312a0c0c20b0ee4151fde5a354055",
+        "raw_commit": "tree ecec9da0432120704619057e0ac10d8de7e38b49\nauthor Controlled Development Fixture <fixture@example.invalid> 1791158400 +0000\ncommitter Controlled Development Fixture <fixture@example.invalid> 1791158400 +0000\n\nControlled case: explicit-gitignore\n",
+        "tree": {
+          "sha": "ecec9da0432120704619057e0ac10d8de7e38b49",
+          "truncated": false,
+          "tree": [
+            {
+              "path": ".gitignore",
+              "mode": "100644",
+              "type": "blob",
+              "sha": "c7f05894642bce069a88de04ea9a8fc1873c007e",
+              "size": 8
+            },
+            {
+              "path": ".semgrepignore",
+              "mode": "100644",
+              "type": "blob",
+              "sha": "a2c7338cfafbf53745700b62af90d10f2fe8bdf2",
+              "size": 20
+            },
+            {
+              "path": "drop.py",
+              "mode": "100644",
+              "type": "blob",
+              "sha": "2410bc335e0990be22b85b4ec7f7e0c78b934420",
+              "size": 22
+            },
+            {
+              "path": "keep.py",
+              "mode": "100644",
+              "type": "blob",
+              "sha": "2410bc335e0990be22b85b4ec7f7e0c78b934420",
+              "size": 22
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "inline",
+      "files": {
+        "agent.py": "value = eval(input())  # nosemgrep: python_eval_rule-eval\n"
+      },
+      "selected": [
+        "agent.py"
+      ],
+      "policy_excluded": [],
+      "suppressed": [
+        "agent.py"
+      ],
+      "gate": "scan",
+      "repeat": true,
+      "git": {
+        "revision": "3ab4a4285a2611fbfbca591a781cd1a78f846837",
+        "raw_commit": "tree 19b215f8f9bab35e30805555f816ef9da4d0053b\nauthor Controlled Development Fixture <fixture@example.invalid> 1791158400 +0000\ncommitter Controlled Development Fixture <fixture@example.invalid> 1791158400 +0000\n\nControlled case: inline\n",
+        "tree": {
+          "sha": "19b215f8f9bab35e30805555f816ef9da4d0053b",
+          "truncated": false,
+          "tree": [
+            {
+              "path": "agent.py",
+              "mode": "100644",
+              "type": "blob",
+              "sha": "c3f9e61074e727df973a0730748735a9b0b92613",
+              "size": 58
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "unknown-rule",
+      "files": {
+        "agent.py": "value = eval(input())  # nosemgrep: unrelated.rule\n"
+      },
+      "selected": [
+        "agent.py"
+      ],
+      "policy_excluded": [],
+      "suppressed": [],
+      "gate": "scan",
+      "native_issue": true,
+      "git": {
+        "revision": "a350db24dd16839b50e423e4133f817c31107693",
+        "raw_commit": "tree cc94a04cb0c5e6250297e50e0f6046b4d6393c7a\nauthor Controlled Development Fixture <fixture@example.invalid> 1791158400 +0000\ncommitter Controlled Development Fixture <fixture@example.invalid> 1791158400 +0000\n\nControlled case: unknown-rule\n",
+        "tree": {
+          "sha": "cc94a04cb0c5e6250297e50e0f6046b4d6393c7a",
+          "truncated": false,
+          "tree": [
+            {
+              "path": "agent.py",
+              "mode": "100644",
+              "type": "blob",
+              "sha": "f1404ca37d8a3a083a3ec30f9e15c84ba9ceadbb",
+              "size": 51
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "missing-include",
+      "files": {
+        ".semgrepignore": ":include missing.ignore\n",
+        "agent.py": "value = eval(input())\n"
+      },
+      "selected": [
+        "agent.py"
+      ],
+      "gate": "policy-refused",
+      "blocker": "missing-include",
+      "git": {
+        "revision": "b169c83086d330bdf506943defa1eb5831f781d3",
+        "raw_commit": "tree 3b31ca37b6483d47115b43d22949d692c82481d7\nauthor Controlled Development Fixture <fixture@example.invalid> 1791158400 +0000\ncommitter Controlled Development Fixture <fixture@example.invalid> 1791158400 +0000\n\nControlled case: missing-include\n",
+        "tree": {
+          "sha": "3b31ca37b6483d47115b43d22949d692c82481d7",
+          "truncated": false,
+          "tree": [
+            {
+              "path": ".semgrepignore",
+              "mode": "100644",
+              "type": "blob",
+              "sha": "bed4bce5b7afebf19b0e409b271c234324d03759",
+              "size": 24
+            },
+            {
+              "path": "agent.py",
+              "mode": "100644",
+              "type": "blob",
+              "sha": "2410bc335e0990be22b85b4ec7f7e0c78b934420",
+              "size": 22
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "escaping-include",
+      "files": {
+        ".semgrepignore": ":include ../outside\n",
+        "agent.py": "value = eval(input())\n"
+      },
+      "selected": [
+        "agent.py"
+      ],
+      "gate": "policy-refused",
+      "blocker": "unsafe-include",
+      "git": {
+        "revision": "7dfc962ef5de4e881a2d53107eaa413ba277484b",
+        "raw_commit": "tree 52f539726c6fa99b9944816dc77944d5ae633ac8\nauthor Controlled Development Fixture <fixture@example.invalid> 1791158400 +0000\ncommitter Controlled Development Fixture <fixture@example.invalid> 1791158400 +0000\n\nControlled case: escaping-include\n",
+        "tree": {
+          "sha": "52f539726c6fa99b9944816dc77944d5ae633ac8",
+          "truncated": false,
+          "tree": [
+            {
+              "path": ".semgrepignore",
+              "mode": "100644",
+              "type": "blob",
+              "sha": "60bfeef733d16500ca07fd81f48d6539d53f22b0",
+              "size": 20
+            },
+            {
+              "path": "agent.py",
+              "mode": "100644",
+              "type": "blob",
+              "sha": "2410bc335e0990be22b85b4ec7f7e0c78b934420",
+              "size": 22
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "absolute-include",
+      "files": {
+        ".semgrepignore": ":include /etc/passwd\n",
+        "agent.py": "value = eval(input())\n"
+      },
+      "selected": [
+        "agent.py"
+      ],
+      "gate": "policy-refused",
+      "blocker": "unsafe-include",
+      "git": {
+        "revision": "39a864944f63decf99f0f96561791b997e6864e1",
+        "raw_commit": "tree 1ae093ba00c2eda59f7ab0b0ca8067f90c866329\nauthor Controlled Development Fixture <fixture@example.invalid> 1791158400 +0000\ncommitter Controlled Development Fixture <fixture@example.invalid> 1791158400 +0000\n\nControlled case: absolute-include\n",
+        "tree": {
+          "sha": "1ae093ba00c2eda59f7ab0b0ca8067f90c866329",
+          "truncated": false,
+          "tree": [
+            {
+              "path": ".semgrepignore",
+              "mode": "100644",
+              "type": "blob",
+              "sha": "90e7b6a46b570a920f3546e3dab23d5d3c0ae9c7",
+              "size": 21
+            },
+            {
+              "path": "agent.py",
+              "mode": "100644",
+              "type": "blob",
+              "sha": "2410bc335e0990be22b85b4ec7f7e0c78b934420",
+              "size": 22
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "include-cycle",
+      "files": {
+        ".semgrepignore": ":include rules.ignore\n",
+        "rules.ignore": ":include .semgrepignore\n",
+        "agent.py": "value = eval(input())\n"
+      },
+      "selected": [
+        "agent.py"
+      ],
+      "gate": "policy-refused",
+      "blocker": "nested-include",
+      "git": {
+        "revision": "c69ff4571e75fd01a205007d821f21081e1d80f8",
+        "raw_commit": "tree fa78dc9e646dca76334c7880ab05222c50962f95\nauthor Controlled Development Fixture <fixture@example.invalid> 1791158400 +0000\ncommitter Controlled Development Fixture <fixture@example.invalid> 1791158400 +0000\n\nControlled case: include-cycle\n",
+        "tree": {
+          "sha": "fa78dc9e646dca76334c7880ab05222c50962f95",
+          "truncated": false,
+          "tree": [
+            {
+              "path": ".semgrepignore",
+              "mode": "100644",
+              "type": "blob",
+              "sha": "6ae652de309f8f618c9f0832dbaf3aa18e5609a5",
+              "size": 22
+            },
+            {
+              "path": "agent.py",
+              "mode": "100644",
+              "type": "blob",
+              "sha": "2410bc335e0990be22b85b4ec7f7e0c78b934420",
+              "size": 22
+            },
+            {
+              "path": "rules.ignore",
+              "mode": "100644",
+              "type": "blob",
+              "sha": "5e30b5ca2fb746f17c7fe175ddbd56e5038af58c",
+              "size": 24
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "self-include",
+      "files": {
+        ".semgrepignore": ":include .semgrepignore\n",
+        "agent.py": "value = eval(input())\n"
+      },
+      "selected": [
+        "agent.py"
+      ],
+      "gate": "policy-refused",
+      "blocker": "nested-include",
+      "git": {
+        "revision": "09a01120680a1a2f2bf15990e19092301096c8a6",
+        "raw_commit": "tree fb2833eec697fb8788d2857ee6b4d712624be518\nauthor Controlled Development Fixture <fixture@example.invalid> 1791158400 +0000\ncommitter Controlled Development Fixture <fixture@example.invalid> 1791158400 +0000\n\nControlled case: self-include\n",
+        "tree": {
+          "sha": "fb2833eec697fb8788d2857ee6b4d712624be518",
+          "truncated": false,
+          "tree": [
+            {
+              "path": ".semgrepignore",
+              "mode": "100644",
+              "type": "blob",
+              "sha": "5e30b5ca2fb746f17c7fe175ddbd56e5038af58c",
+              "size": 24
+            },
+            {
+              "path": "agent.py",
+              "mode": "100644",
+              "type": "blob",
+              "sha": "2410bc335e0990be22b85b4ec7f7e0c78b934420",
+              "size": 22
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "unknown-directive",
+      "files": {
+        ".semgrepignore": ":other filename\n",
+        "agent.py": "value = eval(input())\n"
+      },
+      "selected": [
+        "agent.py"
+      ],
+      "gate": "policy-refused",
+      "blocker": "unsupported-directive",
+      "git": {
+        "revision": "e63a879ebbf0169f271804e8d9bd4ce8fa40b7c5",
+        "raw_commit": "tree a3cf192b65e72fe9443feb404f89d250e151e98f\nauthor Controlled Development Fixture <fixture@example.invalid> 1791158400 +0000\ncommitter Controlled Development Fixture <fixture@example.invalid> 1791158400 +0000\n\nControlled case: unknown-directive\n",
+        "tree": {
+          "sha": "a3cf192b65e72fe9443feb404f89d250e151e98f",
+          "truncated": false,
+          "tree": [
+            {
+              "path": ".semgrepignore",
+              "mode": "100644",
+              "type": "blob",
+              "sha": "5f8bf3892f2e23eb96a822d0a68d88fa3e51da34",
+              "size": 16
+            },
+            {
+              "path": "agent.py",
+              "mode": "100644",
+              "type": "blob",
+              "sha": "2410bc335e0990be22b85b4ec7f7e0c78b934420",
+              "size": 22
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "malformed-python",
+      "files": {
+        "agent.py": "def broken(:\n"
+      },
+      "selected": [
+        "agent.py"
+      ],
+      "gate": "syntax-refused",
+      "git": {
+        "revision": "7c1f4df801211b7b3e5644c31d749a50222f2433",
+        "raw_commit": "tree 4748eeb671eddd45bee96598a3dd7eb0bbe23d48\nauthor Controlled Development Fixture <fixture@example.invalid> 1791158400 +0000\ncommitter Controlled Development Fixture <fixture@example.invalid> 1791158400 +0000\n\nControlled case: malformed-python\n",
+        "tree": {
+          "sha": "4748eeb671eddd45bee96598a3dd7eb0bbe23d48",
+          "truncated": false,
+          "tree": [
+            {
+              "path": "agent.py",
+              "mode": "100644",
+              "type": "blob",
+              "sha": "c440d6d7f7fca646fb897d0b5d279ec775aeddfd",
+              "size": 13
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

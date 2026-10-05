@@ -23,8 +23,10 @@ from agentsec_evidence.reporting.models import (
     CommonReport,
     DependencySource,
     ReportSource,
+    ResearchSource,
     StaticSource,
 )
+from agentsec_evidence.reporting.research import load_research_source, validate_research_runs
 from agentsec_evidence.validation.checks import validate_sarif
 
 
@@ -33,8 +35,11 @@ def require_new_derivative(path: Path, sources: list[Path]) -> Path:
     if destination.exists() or any(destination.is_relative_to(root.resolve()) for root in sources):
         raise ValueError("Derived output must be new and outside source bundles")
     for parent in destination.parents:
-        if (parent / "bundle-manifest.json").is_file() or (
-            (parent / "manifest.json").is_file() and (parent / "report.json").is_file()
+        if (
+            (parent / "bundle-manifest.json").is_file()
+            or ((parent / "manifest.json").is_file() and (parent / "report.json").is_file())
+            or (parent / "evidence-manifest.json").is_file()
+            or (parent / "report-manifest.json").is_file()
         ):
             raise ValueError("Derived output cannot modify any finalized evidence bundle")
     return destination
@@ -63,6 +68,10 @@ def validate_report_sarif(project_root: Path, document: dict[str, JsonValue]) ->
 def load_report_source(
     project_root: Path, bundle: Path
 ) -> tuple[ReportSource, dict[str, JsonValue]]:
+    if (bundle.parent / "evidence-manifest.json").is_file():
+        research_source, document = load_research_source(bundle)
+        validate_report_sarif(project_root, document)
+        return research_source, document
     root = bundle.resolve(strict=True)
     if (root / "manifest.json").is_file():
         existing = load_dependency_run(root)
@@ -127,8 +136,8 @@ def write_common_report(*, project_root: Path, bundles: list[Path], output: Path
     # Preserve per-source runs and counting units; do not rescan or invent a combined total.
     if not bundles:
         raise ValueError("At least one evidence bundle is required")
-    roots = [path.resolve(strict=True) for path in bundles]
-    if len(set(roots)) != len(roots):
+    roots = [path.absolute() for path in bundles]
+    if len({path.resolve(strict=True) for path in roots}) != len(roots):
         raise ValueError("Duplicate source bundle")
     destination = require_new_derivative(output, roots)
     sources: list[ReportSource] = []
@@ -142,7 +151,9 @@ def write_common_report(*, project_root: Path, bundles: list[Path], output: Path
     document = {"$schema": SARIF_SCHEMA_URI, "version": "2.1.0", "runs": runs}
     validate_report_sarif(project_root, document)
     report = CommonReport(
-        contract="common-report-v2"
+        contract="common-report-v3"
+        if any(isinstance(source, ResearchSource) for source in sources)
+        else "common-report-v2"
         if any(isinstance(source, AgentSource) for source in sources)
         else "common-report-v1",
         generated_at=utc_now(),
@@ -217,7 +228,7 @@ def validate_common_report(project_root: Path, root: Path) -> dict[str, JsonValu
         runs = cast(list[dict[str, JsonValue]], document["runs"])
         if len(runs) != report.sarif_runs:
             raise ValueError("Common report SARIF run accounting failure")
-        expected_runs = sum(2 if source.kind == "dependency" else 1 for source in report.sources)
+        expected_runs = sum(_source_run_count(source) for source in report.sources)
         if len(runs) != expected_runs:
             raise ValueError("Missing or additional SARIF source run")
         for source in report.sources:
@@ -229,7 +240,7 @@ def validate_common_report(project_root: Path, root: Path) -> dict[str, JsonValu
                 )
                 == source.run_id
             ]
-            if len(matching) != (2 if source.kind == "dependency" else 1):
+            if len(matching) != _source_run_count(source):
                 raise ValueError("SARIF source linkage is incomplete")
             for run in matching:
                 properties = cast(dict[str, JsonValue], run["properties"])
@@ -238,7 +249,9 @@ def validate_common_report(project_root: Path, root: Path) -> dict[str, JsonValu
                     != source.source_manifest_sha256
                 ):
                     raise ValueError("SARIF source manifest linkage differs")
-            if isinstance(source, DependencySource):
+            if isinstance(source, ResearchSource):
+                validate_research_runs(source, matching)
+            elif isinstance(source, DependencySource):
                 paths = [
                     cast(dict[str, JsonValue], run["properties"]).get(
                         "agentsecEvidence/comparisonPath"
@@ -258,7 +271,7 @@ def validate_common_report(project_root: Path, root: Path) -> dict[str, JsonValu
                 != source.summary.normalized_finding_count
             ):
                 raise ValueError("Static result accounting differs from summary")
-    except (KeyError, TypeError, AttributeError, StopIteration) as exc:
+    except (KeyError, TypeError, IndexError, AttributeError, StopIteration) as exc:
         raise ValueError("Malformed common reporting structure") from exc
     return {
         "passed": True,
@@ -266,3 +279,9 @@ def validate_common_report(project_root: Path, root: Path) -> dict[str, JsonValu
         "sources": len(report.sources),
         "sarif_runs": len(runs),
     }
+
+
+def _source_run_count(source: ReportSource) -> int:
+    if isinstance(source, ResearchSource):
+        return len(source.summary.passes) or 1
+    return 2 if isinstance(source, DependencySource) else 1

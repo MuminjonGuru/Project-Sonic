@@ -20,8 +20,8 @@ and reported. It does not implement a replacement SAST engine.
 | Git evidence and input plans | Offline commit/tree/blob verification and all-file per-tool decisions | Authored walkthrough; separate proof, no acquisition CLI or scanner authorization |
 | Selected input views | Verified selected-byte copies and isolated Python/MCP input-policy validation | Four controlled cases; full parent policy context retained; no scanner authorization |
 | Research Semgrep contracts | Hash-pinned 68-rule candidate, paired native JSON/SARIF and separate research/policy views | Controlled development verification only; no public scan runner or final profile freeze |
-| Guarded research bridge | Full-parent Git replay, policy include guards, isolated syntax validation and dual-pass execution | Fifteen controlled Git cases; no public-source admission or common-report integration |
-| Common reporting | Validated static/dependency/agent evidence in common JSON and SARIF | Offline derivatives; no new scans or combined vulnerability total |
+| Guarded research bridge | Full-parent Git replay, policy include guards, isolated syntax validation and dual-pass execution | Fifteen controlled Git cases; no public-source admission |
+| Common reporting | Validated static/dependency/agent bundles and sealed controlled research cases in common JSON and SARIF | Offline derivatives; views, repetitions and refusals remain separate; no combined vulnerability total |
 
 The static evidence path is:
 
@@ -68,8 +68,10 @@ Public source intake, the local UI and held-out evaluation are also pending.
 The [research Semgrep contracts](docs/semgrep-research-contracts.md) now preserve file exclusions,
 native suppression and incomplete-analysis evidence without altering the first-slice profiles.
 All 68 pinned GitLab Python rules remain a candidate, not a claim of comprehensive detection.
-This library and its controlled verification helper are not yet connected to a public-source
-scan command or common reporting.
+This library and its controlled verification helper are not a public-source scan command.
+The [offline reporting extension](docs/research-common-reporting.md) now replays sealed controlled
+cases into `common-report-v3`; older source combinations retain v1/v2. It preserves both views,
+repetitions, input refusals and native evidence links without rerunning tools.
 
 The [guarded research bridge](docs/guarded-research-runner.md) connects verified inputs to the
 candidate on registered development cases. Both views disable implicit Git ignore filtering;

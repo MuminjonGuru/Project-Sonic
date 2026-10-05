@@ -214,7 +214,20 @@ refusals; do not silently rewrite them or implement host glob matching. An expli
 Keep process failures and native incomplete analysis distinct. No public-source CLI or common
 report integration is granted by this increment; legacy Agent Audit guards remain unchanged.
 
+### Retained research reporting follow-up: 6 October 2026
+
+The additive [offline reporting path](docs/research-common-reporting.md) now accepts one case
+directory under a sealed controlled matrix. Earlier no-reporting statements describe their
+own increments. Verify the whole seal and replay the selected case's full Git/input/policy,
+syntax-response, native and process evidence; do not launch tools during reporting.
+Research-containing reports use v3; agent-only combinations stay v2 and legacy-only stay v1.
+Keep views/repetitions separate, null unrun counts, explicit synthetic refusal notifications
+and native suppression without approval inference. Do not silently broaden this into public
+source admission or arbitrary failed-attempt ingestion. Preserve original reports and older
+derivatives. Recorded commands/hashes establish consistency, not external attestation.
+
 ## Safety Controls
+
 
 - Build subprocess commands as argument arrays. Never invoke scanner commands through a shell.
 - Mount targets read-only; deny scanner networking; never expose the Docker socket or host home.

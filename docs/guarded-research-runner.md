@@ -1,8 +1,9 @@
 # Guarded Semgrep research runner
 
 Status: controlled development bridge. It does **not** admit public source scans, expose an
-arbitrary-path CLI, freeze a final research profile or integrate this evidence into common
-reporting. Existing Semgrep fixture commands, Agent Audit policy refusals and historical bundles
+arbitrary-path CLI or freeze a final research profile. The 6 October
+[offline reporting extension](research-common-reporting.md) now consumes its sealed evidence.
+Existing Semgrep fixture commands, Agent Audit policy refusals and historical bundles
 are unchanged. See [the candidate contracts](semgrep-research-contracts.md).
 
 ## Treatment and evidence boundary
@@ -112,6 +113,6 @@ stdout/stderr, timings, cleanup results and analysis assessments. Each attempt r
 directory. Failed attempts remain; a success summary is written only after all assertions pass.
 Generated outputs and third-party rules are private workspace artifacts, not redistributed here.
 
-The next gate is review of this bridge and its evidence, then the public treatment/admission and
-reporting integration. A passing controlled matrix does not complete the same-repository pilot,
+The next gate is public treatment/admission review; reporting now replays the retained controlled
+matrix separately. A passing controlled matrix does not complete the same-repository pilot,
 benchmark governance, independent-machine reproduction or the 60-point build checkpoint.

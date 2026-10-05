@@ -1,11 +1,19 @@
 # Common Evidence Reporting
 
+## Research Extension: 6 October 2026
+
+Sealed controlled Semgrep research cases now enter `report build` as `semgrep-research` sources.
+Reports containing them use `common-report-v3`; v1 and v2 remain unchanged for older source
+combinations. Both views, all repetitions, refusals and native evidence links remain separate.
+See [input requirements, flow and verification limits](research-common-reporting.md). This is
+offline evidence replay, not a public-source scan or final research-profile approval.
+
 ## Agent Extension: 2 October 2026
 
 The [bounded agent runner](agent-static-runner.md) adds an `agent-static` source with explicit
 admission, blockers, unknown per-file coverage and native suppression accounting. Reports that
-include it use `common-report-v2`; legacy-only reports remain v1. The schema directory retains
-its historical name and its common-report schema accepts both discriminated versions. Original
+include it without research sources use `common-report-v2`; legacy-only reports remain v1.
+The schema directory retains its historical name and accepts the discriminated versions. Original
 Semgrep/KICS/dependency bundles are unchanged. The sections below describe the earlier v1 scope.
 
 ## Purpose and Boundary

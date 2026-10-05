@@ -5,8 +5,10 @@ from typing import Annotated, Literal
 from pydantic import AwareDatetime, Field, JsonValue, model_validator
 
 from agentsec_evidence.agents.records import AgentRunDetails
+from agentsec_evidence.core.identity import semantic_hash
 from agentsec_evidence.dependencies.models import DependencyModel, StageComparison
 from agentsec_evidence.models.contracts import CoverageRecord, FailureRecord, Sha256, Summary
+from agentsec_evidence.reporting.research_models import ResearchCaseSummary
 
 Count = Annotated[int, Field(ge=0)]
 
@@ -80,13 +82,34 @@ class AgentSource(SourceBase):
         return self
 
 
+class ResearchSource(SourceBase):
+    kind: Literal["semgrep-research"] = "semgrep-research"
+    summary: ResearchCaseSummary
+
+    @model_validator(mode="after")
+    def validate_source(self) -> ResearchSource:
+        if self.state != self.summary.state:
+            raise ValueError("Research source state differs")
+        expected = (
+            "research-"
+            + semantic_hash(
+                {"manifest": self.source_manifest_sha256, "case": self.summary.case_id}
+            )[:32]
+        )
+        if self.run_id != expected:
+            raise ValueError("Research source identity differs from its manifest and case")
+        return self
+
+
 type ReportSource = Annotated[
-    StaticSource | DependencySource | AgentSource, Field(discriminator="kind")
+    StaticSource | DependencySource | AgentSource | ResearchSource, Field(discriminator="kind")
 ]
 
 
 class CommonReport(DependencyModel):
-    contract: Literal["common-report-v1", "common-report-v2"] = "common-report-v1"
+    contract: Literal["common-report-v1", "common-report-v2", "common-report-v3"] = (
+        "common-report-v1"
+    )
     generated_at: AwareDatetime
     sensitivity: Literal["internal"] = "internal"
     sources: list[ReportSource]
@@ -108,10 +131,12 @@ class CommonReport(DependencyModel):
     @model_validator(mode="after")
     def validate_agent_version(self) -> CommonReport:
         expected = (
-            "common-report-v2"
+            "common-report-v3"
+            if any(isinstance(source, ResearchSource) for source in self.sources)
+            else "common-report-v2"
             if any(isinstance(source, AgentSource) for source in self.sources)
             else "common-report-v1"
         )
         if self.contract != expected:
-            raise ValueError("Agent source details require common-report-v2")
+            raise ValueError("Source kinds require the corresponding common report version")
         return self

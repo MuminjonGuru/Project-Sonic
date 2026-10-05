@@ -1135,6 +1135,52 @@
       "title": "FailureRecord",
       "type": "object"
     },
+    "FindingAnchor": {
+      "additionalProperties": false,
+      "properties": {
+        "end_column": {
+          "minimum": 1,
+          "title": "End Column",
+          "type": "integer"
+        },
+        "end_line": {
+          "minimum": 1,
+          "title": "End Line",
+          "type": "integer"
+        },
+        "path": {
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "rule_id": {
+          "maxLength": 256,
+          "pattern": "^[A-Za-z0-9_.-]+$",
+          "title": "Rule Id",
+          "type": "string"
+        },
+        "start_column": {
+          "minimum": 1,
+          "title": "Start Column",
+          "type": "integer"
+        },
+        "start_line": {
+          "minimum": 1,
+          "title": "Start Line",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "rule_id",
+        "path",
+        "start_line",
+        "start_column",
+        "end_line",
+        "end_column"
+      ],
+      "title": "FindingAnchor",
+      "type": "object"
+    },
     "Fraction": {
       "additionalProperties": false,
       "properties": {
@@ -1209,6 +1255,115 @@
       "type": "object"
     },
     "JsonValue": {},
+    "PolicyFindingView": {
+      "additionalProperties": false,
+      "properties": {
+        "policy_index": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Policy Index"
+        },
+        "research_index": {
+          "minimum": 0,
+          "title": "Research Index",
+          "type": "integer"
+        },
+        "state": {
+          "enum": [
+            "reported",
+            "native-suppression-marked",
+            "file-excluded",
+            "not-observed",
+            "unknown"
+          ],
+          "title": "State",
+          "type": "string"
+        }
+      },
+      "required": [
+        "research_index",
+        "policy_index",
+        "state"
+      ],
+      "title": "PolicyFindingView",
+      "type": "object"
+    },
+    "PolicyInclude": {
+      "additionalProperties": false,
+      "properties": {
+        "line": {
+          "minimum": 1,
+          "title": "Line",
+          "type": "integer"
+        },
+        "owner": {
+          "minLength": 1,
+          "title": "Owner",
+          "type": "string"
+        },
+        "target": {
+          "minLength": 1,
+          "title": "Target",
+          "type": "string"
+        }
+      },
+      "required": [
+        "owner",
+        "line",
+        "target"
+      ],
+      "title": "PolicyInclude",
+      "type": "object"
+    },
+    "PolicyIssue": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "enum": [
+            "policy-budget",
+            "policy-encoding",
+            "unsupported-directive",
+            "unsafe-include",
+            "missing-include",
+            "nested-include",
+            "python-policy-input"
+          ],
+          "title": "Code",
+          "type": "string"
+        },
+        "line": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Line"
+        },
+        "path": {
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "code"
+      ],
+      "title": "PolicyIssue",
+      "type": "object"
+    },
     "Producer": {
       "additionalProperties": false,
       "properties": {
@@ -1247,6 +1402,7 @@
         "mapping": {
           "agent-static": "#/$defs/AgentSource",
           "dependency": "#/$defs/DependencySource",
+          "semgrep-research": "#/$defs/ResearchSource",
           "static": "#/$defs/StaticSource"
         },
         "propertyName": "kind"
@@ -1260,8 +1416,792 @@
         },
         {
           "$ref": "#/$defs/AgentSource"
+        },
+        {
+          "$ref": "#/$defs/ResearchSource"
         }
       ]
+    },
+    "ResearchCaseSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "analysis_completeness": {
+          "const": "not-established",
+          "default": "not-established",
+          "title": "Analysis Completeness",
+          "type": "string"
+        },
+        "case_id": {
+          "maxLength": 100,
+          "pattern": "^[a-z0-9-]+$",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "contract": {
+          "const": "semgrep-research-summary-v1",
+          "default": "semgrep-research-summary-v1",
+          "title": "Contract",
+          "type": "string"
+        },
+        "dual_views": {
+          "items": {
+            "$ref": "#/$defs/SemgrepDualView"
+          },
+          "maxItems": 2,
+          "title": "Dual Views",
+          "type": "array"
+        },
+        "evidence_role": {
+          "const": "controlled-development-not-held-out",
+          "default": "controlled-development-not-held-out",
+          "title": "Evidence Role",
+          "type": "string"
+        },
+        "limitations": {
+          "default": [
+            "This is replayed controlled development evidence, not a public-source scan.",
+            "Views and repetitions are separate observations, not additive vulnerabilities.",
+            "Native suppression does not establish reviewer approval or remediation.",
+            "Recorded commands and hashes are not external execution attestation."
+          ],
+          "items": {
+            "type": "string"
+          },
+          "title": "Limitations",
+          "type": "array"
+        },
+        "passes": {
+          "items": {
+            "$ref": "#/$defs/ResearchPassSummary"
+          },
+          "maxItems": 4,
+          "title": "Passes",
+          "type": "array"
+        },
+        "policy": {
+          "$ref": "#/$defs/SemgrepPolicyAssessment"
+        },
+        "scope": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SemgrepResearchScope"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "selected_file_count": {
+          "minimum": 0,
+          "title": "Selected File Count",
+          "type": "integer"
+        },
+        "state": {
+          "enum": [
+            "policy-refused",
+            "syntax-refused",
+            "observed"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "syntax_state": {
+          "enum": [
+            "not-run",
+            "rejected",
+            "parsed"
+          ],
+          "title": "Syntax State",
+          "type": "string"
+        },
+        "unrun_finding_count": {
+          "default": null,
+          "title": "Unrun Finding Count",
+          "type": "null"
+        },
+        "vulnerability_total": {
+          "default": null,
+          "title": "Vulnerability Total",
+          "type": "null"
+        }
+      },
+      "required": [
+        "case_id",
+        "state",
+        "selected_file_count",
+        "policy",
+        "scope",
+        "syntax_state",
+        "passes",
+        "dual_views"
+      ],
+      "title": "ResearchCaseSummary",
+      "type": "object"
+    },
+    "ResearchExecutionAssessment": {
+      "additionalProperties": false,
+      "properties": {
+        "analysis_state": {
+          "enum": [
+            "not-established",
+            "incomplete",
+            "failed"
+          ],
+          "title": "Analysis State",
+          "type": "string"
+        },
+        "cleanup_succeeded": {
+          "title": "Cleanup Succeeded",
+          "type": "boolean"
+        },
+        "contract": {
+          "const": "semgrep-execution-assessment-v1",
+          "default": "semgrep-execution-assessment-v1",
+          "title": "Contract",
+          "type": "string"
+        },
+        "process_state": {
+          "enum": [
+            "completed",
+            "nonzero",
+            "timed-out",
+            "output-limited",
+            "exit-unavailable"
+          ],
+          "title": "Process State",
+          "type": "string"
+        },
+        "reasons": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Reasons",
+          "type": "array"
+        },
+        "report_state": {
+          "enum": [
+            "reconciled",
+            "missing-or-invalid"
+          ],
+          "title": "Report State",
+          "type": "string"
+        },
+        "vulnerability_total": {
+          "default": null,
+          "title": "Vulnerability Total",
+          "type": "null"
+        }
+      },
+      "required": [
+        "process_state",
+        "cleanup_succeeded",
+        "report_state",
+        "analysis_state",
+        "reasons"
+      ],
+      "title": "ResearchExecutionAssessment",
+      "type": "object"
+    },
+    "ResearchFileObservation": {
+      "additionalProperties": false,
+      "properties": {
+        "native_reason": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Native Reason"
+        },
+        "path": {
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "reported",
+            "reported-with-native-issue",
+            "native-skipped",
+            "unreported"
+          ],
+          "title": "State",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "state"
+      ],
+      "title": "ResearchFileObservation",
+      "type": "object"
+    },
+    "ResearchFinding": {
+      "additionalProperties": false,
+      "properties": {
+        "anchor": {
+          "$ref": "#/$defs/FindingAnchor"
+        },
+        "json_pointer": {
+          "anyOf": [
+            {
+              "pattern": "^/results/(0|[1-9][0-9]*)$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Json Pointer"
+        },
+        "message": {
+          "minLength": 1,
+          "title": "Message",
+          "type": "string"
+        },
+        "native_suppressions": {
+          "default": [],
+          "items": {
+            "additionalProperties": {
+              "$ref": "#/$defs/JsonValue"
+            },
+            "type": "object"
+          },
+          "title": "Native Suppressions",
+          "type": "array"
+        },
+        "review_state": {
+          "const": "unreviewed",
+          "default": "unreviewed",
+          "title": "Review State",
+          "type": "string"
+        },
+        "sarif_pointer": {
+          "pattern": "^/runs/0/results/(0|[1-9][0-9]*)$",
+          "title": "Sarif Pointer",
+          "type": "string"
+        }
+      },
+      "required": [
+        "anchor",
+        "message",
+        "json_pointer",
+        "sarif_pointer"
+      ],
+      "title": "ResearchFinding",
+      "type": "object"
+    },
+    "ResearchInput": {
+      "additionalProperties": false,
+      "properties": {
+        "byte_length": {
+          "minimum": 0,
+          "title": "Byte Length",
+          "type": "integer"
+        },
+        "media_type": {
+          "minLength": 1,
+          "title": "Media Type",
+          "type": "string"
+        },
+        "path": {
+          "maxLength": 4096,
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "0.1.0",
+          "default": "0.1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "sha256",
+        "byte_length",
+        "media_type"
+      ],
+      "title": "ResearchInput",
+      "type": "object"
+    },
+    "ResearchPassSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "duration_ns": {
+          "minimum": 0,
+          "title": "Duration Ns",
+          "type": "integer"
+        },
+        "evidence": {
+          "$ref": "#/$defs/SemgrepPassEvidence"
+        },
+        "execution": {
+          "$ref": "#/$defs/ResearchExecutionAssessment"
+        },
+        "exit_code": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Exit Code"
+        },
+        "key": {
+          "pattern": "^(research|repository-policy)-[12]$",
+          "title": "Key",
+          "type": "string"
+        },
+        "native_finding_records": {
+          "minimum": 0,
+          "title": "Native Finding Records",
+          "type": "integer"
+        },
+        "native_json_path": {
+          "title": "Native Json Path",
+          "type": "string"
+        },
+        "native_sarif_path": {
+          "title": "Native Sarif Path",
+          "type": "string"
+        },
+        "repetition": {
+          "maximum": 2,
+          "minimum": 1,
+          "title": "Repetition",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "key",
+        "repetition",
+        "evidence",
+        "execution",
+        "exit_code",
+        "duration_ns",
+        "native_finding_records",
+        "native_json_path",
+        "native_sarif_path"
+      ],
+      "title": "ResearchPassSummary",
+      "type": "object"
+    },
+    "ResearchSource": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "semgrep-research",
+          "default": "semgrep-research",
+          "title": "Kind",
+          "type": "string"
+        },
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "revision": {
+          "title": "Revision",
+          "type": "string"
+        },
+        "run_id": {
+          "title": "Run Id",
+          "type": "string"
+        },
+        "source_manifest_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Manifest Sha256",
+          "type": "string"
+        },
+        "source_semantic_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Source Semantic Sha256"
+        },
+        "state": {
+          "title": "State",
+          "type": "string"
+        },
+        "summary": {
+          "$ref": "#/$defs/ResearchCaseSummary"
+        },
+        "target_content_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Target Content Sha256"
+        }
+      },
+      "required": [
+        "run_id",
+        "state",
+        "label",
+        "revision",
+        "target_content_sha256",
+        "source_manifest_sha256",
+        "source_semantic_sha256",
+        "summary"
+      ],
+      "title": "ResearchSource",
+      "type": "object"
+    },
+    "SemgrepDualView": {
+      "additionalProperties": false,
+      "properties": {
+        "analysis_completeness": {
+          "const": "not-established",
+          "default": "not-established",
+          "title": "Analysis Completeness",
+          "type": "string"
+        },
+        "contract": {
+          "const": "semgrep-dual-view-v1",
+          "default": "semgrep-dual-view-v1",
+          "title": "Contract",
+          "type": "string"
+        },
+        "findings": {
+          "items": {
+            "$ref": "#/$defs/PolicyFindingView"
+          },
+          "title": "Findings",
+          "type": "array"
+        },
+        "policy_state": {
+          "enum": [
+            "not-run",
+            "observed"
+          ],
+          "title": "Policy State",
+          "type": "string"
+        },
+        "repository_policy": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SemgrepPassEvidence"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "research": {
+          "$ref": "#/$defs/SemgrepPassEvidence"
+        },
+        "vulnerability_total": {
+          "default": null,
+          "title": "Vulnerability Total",
+          "type": "null"
+        }
+      },
+      "required": [
+        "research",
+        "repository_policy",
+        "findings",
+        "policy_state"
+      ],
+      "title": "SemgrepDualView",
+      "type": "object"
+    },
+    "SemgrepPassEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "analysis_completeness": {
+          "const": "not-established",
+          "default": "not-established",
+          "title": "Analysis Completeness",
+          "type": "string"
+        },
+        "contract": {
+          "const": "semgrep-pass-evidence-v1",
+          "default": "semgrep-pass-evidence-v1",
+          "title": "Contract",
+          "type": "string"
+        },
+        "execution_id": {
+          "minLength": 1,
+          "title": "Execution Id",
+          "type": "string"
+        },
+        "files": {
+          "items": {
+            "$ref": "#/$defs/ResearchFileObservation"
+          },
+          "maxItems": 64,
+          "minItems": 1,
+          "title": "Files",
+          "type": "array"
+        },
+        "findings": {
+          "items": {
+            "$ref": "#/$defs/ResearchFinding"
+          },
+          "maxItems": 10000,
+          "title": "Findings",
+          "type": "array"
+        },
+        "native_declared_rule_ids": {
+          "items": {
+            "maxLength": 256,
+            "pattern": "^[A-Za-z0-9_.-]+$",
+            "type": "string"
+          },
+          "title": "Native Declared Rule Ids",
+          "type": "array"
+        },
+        "native_errors": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Native Errors",
+          "type": "array"
+        },
+        "native_execution_successful": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Native Execution Successful"
+        },
+        "native_json_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Native Json Sha256",
+          "type": "string"
+        },
+        "native_notifications": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Native Notifications",
+          "type": "array"
+        },
+        "native_sarif_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Native Sarif Sha256",
+          "type": "string"
+        },
+        "native_skip_details_available": {
+          "title": "Native Skip Details Available",
+          "type": "boolean"
+        },
+        "native_skipped_rules": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Native Skipped Rules",
+          "type": "array"
+        },
+        "profile_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Profile Sha256",
+          "type": "string"
+        },
+        "role": {
+          "enum": [
+            "research",
+            "repository-policy"
+          ],
+          "title": "Role",
+          "type": "string"
+        },
+        "scope_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Scope Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "profile_sha256",
+        "scope_sha256",
+        "execution_id",
+        "role",
+        "native_json_sha256",
+        "native_sarif_sha256",
+        "files",
+        "findings",
+        "native_skip_details_available",
+        "native_declared_rule_ids"
+      ],
+      "title": "SemgrepPassEvidence",
+      "type": "object"
+    },
+    "SemgrepPolicyAssessment": {
+      "additionalProperties": false,
+      "properties": {
+        "blockers": {
+          "items": {
+            "$ref": "#/$defs/PolicyIssue"
+          },
+          "title": "Blockers",
+          "type": "array"
+        },
+        "contract": {
+          "const": "semgrep-policy-assessment-v1",
+          "default": "semgrep-policy-assessment-v1",
+          "title": "Contract",
+          "type": "string"
+        },
+        "execution_authorization": {
+          "const": "not-granted",
+          "default": "not-granted",
+          "title": "Execution Authorization",
+          "type": "string"
+        },
+        "files": {
+          "items": {
+            "$ref": "#/$defs/ResearchInput"
+          },
+          "title": "Files",
+          "type": "array"
+        },
+        "implicit_gitignore": {
+          "const": "disabled",
+          "default": "disabled",
+          "title": "Implicit Gitignore",
+          "type": "string"
+        },
+        "includes": {
+          "items": {
+            "$ref": "#/$defs/PolicyInclude"
+          },
+          "title": "Includes",
+          "type": "array"
+        },
+        "label": {
+          "const": "Semgrep ignore files and inline suppressions; Git ignore filtering disabled",
+          "default": "Semgrep ignore files and inline suppressions; Git ignore filtering disabled",
+          "title": "Label",
+          "type": "string"
+        },
+        "pattern_evaluation": {
+          "const": "delegated-to-pinned-semgrep",
+          "default": "delegated-to-pinned-semgrep",
+          "title": "Pattern Evaluation",
+          "type": "string"
+        },
+        "root_defaults": {
+          "enum": [
+            "pinned-native-defaults",
+            "root-file-overrides-defaults"
+          ],
+          "title": "Root Defaults",
+          "type": "string"
+        },
+        "semgrepignore_paths": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Semgrepignore Paths",
+          "type": "array"
+        }
+      },
+      "required": [
+        "root_defaults",
+        "semgrepignore_paths",
+        "files",
+        "includes",
+        "blockers"
+      ],
+      "title": "SemgrepPolicyAssessment",
+      "type": "object"
+    },
+    "SemgrepResearchScope": {
+      "additionalProperties": false,
+      "properties": {
+        "contract": {
+          "const": "semgrep-research-scope-v1",
+          "default": "semgrep-research-scope-v1",
+          "title": "Contract",
+          "type": "string"
+        },
+        "execution_authorization": {
+          "const": "not-granted",
+          "default": "not-granted",
+          "title": "Execution Authorization",
+          "type": "string"
+        },
+        "policy_context": {
+          "const": "full-parent-required",
+          "default": "full-parent-required",
+          "title": "Policy Context",
+          "type": "string"
+        },
+        "policy_files": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ResearchInput"
+          },
+          "maxItems": 64,
+          "title": "Policy Files",
+          "type": "array"
+        },
+        "profile_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Profile Sha256",
+          "type": "string"
+        },
+        "selected_files": {
+          "items": {
+            "$ref": "#/$defs/ResearchInput"
+          },
+          "maxItems": 64,
+          "minItems": 1,
+          "title": "Selected Files",
+          "type": "array"
+        },
+        "selection_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Selection Sha256",
+          "type": "string"
+        },
+        "target_snapshot_id": {
+          "minLength": 1,
+          "title": "Target Snapshot Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "target_snapshot_id",
+        "selection_sha256",
+        "profile_sha256",
+        "selected_files"
+      ],
+      "title": "SemgrepResearchScope",
+      "type": "object"
     },
     "StageComparison": {
       "additionalProperties": false,
@@ -1596,7 +2536,8 @@
       "default": "common-report-v1",
       "enum": [
         "common-report-v1",
-        "common-report-v2"
+        "common-report-v2",
+        "common-report-v3"
       ],
       "title": "Contract",
       "type": "string"

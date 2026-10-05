@@ -1,0 +1,157 @@
+{
+  "$defs": {
+    "CandidateRule": {
+      "additionalProperties": false,
+      "properties": {
+        "license_expression": {
+          "const": "MIT",
+          "default": "MIT",
+          "title": "License Expression",
+          "type": "string"
+        },
+        "native_rule_id": {
+          "maxLength": 256,
+          "pattern": "^[A-Za-z0-9_.-]+$",
+          "title": "Native Rule Id",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "source_path": {
+          "minLength": 1,
+          "title": "Source Path",
+          "type": "string"
+        },
+        "upstream_test_state": {
+          "enum": [
+            "passed",
+            "no-active-assertions"
+          ],
+          "title": "Upstream Test State",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_path",
+        "sha256",
+        "native_rule_id",
+        "upstream_test_state"
+      ],
+      "title": "CandidateRule",
+      "type": "object"
+    }
+  },
+  "$id": "urn:agentsec-evidence:schema:semgrep-research-v1:candidate-profile",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "contract": {
+      "const": "semgrep-research-profile-v1",
+      "default": "semgrep-research-profile-v1",
+      "title": "Contract",
+      "type": "string"
+    },
+    "image": {
+      "const": "semgrep/semgrep@sha256:f1f7b71861c7b28b6e0f661225a2c4f58a484f5d0f182465c6d6b3b22f972ade",
+      "title": "Image",
+      "type": "string"
+    },
+    "limitations": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Limitations",
+      "type": "array"
+    },
+    "native_formats": {
+      "default": [
+        "json",
+        "sarif"
+      ],
+      "items": {
+        "enum": [
+          "json",
+          "sarif"
+        ],
+        "type": "string"
+      },
+      "title": "Native Formats",
+      "type": "array"
+    },
+    "profile_id": {
+      "minLength": 1,
+      "title": "Profile Id",
+      "type": "string"
+    },
+    "public_source_admission": {
+      "const": "not-granted",
+      "default": "not-granted",
+      "title": "Public Source Admission",
+      "type": "string"
+    },
+    "rules": {
+      "items": {
+        "$ref": "#/$defs/CandidateRule"
+      },
+      "maxItems": 256,
+      "minItems": 1,
+      "title": "Rules",
+      "type": "array"
+    },
+    "source_license_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Source License Sha256",
+      "type": "string"
+    },
+    "source_repository": {
+      "const": "https://gitlab.com/gitlab-org/security-products/sast-rules",
+      "title": "Source Repository",
+      "type": "string"
+    },
+    "source_revision": {
+      "pattern": "^[0-9a-f]{40}$",
+      "title": "Source Revision",
+      "type": "string"
+    },
+    "status": {
+      "const": "development-candidate",
+      "default": "development-candidate",
+      "title": "Status",
+      "type": "string"
+    },
+    "tool_id": {
+      "const": "semgrep",
+      "default": "semgrep",
+      "title": "Tool Id",
+      "type": "string"
+    },
+    "tool_version": {
+      "const": "1.174.0",
+      "default": "1.174.0",
+      "title": "Tool Version",
+      "type": "string"
+    },
+    "views": {
+      "const": "research-and-repository-policy",
+      "default": "research-and-repository-policy",
+      "title": "Views",
+      "type": "string"
+    }
+  },
+  "required": [
+    "profile_id",
+    "image",
+    "source_repository",
+    "source_revision",
+    "source_license_sha256",
+    "rules",
+    "limitations"
+  ],
+  "title": "SemgrepResearchProfile",
+  "type": "object"
+}

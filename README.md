@@ -19,6 +19,7 @@ and reported. It does not implement a replacement SAST engine.
 | Artifact inventory | Versioned filename candidates over complete supplied snapshot metadata | Authored checks only; no content parsing, security verdict or Git-tree completeness claim |
 | Git evidence and input plans | Offline commit/tree/blob verification and all-file per-tool decisions | Authored walkthrough; separate proof, no acquisition CLI or scanner authorization |
 | Selected input views | Verified selected-byte copies and isolated Python/MCP input-policy validation | Four controlled cases; full parent policy context retained; no scanner authorization |
+| Research Semgrep contracts | Hash-pinned 68-rule candidate, paired native JSON/SARIF and separate research/policy views | Controlled development verification only; no public scan runner or final profile freeze |
 | Common reporting | Validated static/dependency/agent evidence in common JSON and SARIF | Offline derivatives; no new scans or combined vulnerability total |
 
 The static evidence path is:
@@ -62,6 +63,12 @@ The [selected-view bridge](docs/verified-input-views.md) now materializes exact 
 connects the bounded validation worker without discarding the full inventory's policy context.
 Passing this input gate does not grant scanner permission or establish security coverage.
 Public source intake, the local UI and held-out evaluation are also pending.
+
+The [research Semgrep contracts](docs/semgrep-research-contracts.md) now preserve file exclusions,
+native suppression and incomplete-analysis evidence without altering the first-slice profiles.
+All 68 pinned GitLab Python rules remain a candidate, not a claim of comprehensive detection.
+This library and its controlled verification helper are not yet connected to a public-source
+scan command or common reporting.
 
 ### Evidence Walkthrough
 

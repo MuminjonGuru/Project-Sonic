@@ -1,0 +1,10 @@
+tool_id = "agent-audit"
+tool_version = "0.20.0"
+adapter_id = "agent-audit-json"
+adapter_version = "0.1.0"
+image = "sha256:e4b41016ff8cd5b5c769f171cca3f3f145a8312a3fb2a0ad72993b11a636e79a"
+validator_image = "sha256:3bfa1ba1294f1c4683ebbbbff98921e67b8230299fe35e0f5e82deefc6a73080"
+source_revision = "8c4c5cb9bddd4758b064577c912ee8afcaf5330f"
+treatment = "python-source-pilot-v1"
+network = "denied"
+executes_target_code = false

@@ -245,6 +245,17 @@ inventory. It retains failures and refuses unsupported input. This is intake ver
 not source scanning or a vulnerability result. Research profiles and source-pilot admission
 remain separate gates; the existing dependency experiment and its evidence are unchanged.
 
+## Same-Repository Source Pilot
+
+The [bounded pilot runner](docs/same-repository-pilot.md) connects verified source intake,
+the unchanged 68-rule Semgrep candidate in two policy views, Agent Audit static analysis,
+and both frozen dependency paths on one revision. Its fixed treatment selects all 26 Python
+files from the 47-file inventory and runs three sequential repetitions without target
+execution. The new pilot envelope is separate from controlled-case common-report contracts.
+Dockerfile remains unsupported; broad inventory is not comprehensive detection coverage.
+Use fresh output directories and retain failed attempts. This is formative integration
+evidence, not a held-out accuracy benchmark or completion of the full project.
+
 ## Repository Boundary
 
 All implementation, tests, fixtures, benchmark definitions, runtime workspaces, and generated

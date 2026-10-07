@@ -17,7 +17,58 @@ from agentsec_evidence.research.models import (
     load_research_profile,
     verify_rule_bytes,
 )
-from agentsec_evidence.research.semgrep import build_dual_view, reconcile_semgrep_pass
+from agentsec_evidence.research.semgrep import (
+    build_dual_view,
+    directory_skip_context,
+    reconcile_semgrep_pass,
+)
+
+
+@pytest.mark.parametrize(
+    "mutation", ["none", "duplicate", "scanned", "reason", "foreign", "strict"]
+)
+def test_pilot_directory_skip_keeps_children_unreported(mutation: str) -> None:
+    selected = scope().model_dump(mode="json")
+    selected["selected_files"] = [{**selected["selected_files"][0], "path": "tests/example.py"}]
+    selected_scope = SemgrepResearchScope.model_validate(selected)
+    native, sarif = reports()
+    native["results"] = []
+    native["paths"] = {
+        "scanned": [],
+        "skipped": [{"path": "/src/tests", "reason": "semgrepignore_patterns_match"}],
+    }
+    sarif["runs"][0]["results"] = []
+    if mutation == "duplicate":
+        native["paths"]["skipped"] *= 2
+    elif mutation == "scanned":
+        native["paths"]["scanned"] = ["/src/tests/example.py"]
+    elif mutation == "reason":
+        native["paths"]["skipped"][0]["reason"] = "unknown_future_reason"
+    elif mutation == "foreign":
+        native["paths"]["skipped"][0]["path"] = "/src/tests-other"
+
+    def run() -> SemgrepPassEvidence:
+        return reconcile_semgrep_pass(
+            profile_bytes=PROFILE,
+            scope=selected_scope,
+            execution_id="pilot-test",
+            role="repository-policy",
+            native_json=encoded(native),
+            native_sarif=encoded(sarif),
+            allow_policy_directory_skips=mutation != "strict",
+        )
+
+    if mutation != "none":
+        with pytest.raises(ValueError):
+            run()
+        return
+    evidence = run()
+    assert evidence.files[0].state == "unreported"
+    assert evidence.files[0].native_reason is None
+    sidecar = directory_skip_context(selected_scope, encoded(native))
+    assert sidecar[0]["selected_descendants"] == ["tests/example.py"]
+    assert sidecar[0]["native_pointer"] == "/paths/skipped/0"
+
 
 ROOT = Path(__file__).resolve().parents[2]
 PROFILE = (ROOT / "configs/research/semgrep-python-candidate-v1.json").read_bytes()

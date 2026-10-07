@@ -17,7 +17,7 @@ class AgentAuditToolConfig(StrictConfigModel):
         "sha256:3bfa1ba1294f1c4683ebbbbff98921e67b8230299fe35e0f5e82deefc6a73080"
     ]
     source_revision: Literal["8c4c5cb9bddd4758b064577c912ee8afcaf5330f"]
-    treatment: Literal["authored-agent-static-v1"]
+    treatment: Literal["authored-agent-static-v1", "python-source-pilot-v1"]
     network: Literal["denied"]
     executes_target_code: Literal[False]
 

@@ -226,7 +226,23 @@ and native suppression without approval inference. Do not silently broaden this 
 source admission or arbitrary failed-attempt ingestion. Preserve original reports and older
 derivatives. Recorded commands/hashes establish consistency, not external attestation.
 
-## Safety Controls
+### Fixed public-source pilot follow-up: 6 October 2026
+
+Phase 03 P3-D-2026-10-06-02 records student approval of the bounded treatment in
+[docs/same-repository-pilot.md](docs/same-repository-pilot.md). Earlier dependency-only and
+no-public-runner statements describe their respective increments, not this new approval.
+The only public source target is the fixed revision in `source-pilot.json`: all 26 Python
+files, unchanged 68-rule candidate in two policy views, pinned Agent Audit, and existing
+paired dependency paths, repeated three times. No arbitrary-directory CLI or broader
+admission. Candidate component metadata remains historical; the outer plan grants finite use.
+
+Do not execute target code, refresh pins, install dependencies, infer MCP from LangGraph,
+or add Dockerfile coverage. Preserve unknown framework/per-file analysis and unrun counts.
+Use a new attempt directory after failure, never silent retries. The dedicated pilot report
+must not masquerade as a controlled-source v3 common report. Retained hashes and replay
+establish consistency, not a public vulnerability oracle, independent labels or attestation.
+
+## Safety Controls (All Treatments)
 
 
 - Build subprocess commands as argument arrays. Never invoke scanner commands through a shell.

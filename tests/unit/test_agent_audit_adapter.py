@@ -16,6 +16,8 @@ from agentsec_evidence.adapters.agent_audit import (
 )
 from agentsec_evidence.agents.inputs import validate_agent_input
 from agentsec_evidence.core.identity import sha256_bytes
+from agentsec_evidence.core.io import jsonl_bytes
+from agentsec_evidence.pilot.validation import checked_retained_findings
 
 
 def native_document() -> dict[str, Any]:
@@ -105,6 +107,24 @@ def test_loss_aware_normalization_and_blob_linkage() -> None:
     assert finding.locations[0].start_line == 2
     assert result.native_scanned_files == 1
     assert result.per_file_coverage == "not-observable"
+
+
+def test_pilot_replay_preserves_opaque_ids_but_checks_finding_content() -> None:
+    first = normalized(native_document()).findings
+    second = normalized(native_document()).findings
+    assert first[0].record_id != second[0].record_id
+    assert checked_retained_findings(second, jsonl_bytes(first)) == list(first)
+    changed = first[0].model_copy(
+        update={"message": first[0].message.model_copy(update={"title": "Not the native title"})}
+    )
+    with pytest.raises(ValueError, match="content differs"):
+        checked_retained_findings(second, jsonl_bytes([changed]))
+
+
+def test_pilot_replay_rejects_duplicated_record_ids() -> None:
+    findings = normalized(native_document()).findings
+    with pytest.raises(ValueError, match="Duplicate"):
+        checked_retained_findings(findings * 2, jsonl_bytes(findings * 2))
 
 
 @pytest.mark.parametrize(

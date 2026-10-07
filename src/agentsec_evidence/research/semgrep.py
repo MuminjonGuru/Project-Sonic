@@ -99,6 +99,43 @@ def _suppression_records(value: dict[str, JsonValue]) -> tuple[dict[str, JsonVal
     return records
 
 
+def directory_skip_context(
+    scope: SemgrepResearchScope, native_json: bytes
+) -> list[dict[str, JsonValue]]:
+    """Retain ancestor skip evidence without inventing direct per-file native reports."""
+    raw = load_agent_json(native_json, max_bytes=MAX_REPORT_BYTES)
+    paths = _object(raw.get("paths"))
+    selected = {item.path for item in scope.selected_files}
+    scanned = {_path(path) for path in _array(paths.get("scanned"))}
+    result: list[dict[str, JsonValue]] = []
+    seen: set[str] = set()
+    for index, item in enumerate(_array(paths.get("skipped", []))):
+        entry = _object(item)
+        path = _path(entry.get("path"))
+        descendants = sorted(p for p in selected if p.startswith(path + "/"))
+        if path in selected or not descendants:
+            continue
+        reason = _text(entry.get("reason"))
+        if path in seen or reason not in {
+            "semgrepignore_patterns_match",
+            "gitignore_patterns_match",
+        }:
+            raise ValueError("Unsupported or repeated native directory skip")
+        if scanned.intersection(descendants):
+            raise ValueError("Native directory policy exclusion contradicts reported descendants")
+        seen.add(path)
+        result.append(
+            {
+                "native_pointer": f"/paths/skipped/{index}",
+                "path": path,
+                "reason": reason,
+                "selected_descendants": [p for p in descendants],
+                "interpretation": "Ancestor skip evidence, not individual native file observations",
+            }
+        )
+    return result
+
+
 def reconcile_semgrep_pass(
     *,
     profile_bytes: bytes,
@@ -107,6 +144,7 @@ def reconcile_semgrep_pass(
     role: Literal["research", "repository-policy"],
     native_json: bytes,
     native_sarif: bytes,
+    allow_policy_directory_skips: bool = False,
 ) -> SemgrepPassEvidence:
     """Join paired native evidence, not vulnerability identities or security verdicts.
 
@@ -143,11 +181,19 @@ def reconcile_semgrep_pass(
     if len(set(scanned)) != len(scanned) or not set(scanned).issubset(selected):
         raise ValueError("Native reported paths differ from selected inputs")
     skipped: dict[str, str] = {}
+    directory_paths = (
+        {item["path"] for item in directory_skip_context(checked, native_json)}
+        if allow_policy_directory_skips and role == "repository-policy"
+        else set()
+    )
     for item in parsed.paths.skipped:
         entry = _object(item)
         path = _path(entry.get("path"))
         # Policy files can be listed as skipped non-Python inputs but are not scanner targets.
         if path in {item.path for item in checked.policy_files}:
+            continue
+        if path in directory_paths:
+            # The pilot retains a separate ancestor sidecar; children remain unreported.
             continue
         if path not in selected or path in skipped:
             raise ValueError("Native skipped paths are foreign or repeated")

@@ -4,6 +4,32 @@
 preserving native evidence, producing provenance-aware normalized records, exporting SARIF,
 and measuring evidence quality for AI-agent repositories.
 
+## Architecture
+
+```mermaid
+flowchart TD
+    subgraph intake["Host: admission and orchestration"]
+        A["Registered fixture or admitted fixed-revision pilot"] --> B["Snapshot and inventory; Git verification for source pilot"]
+        B --> C["Per-tool input selection and policy gates"]
+    end
+    subgraph containers["Disposable Docker containers: sequential execution"]
+        V["Isolated syntax validation where required"] --> S["Applicable pinned treatment: Semgrep, KICS, Agent Audit or dependency tools"]
+    end
+    subgraph evidence["Host: evidence preservation and offline processing"]
+        R["Native reports, stdout/stderr, identities and hashes"] --> N["Typed findings, coverage, failures and dependency observations"]
+        N --> E["Validated bundles, JSON/SARIF exports and offline replay"]
+    end
+    C --> V
+    S --> R
+```
+
+This is the shared execution pattern, not a claim that every scanner runs on every input.
+Containers receive read-only targets, denied networking and no Docker socket or host home.
+Target code, dependencies, tests and live agents are not executed. Refusals, failures and
+unrun stages remain explicit; missing evidence is not a clean result. The source pilot's
+Dockerfile is unsupported by the selected KICS profile, so KICS does not run in that pilot.
+The dependency treatment keeps direct OSV and Syft -> CycloneDX -> OSV as separate paths.
+
 ## Current Scope
 
 The current implementation is a working CLI prototype, not a complete agent-security product.
@@ -12,16 +38,34 @@ and reported. It does not implement a replacement SAST engine.
 
 | Area | Implemented capability | Evidence boundary |
 |---|---|---|
-| Code | Pinned Semgrep execution, normalization and SARIF | Project-authored development fixtures |
+| Code | Pinned Semgrep execution, normalization and SARIF | Authored fixtures and one admitted public Python pilot; the 68-rule research profile remains a candidate |
 | Infrastructure-as-Code | Pinned KICS execution, normalization and SARIF | Selected Terraform/Kubernetes queries and authored fixtures |
 | Dependencies | Direct OSV analysis compared with Syft -> CycloneDX -> OSV | Controlled PyPI cases and one pinned public-repository lockfile |
-| Agent artifacts | Bounded validation worker -> pinned Agent Audit -> normalized evidence and SARIF | Thirteen authored Python/MCP cases only; public source intake gated |
-| Artifact inventory | Versioned filename candidates over complete supplied snapshot metadata | Authored checks only; no content parsing, security verdict or Git-tree completeness claim |
-| Git evidence and input plans | Offline commit/tree/blob verification and all-file per-tool decisions | Authored walkthrough; separate proof, no acquisition CLI or scanner authorization |
-| Selected input views | Verified selected-byte copies and isolated Python/MCP input-policy validation | Four controlled cases; full parent policy context retained; no scanner authorization |
-| Research Semgrep contracts | Hash-pinned 68-rule candidate, paired native JSON/SARIF and separate research/policy views | Controlled development verification only; no public scan runner or final profile freeze |
-| Guarded research bridge | Full-parent Git replay, policy include guards, isolated syntax validation and dual-pass execution | Fifteen controlled Git cases; no public-source admission |
-| Common reporting | Validated static/dependency/agent bundles and sealed controlled research cases in common JSON and SARIF | Offline derivatives; views, repetitions and refusals remain separate; no combined vulnerability total |
+| Agent artifacts | Bounded validation worker -> pinned Agent Audit -> normalized evidence and SARIF | Thirteen authored Python/MCP cases plus the admitted public Python pilot; per-file completion remains unknown |
+| Artifact inventory and Git evidence | Filename candidates, commit/tree/blob replay and explicit all-file input decisions | Controlled cases and all 47 regular files of the fixed pilot; inventory breadth is not detection breadth |
+| Selected input views | Verified byte copies, full-context policy guards and isolated Python/MCP validation | Controlled cases and explicitly approved pilot selections; a valid view alone does not authorize scanning |
+| Research Semgrep | Pinned 68-rule candidate with separate research and repository-policy views | Controlled cases and 26 selected Python files in the fixed pilot; no general repository admission or final profile freeze |
+| Reporting and replay | Static/dependency/agent bundles and controlled research cases in common JSON/SARIF; dedicated public-pilot report and replay | Views, repetitions, refusals and dependency paths remain separate; no combined vulnerability total |
+
+The public-source helper accepts one frozen plan, not arbitrary repositories. Prompts, skills,
+memory, permissions and agent communication have no comprehensive dedicated treatment here.
+The read-only results UI, final benchmark governance and held-out evaluation are not complete.
+
+## Start Reviewing Here
+
+| Review question | Entry points |
+|---|---|
+| What exactly was approved and measured? | [Pilot design and invocation flow](docs/same-repository-pilot.md), [frozen source-pilot plan](test_cases/pilot/langgraph-cicd/source-pilot.json), [candidate rule profile](configs/research/semgrep-python-candidate-v1.json) |
+| How are tools connected and evidence preserved? | [Pilot runner](src/agentsec_evidence/pilot/runner.py), [shared orchestration](src/agentsec_evidence/orchestration/shared.py), [producer adapters](src/agentsec_evidence/adapters/) |
+| Can retained results be checked without rescanning? | [Offline pilot replay](src/agentsec_evidence/pilot/validation.py), [replay helper](tools/verify_source_pilot.py), [reporting contracts](docs/common-reporting.md) |
+| What guards and expected cases exist? | [Python/MCP case registry](test_cases/development/agent-artifacts/cases.json), [authored dependency expectations](test_cases/development/dependency-basic/expected.json), [pilot regression tests](tests/unit/test_source_pilot.py), [Docker safety tests](tests/security/test_docker_plan.py) |
+
+The [pilot results below](#same-repository-source-pilot) summarize retained measurements.
+Native execution bundles, target archives, rule files and images are not included in the
+checkout. Reproduction needs their documented preparation; opening the repository alone
+does not provide the raw pilot dataset. The results are formative evidence, not held-out labels.
+
+## Treatment Paths
 
 The static evidence path is:
 
@@ -43,8 +87,9 @@ retained evidence -> validation -> common JSON / SARIF
 ```
 
 Both OSV treatments use explicit shared settings and the same frozen offline database.
-The public pilot is lockfile-only: it does not execute the agent, install dependencies, or
-establish runtime exploitability. A successful no-finding scan is not proof of safety.
+The original dependency experiment is lockfile-only; the later same-repository pilot also
+includes the admitted Python source treatment. Neither executes the agent or installs target
+dependencies, and neither establishes runtime exploitability. No findings is not proof of safety.
 
 The first agreed agent-specific integration scope is Python tool definitions and MCP JSON
 configurations. The [bounded agent CLI and reporting path](docs/agent-static-runner.md) now
@@ -63,18 +108,21 @@ Git LFS pointers are refused; a valid plan does not authorize execution or bypas
 The [selected-view bridge](docs/verified-input-views.md) now materializes exact selected bytes and
 connects the bounded validation worker without discarding the full inventory's policy context.
 Passing this input gate does not grant scanner permission or establish security coverage.
-Public source intake, the local UI and held-out evaluation are also pending.
+A general public-repository workflow, the local UI and held-out evaluation remain pending;
+the fixed cached-source pilot is separately admitted through its frozen plan.
 
 The [research Semgrep contracts](docs/semgrep-research-contracts.md) now preserve file exclusions,
 native suppression and incomplete-analysis evidence without altering the first-slice profiles.
 All 68 pinned GitLab Python rules remain a candidate, not a claim of comprehensive detection.
-This library and its controlled verification helper are not a public-source scan command.
+The library alone does not authorize public-source scanning; the fixed pilot helper applies
+the separately approved treatment. It does not provide unrestricted directory scanning.
 The [offline reporting extension](docs/research-common-reporting.md) now replays sealed controlled
 cases into `common-report-v3`; older source combinations retain v1/v2. It preserves both views,
 repetitions, input refusals and native evidence links without rerunning tools.
 
 The [guarded research bridge](docs/guarded-research-runner.md) connects verified inputs to the
-candidate on registered development cases. Both views disable implicit Git ignore filtering;
+candidate on registered development cases; the fixed pilot reuses its guards under a separate
+admission. Both views disable implicit Git ignore filtering;
 the policy view applies Semgrep ignore files and inline suppressions only. Policy exclusions,
 syntax refusal, process failure and incomplete native analysis remain distinct evidence.
 
@@ -241,9 +289,9 @@ accuracy or confirmatory benchmark readiness.
 
 [Pinned source preparation](docs/pinned-source-preparation.md) connects the existing cached
 pilot archive to complete Git object verification, a copied snapshot and the full artifact
-inventory. It retains failures and refuses unsupported input. This is intake verification,
-not source scanning or a vulnerability result. Research profiles and source-pilot admission
-remain separate gates; the existing dependency experiment and its evidence are unchanged.
+inventory. It retains failures and refuses unsupported input. This component verifies intake,
+not vulnerabilities. Source scanning is authorized separately by the fixed plan used in the
+pilot below; the original dependency evidence remains unchanged.
 
 ## Same-Repository Source Pilot
 
@@ -255,6 +303,33 @@ execution. The new pilot envelope is separate from controlled-case common-report
 Dockerfile remains unsupported; broad inventory is not comprehensive detection coverage.
 Use fresh output directories and retain failed attempts. This is formative integration
 evidence, not a held-out accuracy benchmark or completion of the full project.
+
+### Retained Pilot Results
+
+Target: `langchain-samples/cicd-pipeline-example` at
+`5ab0d0a0f3c90999f786f834d9c05484dfe5f2bf`. The following observations repeat across all
+three runs. See [merged PR #15](https://github.com/MuminjonGuru/Project-Sonic/pull/15) for
+the published engineering verification summary and scope limits.
+
+| Treatment | Observation per repetition | Interpretation |
+|---|---|---|
+| Semgrep research | 0 reports; 26 reported scanned paths | Rule-by-file completion is not established |
+| Semgrep repository-policy | 0 reports; 12 reported scanned paths | Different coverage; native exclusions and directory context retained |
+| Agent Audit | 8 reports; native aggregate file count 21 | Reports remain unreviewed; per-file completion unknown for the 26 selected inputs |
+| Direct OSV and Syft/CycloneDX/OSV | Both retain 159 eligible PyPI name/version pairs plus a separate local root; 0 advisory matches | Frozen database only; source-qualifier and relationship limitations remain |
+| KICS | Not run on the observed Dockerfile | Unsupported by this pilot profile, not a clean scan |
+
+The completed attempt has 18 stage rows: six stages repeated three times. Each stage's
+declared semantic projection matched across repetitions; raw outputs remain retained.
+Repeats are not independent cases, and eight reports repeated three times are not 24 unique
+vulnerabilities. Neither no findings nor package-count equality establishes security or full
+evidence fidelity. Manual preparation and review effort were not timed.
+
+The first attempt stopped on directory-level ignore evidence. Its failure was preserved;
+the reconciler was corrected without changing target, rules, versions or scanner policy.
+The dedicated pilot report and offline replay are implemented. General benchmark resume/freeze
+controls, final profile justification, the UI and independent-machine delivery rehearsal remain
+separate work. Local unpublished extensions are not evidence of capability in this checkout.
 
 ## Repository Boundary
 

@@ -51,6 +51,27 @@ The public-source helper accepts one frozen plan, not arbitrary repositories. Pr
 memory, permissions and agent communication have no comprehensive dedicated treatment here.
 The read-only results UI, final benchmark governance and held-out evaluation are not complete.
 
+### Detection Rules and Data
+
+For the public pilot, detection uses existing tools under explicit, pinned profiles:
+
+- **Semgrep:** all 68 pinned, unchanged GitLab Python rules in the
+  [candidate profile](configs/research/semgrep-python-candidate-v1.json), applied in separate
+  research and repository-policy views. This is not comprehensive Python or agent-security coverage.
+- **Agent Audit:** the pinned analyzer's existing static detection rules, using the
+  [public-pilot configuration](configs/tools/agent-audit-pilot.toml).
+- **Dependencies:** Syft discovers packages and exports CycloneDX; OSV matches reported packages
+  against the frozen offline vulnerability database. The direct lockfile-to-OSV path uses the
+  same database and settings. [Dependency method](docs/dependency-pilot.md).
+- **KICS:** integrated and tested separately with selected Terraform/Kubernetes queries, but
+  not run on this pilot: its Dockerfile is outside the [selected profile](configs/tools/kics.toml).
+
+The original controlled integration test uses a small project-authored
+[`eval(...)` Semgrep rule](rules/project-authored/semgrep-first-slice.yml). It is a fixture-only
+evidence-pipeline check, not part of the public pilot's 68-rule pack or a comprehensive custom
+agent-security ruleset. Input selection, isolation, suppression handling and evidence validation
+are platform controls, distinct from the scanners' detection rules.
+
 ## Start Reviewing Here
 
 | Review question | Entry points |

@@ -138,6 +138,9 @@ reaps the host subprocess and the existing agent runner attempts named-container
 The [controlled Semgrep handler](benchmark-semgrep.md) reuses this state machine and writer lock
 with separate plan/finish/progress contracts. It admits only the original three-file fixture,
 with no retry. The agent-specific versions and bounds below retain their original scope.
+The [controlled KICS handler](benchmark-kics.md) also shares the runner and lock, using distinct
+plan/finish/progress contracts for four existing fixtures. Its reusable `unsupported` state is
+not successful security analysis. KICS has no retry permission and no new Dockerfile treatment.
 
 - `benchmark-plan-v1` and the historical `benchmark-dry-run-v1` schema remain unchanged.
 - New previews use [benchmark-dry-run-v2](../schemas/benchmark-v2/dry-run.schema.json), accurately

@@ -1,0 +1,277 @@
+{
+  "$defs": {
+    "KicsCase": {
+      "additionalProperties": false,
+      "properties": {
+        "case_id": {
+          "enum": [
+            "dev-kics-basic-v1",
+            "dev-kics-clean-v1",
+            "dev-kics-malformed-v1",
+            "dev-kics-unsupported-v1"
+          ],
+          "title": "Case Id",
+          "type": "string"
+        },
+        "expectation": {
+          "$ref": "#/$defs/KicsExpectation"
+        },
+        "expectation_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Expectation Sha256",
+          "type": "string"
+        },
+        "files": {
+          "items": {
+            "$ref": "#/$defs/PlanFile"
+          },
+          "maxItems": 5,
+          "minItems": 1,
+          "title": "Files",
+          "type": "array"
+        },
+        "selected_paths": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 4,
+          "title": "Selected Paths",
+          "type": "array"
+        },
+        "source_family": {
+          "const": "kics-g2-development-v1",
+          "default": "kics-g2-development-v1",
+          "title": "Source Family",
+          "type": "string"
+        },
+        "split": {
+          "const": "development-not-held-out",
+          "default": "development-not-held-out",
+          "title": "Split",
+          "type": "string"
+        }
+      },
+      "required": [
+        "case_id",
+        "files",
+        "selected_paths",
+        "expectation",
+        "expectation_sha256"
+      ],
+      "title": "KicsCase",
+      "type": "object"
+    },
+    "KicsExpectation": {
+      "additionalProperties": false,
+      "properties": {
+        "expected_execution_outcome": {
+          "anyOf": [
+            {
+              "const": "unsupported",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Expected Execution Outcome"
+        },
+        "expected_files_parsed": {
+          "minimum": 0,
+          "title": "Expected Files Parsed",
+          "type": "integer"
+        },
+        "expected_files_scanned": {
+          "minimum": 0,
+          "title": "Expected Files Scanned",
+          "type": "integer"
+        },
+        "expected_native_results": {
+          "minimum": 0,
+          "title": "Expected Native Results",
+          "type": "integer"
+        },
+        "expected_query_ids": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Expected Query Ids",
+          "type": "array"
+        },
+        "expected_terminal_state": {
+          "anyOf": [
+            {
+              "const": "partial",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Expected Terminal State"
+        },
+        "provenance": {
+          "const": "existing-authored-case-not-new-scanner-derived-oracle",
+          "default": "existing-authored-case-not-new-scanner-derived-oracle",
+          "title": "Provenance",
+          "type": "string"
+        },
+        "review_status": {
+          "const": "historical-engineering-expectation-not-independent",
+          "default": "historical-engineering-expectation-not-independent",
+          "title": "Review Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "expected_native_results",
+        "expected_files_scanned",
+        "expected_files_parsed"
+      ],
+      "title": "KicsExpectation",
+      "type": "object"
+    },
+    "PlanFile": {
+      "additionalProperties": false,
+      "properties": {
+        "bytes": {
+          "maximum": 2097152,
+          "minimum": 0,
+          "title": "Bytes",
+          "type": "integer"
+        },
+        "path": {
+          "maxLength": 512,
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "bytes",
+        "sha256"
+      ],
+      "title": "PlanFile",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "admission": {
+      "const": "existing-kics-g2-fixtures-v1",
+      "default": "existing-kics-g2-fixtures-v1",
+      "title": "Admission",
+      "type": "string"
+    },
+    "automatic_retries": {
+      "const": 0,
+      "default": 0,
+      "title": "Automatic Retries",
+      "type": "integer"
+    },
+    "cases": {
+      "items": {
+        "$ref": "#/$defs/KicsCase"
+      },
+      "maxItems": 4,
+      "minItems": 1,
+      "title": "Cases",
+      "type": "array"
+    },
+    "contract": {
+      "const": "benchmark-kics-plan-v1",
+      "default": "benchmark-kics-plan-v1",
+      "title": "Contract",
+      "type": "string"
+    },
+    "implementation": {
+      "items": {
+        "$ref": "#/$defs/PlanFile"
+      },
+      "maxItems": 2048,
+      "minItems": 1,
+      "title": "Implementation",
+      "type": "array"
+    },
+    "manual_retries": {
+      "const": 0,
+      "default": 0,
+      "title": "Manual Retries",
+      "type": "integer"
+    },
+    "max_workers": {
+      "const": 1,
+      "default": 1,
+      "title": "Max Workers",
+      "type": "integer"
+    },
+    "order": {
+      "const": "case-order-then-repetition",
+      "default": "case-order-then-repetition",
+      "title": "Order",
+      "type": "string"
+    },
+    "pins": {
+      "items": {
+        "$ref": "#/$defs/PlanFile"
+      },
+      "maxItems": 8,
+      "minItems": 8,
+      "title": "Pins",
+      "type": "array"
+    },
+    "plan_id": {
+      "pattern": "^[a-z0-9][a-z0-9_.-]{0,79}$",
+      "title": "Plan Id",
+      "type": "string"
+    },
+    "protocol_status": {
+      "const": "development-plan-not-confirmatory-freeze",
+      "default": "development-plan-not-confirmatory-freeze",
+      "title": "Protocol Status",
+      "type": "string"
+    },
+    "repetitions": {
+      "maximum": 3,
+      "minimum": 1,
+      "title": "Repetitions",
+      "type": "integer"
+    },
+    "split": {
+      "const": "development-not-held-out",
+      "default": "development-not-held-out",
+      "title": "Split",
+      "type": "string"
+    },
+    "target_execution": {
+      "const": false,
+      "default": false,
+      "title": "Target Execution",
+      "type": "boolean"
+    },
+    "treatment": {
+      "const": "authored-kics-g2-static-v1",
+      "default": "authored-kics-g2-static-v1",
+      "title": "Treatment",
+      "type": "string"
+    }
+  },
+  "required": [
+    "plan_id",
+    "pins",
+    "implementation",
+    "cases",
+    "repetitions"
+  ],
+  "title": "KicsBenchmarkPlan",
+  "type": "object"
+}

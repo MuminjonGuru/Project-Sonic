@@ -1,0 +1,311 @@
+{
+  "$defs": {
+    "KicsCell": {
+      "additionalProperties": false,
+      "properties": {
+        "case_id": {
+          "enum": [
+            "dev-kics-basic-v1",
+            "dev-kics-clean-v1",
+            "dev-kics-malformed-v1",
+            "dev-kics-unsupported-v1"
+          ],
+          "title": "Case Id",
+          "type": "string"
+        },
+        "cell_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Cell Id",
+          "type": "string"
+        },
+        "coverage": {
+          "const": "not-measured",
+          "default": "not-measured",
+          "title": "Coverage",
+          "type": "string"
+        },
+        "expectation": {
+          "$ref": "#/$defs/KicsExpectation"
+        },
+        "finding_records": {
+          "default": null,
+          "title": "Finding Records",
+          "type": "null"
+        },
+        "input_files": {
+          "items": {
+            "$ref": "#/$defs/PlanFile"
+          },
+          "title": "Input Files",
+          "type": "array"
+        },
+        "producer_invocations": {
+          "const": 0,
+          "default": 0,
+          "title": "Producer Invocations",
+          "type": "integer"
+        },
+        "repetition": {
+          "maximum": 3,
+          "minimum": 1,
+          "title": "Repetition",
+          "type": "integer"
+        },
+        "selected_paths": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Selected Paths",
+          "type": "array"
+        },
+        "state": {
+          "const": "not-attempted",
+          "default": "not-attempted",
+          "title": "State",
+          "type": "string"
+        }
+      },
+      "required": [
+        "cell_id",
+        "case_id",
+        "repetition",
+        "input_files",
+        "selected_paths",
+        "expectation"
+      ],
+      "title": "KicsCell",
+      "type": "object"
+    },
+    "KicsExpectation": {
+      "additionalProperties": false,
+      "properties": {
+        "expected_execution_outcome": {
+          "anyOf": [
+            {
+              "const": "unsupported",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Expected Execution Outcome"
+        },
+        "expected_files_parsed": {
+          "minimum": 0,
+          "title": "Expected Files Parsed",
+          "type": "integer"
+        },
+        "expected_files_scanned": {
+          "minimum": 0,
+          "title": "Expected Files Scanned",
+          "type": "integer"
+        },
+        "expected_native_results": {
+          "minimum": 0,
+          "title": "Expected Native Results",
+          "type": "integer"
+        },
+        "expected_query_ids": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Expected Query Ids",
+          "type": "array"
+        },
+        "expected_terminal_state": {
+          "anyOf": [
+            {
+              "const": "partial",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Expected Terminal State"
+        },
+        "provenance": {
+          "const": "existing-authored-case-not-new-scanner-derived-oracle",
+          "default": "existing-authored-case-not-new-scanner-derived-oracle",
+          "title": "Provenance",
+          "type": "string"
+        },
+        "review_status": {
+          "const": "historical-engineering-expectation-not-independent",
+          "default": "historical-engineering-expectation-not-independent",
+          "title": "Review Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "expected_native_results",
+        "expected_files_scanned",
+        "expected_files_parsed"
+      ],
+      "title": "KicsExpectation",
+      "type": "object"
+    },
+    "PlanFile": {
+      "additionalProperties": false,
+      "properties": {
+        "bytes": {
+          "maximum": 2097152,
+          "minimum": 0,
+          "title": "Bytes",
+          "type": "integer"
+        },
+        "path": {
+          "maxLength": 512,
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "bytes",
+        "sha256"
+      ],
+      "title": "PlanFile",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "cells": {
+      "items": {
+        "$ref": "#/$defs/KicsCell"
+      },
+      "maxItems": 12,
+      "minItems": 1,
+      "title": "Cells",
+      "type": "array"
+    },
+    "contract": {
+      "const": "benchmark-kics-dry-run-v1",
+      "default": "benchmark-kics-dry-run-v1",
+      "title": "Contract",
+      "type": "string"
+    },
+    "execution_authorized": {
+      "const": false,
+      "default": false,
+      "title": "Execution Authorized",
+      "type": "boolean"
+    },
+    "implementation_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Implementation Sha256",
+      "type": "string"
+    },
+    "limitations": {
+      "default": [
+        "Four existing authored fixtures and two Terraform/Kubernetes queries only",
+        "Full fixture snapshots are mounted; selected paths denote intended IaC inputs only",
+        "No Dockerfile support, target execution, network requests or independent oracle",
+        "Native aggregate counters do not establish per-file or per-query coverage",
+        "Unsupported and malformed-input observations are not clean analysis or true negatives"
+      ],
+      "items": {
+        "type": "string"
+      },
+      "title": "Limitations",
+      "type": "array"
+    },
+    "limits": {
+      "additionalProperties": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "number"
+          }
+        ]
+      },
+      "title": "Limits",
+      "type": "object"
+    },
+    "metric_scoring_implemented": {
+      "const": false,
+      "default": false,
+      "title": "Metric Scoring Implemented",
+      "type": "boolean"
+    },
+    "plan_id": {
+      "pattern": "^[a-z0-9][a-z0-9_.-]{0,79}$",
+      "title": "Plan Id",
+      "type": "string"
+    },
+    "plan_semantic_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Plan Semantic Sha256",
+      "type": "string"
+    },
+    "plan_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Plan Sha256",
+      "type": "string"
+    },
+    "plan_valid": {
+      "const": true,
+      "default": true,
+      "title": "Plan Valid",
+      "type": "boolean"
+    },
+    "resume_implemented": {
+      "const": true,
+      "default": true,
+      "title": "Resume Implemented",
+      "type": "boolean"
+    },
+    "resume_scope": {
+      "const": "verified-terminal-controlled-kics-no-retry",
+      "default": "verified-terminal-controlled-kics-no-retry",
+      "title": "Resume Scope",
+      "type": "string"
+    },
+    "runtime_readiness": {
+      "const": "not-checked",
+      "default": "not-checked",
+      "title": "Runtime Readiness",
+      "type": "string"
+    },
+    "tool_image": {
+      "title": "Tool Image",
+      "type": "string"
+    },
+    "treatment_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Treatment Sha256",
+      "type": "string"
+    },
+    "validation_scope": {
+      "const": "fixed-development-metadata-and-byte-bindings",
+      "default": "fixed-development-metadata-and-byte-bindings",
+      "title": "Validation Scope",
+      "type": "string"
+    }
+  },
+  "required": [
+    "plan_id",
+    "plan_sha256",
+    "plan_semantic_sha256",
+    "treatment_sha256",
+    "implementation_sha256",
+    "cells",
+    "limits",
+    "tool_image"
+  ],
+  "title": "KicsPreview",
+  "type": "object"
+}

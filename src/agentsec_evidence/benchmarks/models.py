@@ -191,7 +191,78 @@ class SemgrepBenchmarkPlan(ResearchModel):
         return self
 
 
-type AdmittedPlan = BenchmarkPlan | BenchmarkPlanV2 | SemgrepBenchmarkPlan
+KicsCaseId = Literal[
+    "dev-kics-basic-v1", "dev-kics-clean-v1", "dev-kics-malformed-v1", "dev-kics-unsupported-v1"
+]
+
+
+class KicsExpectation(ResearchModel):
+    expected_native_results: StrictInt = Field(ge=0)
+    expected_files_scanned: StrictInt = Field(ge=0)
+    expected_files_parsed: StrictInt = Field(ge=0)
+    expected_query_ids: tuple[str, ...] = ()
+    expected_terminal_state: Literal["partial"] | None = None
+    expected_execution_outcome: Literal["unsupported"] | None = None
+    provenance: Literal["existing-authored-case-not-new-scanner-derived-oracle"] = (
+        "existing-authored-case-not-new-scanner-derived-oracle"
+    )
+    review_status: Literal["historical-engineering-expectation-not-independent"] = (
+        "historical-engineering-expectation-not-independent"
+    )
+
+
+class KicsCase(ResearchModel):
+    case_id: KicsCaseId
+    source_family: Literal["kics-g2-development-v1"] = "kics-g2-development-v1"
+    split: Literal["development-not-held-out"] = "development-not-held-out"
+    files: tuple[PlanFile, ...] = Field(min_length=1, max_length=5)
+    selected_paths: tuple[str, ...] = Field(max_length=4)
+    expectation: KicsExpectation
+    expectation_sha256: Sha256
+
+    @model_validator(mode="after")
+    def check_inputs(self) -> Self:
+        check_file_set(self.files)
+        if self.selected_paths != tuple(sorted(set(self.selected_paths))):
+            raise ValueError("KICS selected paths must be sorted and unique")
+        if not set(self.selected_paths).issubset(f.path for f in self.files):
+            raise ValueError("KICS selected input is not inventoried")
+        return self
+
+
+class KicsBenchmarkPlan(ResearchModel):
+    contract: Literal["benchmark-kics-plan-v1"] = "benchmark-kics-plan-v1"
+    plan_id: Identifier
+    admission: Literal["existing-kics-g2-fixtures-v1"] = "existing-kics-g2-fixtures-v1"
+    treatment: Literal["authored-kics-g2-static-v1"] = "authored-kics-g2-static-v1"
+    split: Literal["development-not-held-out"] = "development-not-held-out"
+    pins: tuple[PlanFile, ...] = Field(min_length=8, max_length=8)
+    implementation: tuple[PlanFile, ...] = Field(min_length=1, max_length=2048)
+    cases: tuple[KicsCase, ...] = Field(min_length=1, max_length=4)
+    repetitions: StrictInt = Field(ge=1, le=3)
+    order: Literal["case-order-then-repetition"] = "case-order-then-repetition"
+    max_workers: Literal[1] = 1
+    automatic_retries: Literal[0] = 0
+    manual_retries: Literal[0] = 0
+    target_execution: Literal[False] = False
+    protocol_status: Literal["development-plan-not-confirmatory-freeze"] = (
+        "development-plan-not-confirmatory-freeze"
+    )
+
+    @model_validator(mode="after")
+    def check_bindings(self) -> Self:
+        check_file_set(self.pins)
+        check_file_set(self.implementation)
+        if len({c.case_id for c in self.cases}) != len(self.cases):
+            raise ValueError("Duplicate KICS benchmark case")
+        if any(
+            not f.path.startswith("src/") or not f.path.endswith(".py") for f in self.implementation
+        ):
+            raise ValueError("Implementation pins must name src Python files")
+        return self
+
+
+type AdmittedPlan = BenchmarkPlan | BenchmarkPlanV2 | SemgrepBenchmarkPlan | KicsBenchmarkPlan
 
 
 class PlannedCell(ResearchModel):
@@ -308,5 +379,48 @@ class SemgrepPreview(ResearchModel):
     )
 
 
-type AdmittedCell = PlannedCell | SemgrepCell
-type AdmittedPreview = BenchmarkDryRunV2 | BenchmarkDryRunV3 | SemgrepPreview
+class KicsCell(ResearchModel):
+    cell_id: Sha256
+    case_id: KicsCaseId
+    repetition: StrictInt = Field(ge=1, le=3)
+    input_files: tuple[PlanFile, ...]
+    selected_paths: tuple[str, ...]
+    expectation: KicsExpectation
+    state: Literal["not-attempted"] = "not-attempted"
+    producer_invocations: Literal[0] = 0
+    finding_records: None = None
+    coverage: Literal["not-measured"] = "not-measured"
+
+
+class KicsPreview(ResearchModel):
+    contract: Literal["benchmark-kics-dry-run-v1"] = "benchmark-kics-dry-run-v1"
+    plan_id: Identifier
+    plan_sha256: Sha256
+    plan_semantic_sha256: Sha256
+    treatment_sha256: Sha256
+    implementation_sha256: Sha256
+    cells: tuple[KicsCell, ...] = Field(min_length=1, max_length=12)
+    limits: dict[str, int | float]
+    tool_image: str
+    plan_valid: Literal[True] = True
+    validation_scope: Literal["fixed-development-metadata-and-byte-bindings"] = (
+        "fixed-development-metadata-and-byte-bindings"
+    )
+    execution_authorized: Literal[False] = False
+    runtime_readiness: Literal["not-checked"] = "not-checked"
+    resume_implemented: Literal[True] = True
+    resume_scope: Literal["verified-terminal-controlled-kics-no-retry"] = (
+        "verified-terminal-controlled-kics-no-retry"
+    )
+    metric_scoring_implemented: Literal[False] = False
+    limitations: tuple[str, ...] = (
+        "Four existing authored fixtures and two Terraform/Kubernetes queries only",
+        "Full fixture snapshots are mounted; selected paths denote intended IaC inputs only",
+        "No Dockerfile support, target execution, network requests or independent oracle",
+        "Native aggregate counters do not establish per-file or per-query coverage",
+        "Unsupported and malformed-input observations are not clean analysis or true negatives",
+    )
+
+
+type AdmittedCell = PlannedCell | SemgrepCell | KicsCell
+type AdmittedPreview = BenchmarkDryRunV2 | BenchmarkDryRunV3 | SemgrepPreview | KicsPreview

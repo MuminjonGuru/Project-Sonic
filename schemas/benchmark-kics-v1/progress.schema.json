@@ -1,0 +1,223 @@
+{
+  "$defs": {
+    "KicsCellProgress": {
+      "additionalProperties": false,
+      "properties": {
+        "attempt_id": {
+          "anyOf": [
+            {
+              "pattern": "^attempt_[0-9a-f]{32}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Attempt Id"
+        },
+        "case_id": {
+          "pattern": "^[a-z0-9][a-z0-9_.-]{0,79}$",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "cell_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Cell Id",
+          "type": "string"
+        },
+        "finding_records": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Finding Records"
+        },
+        "native_files_parsed": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Native Files Parsed"
+        },
+        "native_files_scanned": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Native Files Scanned"
+        },
+        "native_queries_total": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Native Queries Total"
+        },
+        "repetition": {
+          "title": "Repetition",
+          "type": "integer"
+        },
+        "run_id": {
+          "anyOf": [
+            {
+              "pattern": "^run_[0-9a-f]{32}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Run Id"
+        },
+        "scanner_invocations": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Scanner Invocations"
+        },
+        "state": {
+          "enum": [
+            "not-attempted",
+            "completed-with-findings",
+            "completed-without-findings",
+            "partial-analysis",
+            "unsupported",
+            "execution-failed",
+            "interrupted"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "verified_terminal_attempt": {
+          "default": false,
+          "title": "Verified Terminal Attempt",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "cell_id",
+        "case_id",
+        "repetition",
+        "state"
+      ],
+      "title": "KicsCellProgress",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "analysis_complete": {
+      "const": false,
+      "default": false,
+      "title": "Analysis Complete",
+      "type": "boolean"
+    },
+    "blocked": {
+      "title": "Blocked",
+      "type": "boolean"
+    },
+    "cells": {
+      "items": {
+        "$ref": "#/$defs/KicsCellProgress"
+      },
+      "title": "Cells",
+      "type": "array"
+    },
+    "contract": {
+      "const": "benchmark-kics-progress-v1",
+      "default": "benchmark-kics-progress-v1",
+      "title": "Contract",
+      "type": "string"
+    },
+    "limitations": {
+      "default": [
+        "Existing four KICS development cases only; no public Dockerfile treatment",
+        "Completed means native workflow completion, not safety or independent oracle agreement",
+        "Unsupported and partial-analysis are separate terminal observations, not clean results",
+        "Reported aggregate file/query counts do not establish per-file completion",
+        "All execution failures and interruptions block; no automatic or manual KICS retry"
+      ],
+      "items": {
+        "type": "string"
+      },
+      "title": "Limitations",
+      "type": "array"
+    },
+    "newly_attempted_cells": {
+      "maximum": 12,
+      "minimum": 0,
+      "title": "Newly Attempted Cells",
+      "type": "integer"
+    },
+    "plan_semantic_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Plan Semantic Sha256",
+      "type": "string"
+    },
+    "plan_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Plan Sha256",
+      "type": "string"
+    },
+    "reused_verified_cells": {
+      "maximum": 12,
+      "minimum": 0,
+      "title": "Reused Verified Cells",
+      "type": "integer"
+    },
+    "scoring_implemented": {
+      "const": false,
+      "default": false,
+      "title": "Scoring Implemented",
+      "type": "boolean"
+    },
+    "session": {
+      "title": "Session",
+      "type": "string"
+    },
+    "workflow_complete": {
+      "title": "Workflow Complete",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "plan_sha256",
+    "plan_semantic_sha256",
+    "session",
+    "cells",
+    "workflow_complete",
+    "blocked",
+    "newly_attempted_cells",
+    "reused_verified_cells"
+  ],
+  "title": "KicsProgress",
+  "type": "object"
+}

@@ -1,4 +1,4 @@
-"""Serial execution and conservative resume for the existing authored agent treatment."""
+"""Serial execution and evidence-verified reuse for explicitly admitted treatments."""
 
 from __future__ import annotations
 
@@ -26,18 +26,29 @@ from agentsec_evidence.benchmarks.attempt_models import (
     BenchmarkProgress,
     BenchmarkProgressV2,
     CellProgress,
+    KicsAttemptEvidence,
+    KicsAttemptFinish,
+    KicsCellProgress,
+    KicsProgress,
     RetryAuthorization,
     SemgrepAttemptFinish,
     SemgrepCellProgress,
     SemgrepProgress,
 )
 from agentsec_evidence.benchmarks.evidence import require_prelaunch_failure, verify_attempt_run
+from agentsec_evidence.benchmarks.kics_evidence import verify_kics_attempt
+from agentsec_evidence.benchmarks.kics_plan import CASE_ROOTS as KICS_CASE_ROOTS
 from agentsec_evidence.benchmarks.models import (
     MAX_PLAN_BYTES,
     AdmittedCell,
     AdmittedPlan,
     AdmittedPreview,
     BenchmarkDryRunV3,
+    BenchmarkPlan,
+    BenchmarkPlanV2,
+    KicsBenchmarkPlan,
+    KicsCell,
+    KicsPreview,
     PlannedCell,
     SemgrepBenchmarkPlan,
     SemgrepCell,
@@ -50,12 +61,35 @@ from agentsec_evidence.core.identity import new_opaque_id, sha256_bytes
 from agentsec_evidence.core.io import model_bytes
 from agentsec_evidence.core.time import utc_now
 from agentsec_evidence.orchestration.agent_pipeline import AgentScanRequest, run_agent_scan
+from agentsec_evidence.orchestration.kics_pipeline import KicsScanRequest, run_kics_scan
 from agentsec_evidence.orchestration.pipeline import SemgrepScanRequest, run_semgrep_scan
 from agentsec_evidence.orchestration.shared import resolve_docker
 from agentsec_evidence.research.retained import bounded_file, plain_path
 
 MAX_RECORD_BYTES = 2 * 1024**2
-REUSABLE = {"partial-analysis", "refused", "completed-with-findings", "completed-without-findings"}
+REUSABLE = {
+    "partial-analysis",
+    "refused",
+    "completed-with-findings",
+    "completed-without-findings",
+    "unsupported",
+}
+
+
+def _row_model(
+    dry: AdmittedPreview,
+) -> type[CellProgress] | type[SemgrepCellProgress] | type[KicsCellProgress]:
+    if isinstance(dry, KicsPreview):
+        return KicsCellProgress
+    return SemgrepCellProgress if isinstance(dry, SemgrepPreview) else CellProgress
+
+
+def _finish_model(
+    plan: AdmittedPlan,
+) -> type[AttemptFinish] | type[SemgrepAttemptFinish] | type[KicsAttemptFinish]:
+    if isinstance(plan, KicsBenchmarkPlan):
+        return KicsAttemptFinish
+    return SemgrepAttemptFinish if isinstance(plan, SemgrepBenchmarkPlan) else AttemptFinish
 
 
 @dataclass
@@ -188,11 +222,7 @@ def _history(project: Path, session: Path, dry: AdmittedPreview) -> History:
         state = "interrupted"
         evidence = None
         if "finish.json" in names:
-            finish: AdmittedFinish = (
-                _read(path / "finish.json", SemgrepAttemptFinish)
-                if isinstance(dry, SemgrepPreview)
-                else _read(path / "finish.json", AttemptFinish)
-            )
+            finish: AdmittedFinish = _read(path / "finish.json", _finish_model(plan))
             if bounded_file(path / "finish.json", MAX_RECORD_BYTES) != model_bytes(finish):
                 raise ValueError("Attempt completion bytes are not canonical")
             if finish.attempt_id != start.attempt_id or finish.start_sha256 != sha256_bytes(
@@ -213,9 +243,23 @@ def _history(project: Path, session: Path, dry: AdmittedPreview) -> History:
             history.previous = None
             previous_finish = None
         blocked = state not in REUSABLE
-        row_model = SemgrepCellProgress if isinstance(dry, SemgrepPreview) else CellProgress
+        row_model = _row_model(dry)
+        counters = {}
+        if isinstance(dry, KicsPreview):
+            counters = {
+                "native_files_scanned": evidence.native_files_scanned
+                if isinstance(evidence, KicsAttemptEvidence)
+                else None,
+                "native_files_parsed": evidence.native_files_parsed
+                if isinstance(evidence, KicsAttemptEvidence)
+                else None,
+                "native_queries_total": evidence.native_queries_total
+                if isinstance(evidence, KicsAttemptEvidence)
+                else None,
+            }
         row = row_model.model_validate(
             {
+                **counters,
                 "cell_id": cell.cell_id,
                 "case_id": cell.case_id,
                 "repetition": cell.repetition,
@@ -245,7 +289,7 @@ def _progress(
     retried: bool = False,
 ) -> AdmittedProgress:
     rows = history.rows
-    row_model = SemgrepCellProgress if isinstance(dry, SemgrepPreview) else CellProgress
+    row_model = _row_model(dry)
     all_rows = rows + [
         row_model(
             cell_id=cell.cell_id,
@@ -268,6 +312,8 @@ def _progress(
     )
     if isinstance(dry, SemgrepPreview):
         return SemgrepProgress.model_validate(fields)
+    if isinstance(dry, KicsPreview):
+        return KicsProgress.model_validate(fields)
     progress = BenchmarkProgress.model_validate(fields)
     if isinstance(dry, BenchmarkDryRunV3):
         return BenchmarkProgressV2.model_validate(
@@ -339,7 +385,9 @@ def _verify(
 ) -> AdmittedEvidence:
     if isinstance(plan, SemgrepBenchmarkPlan) and isinstance(cell, SemgrepCell):
         return verify_semgrep_attempt(project, execution, run_id, plan, cell)
-    if not isinstance(plan, SemgrepBenchmarkPlan) and isinstance(cell, PlannedCell):
+    if isinstance(plan, KicsBenchmarkPlan) and isinstance(cell, KicsCell):
+        return verify_kics_attempt(project, execution, run_id, plan, cell)
+    if isinstance(plan, BenchmarkPlan | BenchmarkPlanV2) and isinstance(cell, PlannedCell):
         return verify_attempt_run(project, execution, run_id, plan, cell)
     raise ValueError("Benchmark producer and cell contracts differ")
 
@@ -397,6 +445,20 @@ def _dispatch(
                     license_status="project-authored-private",
                 )
             )
+        elif isinstance(plan, KicsBenchmarkPlan) and isinstance(cell, KicsCell):
+            relative = KICS_CASE_ROOTS[cell.case_id]
+            result = run_kics_scan(
+                KicsScanRequest(
+                    project_root=project,
+                    workspace_root=execution,
+                    target_source=project / relative / "target",
+                    source_label="fixture:" + relative.rsplit("/", 1)[-1],
+                    revision="fixture-v1",
+                    run_label="benchmark:" + cell.case_id,
+                    source_kind="project-fixture",
+                    license_status="project-authored-private",
+                )
+            )
         else:
             result = run_agent_scan(AgentScanRequest(project, execution, cell.case_id))
         evidence = _verify(project, execution, result.run_id, plan, cell)
@@ -409,7 +471,7 @@ def _dispatch(
     except Exception:
         # Do not put potentially sensitive exception text into portable history.
         state, error_kind, evidence = "execution-failed", "runner-or-verification-error", None
-    finish_model = SemgrepAttemptFinish if isinstance(plan, SemgrepBenchmarkPlan) else AttemptFinish
+    finish_model = _finish_model(plan)
     finish = finish_model.model_validate(
         {
             "attempt_id": attempt_id,

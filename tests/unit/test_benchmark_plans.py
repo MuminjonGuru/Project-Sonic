@@ -104,6 +104,7 @@ def test_cells_follow_explicit_case_then_repeat_order(project: Path) -> None:
 
 def test_policy_context_is_inventoried_not_selected_or_dropped(project: Path) -> None:
     result = validate_plan(project, write_plan(project, sample(project, "python-excluded-yaml")))
+    assert isinstance(result, BenchmarkDryRunV2)
     cell = result.cells[0]
     assert [file.path for file in cell.input_files] == [".agent-audit.yaml", "agent.py"]
     assert cell.selected_paths == ("agent.py",)

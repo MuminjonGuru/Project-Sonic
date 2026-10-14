@@ -705,6 +705,15 @@ def run_kics_scan(request: KicsScanRequest) -> PipelineResult:
                 blob_index=blob_index,
                 desired_state=RunState.PARTIAL if failures else RunState.COMPLETE,
             )
+        except BaseException:
+            # Stopping the Docker client does not prove the named container stopped.
+            cleanup_container(
+                docker=docker,
+                container_name=container_name,
+                cwd=project_root,
+                environment=environment,
+            )
+            raise
         finally:
             if execution_staging.exists():
                 remove_staging(staging_root, execution_staging)

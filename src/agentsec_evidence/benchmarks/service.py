@@ -19,6 +19,7 @@ from agentsec_evidence.benchmarks.models import (
     BenchmarkDryRunV3,
     BenchmarkPlan,
     BenchmarkPlanV2,
+    KicsBenchmarkPlan,
     PlanFile,
     PlannedCase,
     PlannedCell,
@@ -197,6 +198,8 @@ def _parse_plan(data: bytes) -> AdmittedPlan:
         return BenchmarkPlanV2.model_validate(raw)
     if raw.get("contract") == "benchmark-semgrep-plan-v1":
         return SemgrepBenchmarkPlan.model_validate(raw)
+    if raw.get("contract") == "benchmark-kics-plan-v1":
+        return KicsBenchmarkPlan.model_validate(raw)
     return BenchmarkPlan.model_validate(raw)
 
 
@@ -209,6 +212,10 @@ def validate_plan(project: Path, path: Path) -> AdmittedPreview:
     project = plain_path(project, directory=True)
     raw = bounded_file(path, MAX_PLAN_BYTES)
     plan = _parse_plan(raw)
+    if isinstance(plan, KicsBenchmarkPlan):
+        from agentsec_evidence.benchmarks.kics_plan import validate_kics_plan
+
+        return validate_kics_plan(project, path, raw, plan)
     if isinstance(plan, SemgrepBenchmarkPlan):
         from agentsec_evidence.benchmarks.semgrep_plan import validate_semgrep_plan
 

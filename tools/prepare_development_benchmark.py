@@ -3,6 +3,7 @@
 import argparse
 from pathlib import Path
 
+from agentsec_evidence.benchmarks.kics_plan import build_kics_plan
 from agentsec_evidence.benchmarks.semgrep_plan import build_semgrep_plan
 from agentsec_evidence.benchmarks.service import build_development_plan, plan_bytes
 from agentsec_evidence.research.retained import plain_path
@@ -11,7 +12,9 @@ from agentsec_evidence.research.retained import plain_path
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--plan-id", required=True)
-    parser.add_argument("--treatment", choices=["agent", "semgrep-first-slice"], default="agent")
+    parser.add_argument(
+        "--treatment", choices=["agent", "semgrep-first-slice", "kics-g2"], default="agent"
+    )
     parser.add_argument("--case", action="append", required=True, dest="case_ids")
     parser.add_argument("--repetitions", type=int, default=1)
     parser.add_argument(
@@ -40,7 +43,16 @@ def main() -> None:
             )
         ):
             raise ValueError("Output cannot be added to finalized evidence")
-    if args.treatment == "semgrep-first-slice":
+    if args.treatment == "kics-g2":
+        if args.allow_prelaunch_retry:
+            raise ValueError("KICS does not admit manual retries")
+        plan = build_kics_plan(
+            project,
+            plan_id=args.plan_id,
+            case_ids=tuple(args.case_ids),
+            repetitions=args.repetitions,
+        )
+    elif args.treatment == "semgrep-first-slice":
         if args.case_ids != ["dev-semgrep-basic-v1"] or args.allow_prelaunch_retry:
             raise ValueError("Semgrep requires its one existing case and no retry opt-in")
         plan = build_semgrep_plan(project, plan_id=args.plan_id, repetitions=args.repetitions)

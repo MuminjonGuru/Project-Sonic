@@ -313,6 +313,19 @@ Do not broaden this into research-profile/public intake or new rule admission. I
 Semgrep execution requests named-container cleanup but remains blocked without verified evidence.
 Old schemas and bundles remain intact. Keep this increment local; UI and final delivery stay last.
 
+### Controlled KICS governance follow-up: 14 October 2026
+
+The additive [KICS handler](docs/benchmark-kics.md) admits only the four existing G2 fixtures,
+unchanged pinned v2.1.20 image/profile/two Terraform-Kubernetes queries and one to three sequential
+repetitions. Reuse the existing pipeline and shared attempt state machine, with distinct KICS
+plan/preview/finish/progress schemas; historical schemas remain unchanged. No retry is admitted.
+Replay snapshot, invocation, native JSON mapping, comparison SARIF, exports and semantic evidence
+before reuse. Expose native aggregate counters without inferring per-file analysis completeness.
+`unsupported` and `partial-analysis` can finish workflow cells but are not clean results or true
+negatives. Null unparsed counts remain null. Requests for exception cleanup do not prove cleanup;
+failed/interrupted attempts stay blocked. No public Dockerfile support or new research admission.
+Keep this development increment local until separately requested; UI and final delivery stay last.
+
 ## Safety Controls (All Treatments)
 
 

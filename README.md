@@ -368,7 +368,11 @@ any container launch; both attempts remain visible. Legacy plans, interruptions 
 failures retain their no-retry boundary. The [controlled Semgrep handler](docs/benchmark-semgrep.md)
 also supports the original three-file first-slice fixture through that shared runner, with exact
 input/configuration bindings, offline native/export replay and no retry. This is not the 68-rule
-public treatment or a new detection benchmark. Remaining producer handlers, scoring, broader recovery
+public treatment or a new detection benchmark. The [controlled KICS handler](docs/benchmark-kics.md)
+governs the four existing G2 fixtures using the unchanged two-query treatment. It preserves native
+file/query counters, reports unsupported input separately from clean results and verifies evidence
+before zero-launch reuse; no KICS retry or public Dockerfile support is added.
+Remaining producer handlers, scoring, broader recovery
 and final-study freeze remain separate work. The UI follows tested, reviewed and useful
 results, including any justified
 versioned rule/profile refinement; it is not the next implementation task.

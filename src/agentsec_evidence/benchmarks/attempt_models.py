@@ -229,8 +229,100 @@ class SemgrepProgress(ResearchModel):
     )
 
 
-type AdmittedProgress = BenchmarkProgress | BenchmarkProgressV2 | SemgrepProgress
-type AdmittedFinish = AttemptFinish | SemgrepAttemptFinish
-type AdmittedEvidence = AttemptEvidence | SemgrepAttemptEvidence
-type AdmittedCellProgress = CellProgress | SemgrepCellProgress
-type AdmittedState = AttemptState | SemgrepAttemptState
+KicsAttemptState = Literal[
+    "completed-with-findings",
+    "completed-without-findings",
+    "partial-analysis",
+    "unsupported",
+    "execution-failed",
+    "interrupted",
+]
+
+
+class KicsAttemptEvidence(ResearchModel):
+    run_id: RunId
+    terminal_state: str
+    semantic_sha256: Sha256
+    bundle_files: RetainedManifest
+    snapshot_files: RetainedManifest
+    state: KicsAttemptState
+    scanner_invocations: StrictInt = Field(ge=0, le=1)
+    finding_records: StrictInt | None = Field(default=None, ge=0)
+    native_files_scanned: StrictInt | None = Field(default=None, ge=0)
+    native_files_parsed: StrictInt | None = Field(default=None, ge=0)
+    native_queries_total: StrictInt | None = Field(default=None, ge=0)
+    per_file_completion: Literal["unknown", "not-run"]
+
+
+class KicsAttemptFinish(ResearchModel):
+    contract: Literal["benchmark-kics-attempt-finish-v1"] = "benchmark-kics-attempt-finish-v1"
+    attempt_id: AttemptId
+    start_sha256: Sha256
+    ended_at: datetime
+    duration_ns: StrictInt = Field(ge=0)
+    state: KicsAttemptState
+    evidence: KicsAttemptEvidence | None = None
+    error_kind: Literal["runner-or-verification-error", "keyboard-interrupt"] | None = None
+
+    @model_validator(mode="after")
+    def check_outcome(self) -> Self:
+        if self.evidence is not None:
+            if self.state != self.evidence.state or self.error_kind is not None:
+                raise ValueError("Attempt outcome differs from verified KICS evidence")
+        elif (self.state, self.error_kind) not in {
+            ("execution-failed", "runner-or-verification-error"),
+            ("interrupted", "keyboard-interrupt"),
+        }:
+            raise ValueError("Unverified KICS attempt must remain failed or interrupted")
+        return self
+
+
+class KicsCellProgress(ResearchModel):
+    cell_id: Sha256
+    case_id: Identifier
+    repetition: StrictInt
+    state: Literal[
+        "not-attempted",
+        "completed-with-findings",
+        "completed-without-findings",
+        "partial-analysis",
+        "unsupported",
+        "execution-failed",
+        "interrupted",
+    ]
+    attempt_id: AttemptId | None = None
+    run_id: RunId | None = None
+    finding_records: StrictInt | None = None
+    scanner_invocations: StrictInt | None = None
+    native_files_scanned: StrictInt | None = None
+    native_files_parsed: StrictInt | None = None
+    native_queries_total: StrictInt | None = None
+    verified_terminal_attempt: bool = False
+
+
+class KicsProgress(ResearchModel):
+    contract: Literal["benchmark-kics-progress-v1"] = "benchmark-kics-progress-v1"
+    plan_sha256: Sha256
+    plan_semantic_sha256: Sha256
+    session: str
+    cells: tuple[KicsCellProgress, ...]
+    workflow_complete: bool
+    blocked: bool
+    newly_attempted_cells: StrictInt = Field(ge=0, le=12)
+    reused_verified_cells: StrictInt = Field(ge=0, le=12)
+    scoring_implemented: Literal[False] = False
+    analysis_complete: Literal[False] = False
+    limitations: tuple[str, ...] = (
+        "Existing four KICS development cases only; no public Dockerfile treatment",
+        "Completed means native workflow completion, not safety or independent oracle agreement",
+        "Unsupported and partial-analysis are separate terminal observations, not clean results",
+        "Reported aggregate file/query counts do not establish per-file completion",
+        "All execution failures and interruptions block; no automatic or manual KICS retry",
+    )
+
+
+type AdmittedProgress = BenchmarkProgress | BenchmarkProgressV2 | SemgrepProgress | KicsProgress
+type AdmittedFinish = AttemptFinish | SemgrepAttemptFinish | KicsAttemptFinish
+type AdmittedEvidence = AttemptEvidence | SemgrepAttemptEvidence | KicsAttemptEvidence
+type AdmittedCellProgress = CellProgress | SemgrepCellProgress | KicsCellProgress
+type AdmittedState = AttemptState | SemgrepAttemptState | KicsAttemptState

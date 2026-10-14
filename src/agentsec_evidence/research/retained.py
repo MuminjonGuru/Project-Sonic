@@ -6,6 +6,7 @@ import os
 import stat
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Literal
 
 from pydantic import Field, StrictInt, model_validator
 
@@ -81,15 +82,28 @@ class RetainedResearch:
             raise ValueError("Required retained evidence is missing: " + path) from exc
 
 
-def read_retained_research(root: Path) -> RetainedResearch:
+def read_retained_research(
+    root: Path, *, manifest_contract: Literal["source-pilot-evidence-v1"] | None = None
+) -> RetainedResearch:
     root = plain_path(root, directory=True)
     raw = bounded_file(root / "evidence-manifest.json", 4 * 1024 * 1024)
-    manifest = RetainedManifest.model_validate(load_agent_json(raw, max_bytes=4 * 1024 * 1024))
+    document = load_agent_json(raw, max_bytes=4 * 1024 * 1024)
+    if manifest_contract is not None and document.pop("contract", None) != manifest_contract:
+        raise ValueError("Wrong retained evidence manifest contract")
+    manifest = RetainedManifest.model_validate(document)
     expected = {e.path for e in manifest.files}
     allowed_dirs = {
         str(parent) for name in expected for parent in Path(name).parents if str(parent) != "."
     }
     allowed_dirs = {p.replace("\\", "/") for p in allowed_dirs}
+    if manifest_contract == "source-pilot-evidence-v1":
+        # The pilot sealed files, not these empty dependency-process scratch directories.
+        # Files placed in them still fail the ordinary manifest-membership check below.
+        allowed_dirs.update(
+            f"repetition-{i}/dependencies/runtime{suffix}"
+            for i in range(1, 4)
+            for suffix in ("", "/home", "/tmp", "/docker-config")
+        )
     actual: set[str] = set()
     for directory, dirs, names in os.walk(root):
         for name in list(dirs):

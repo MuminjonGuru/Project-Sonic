@@ -1,5 +1,13 @@
 # Common Evidence Reporting
 
+## Public Pilot Extension: 7 October 2026
+
+Completed sealed public pilots now enter `report build` as distinct `public-source-pilot`
+sources using `common-report-v4`. The fixed three-repetition pilot retains 18 stage rows and
+15 SARIF runs, with no combined vulnerability total or inferred finding adjudication. See
+[public-pilot reporting](public-pilot-reporting.md) for replay, provenance and validation limits.
+The earlier v1/v2/v3 combinations remain supported; this does not authorize new scans.
+
 ## Research Extension: 6 October 2026
 
 Sealed controlled Semgrep research cases now enter `report build` as `semgrep-research` sources.

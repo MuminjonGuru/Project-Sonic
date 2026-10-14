@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import tomllib
 from dataclasses import fields
 from datetime import datetime
@@ -25,6 +24,7 @@ from agentsec_evidence.intake.input_plan import ToolInputPlan
 from agentsec_evidence.intake.views import ToolInputView, ToolViewContext
 from agentsec_evidence.reporting.models import ResearchSource
 from agentsec_evidence.reporting.research_models import ResearchCaseSummary, ResearchPassSummary
+from agentsec_evidence.reporting.semgrep_export import semgrep_sarif_run
 from agentsec_evidence.research.execution import assess_research_execution, build_research_argv
 from agentsec_evidence.research.inputs import (
     assess_research_syntax,
@@ -310,7 +310,6 @@ def _load_research_source(case_root: Path) -> tuple[ResearchSource, dict[str, Js
 def research_sarif(
     source: ResearchSource, native_runs: dict[str, dict[str, Any]]
 ) -> dict[str, JsonValue]:
-    runs: list[dict[str, Any]] = []
     base = {
         "agentsecEvidence/sourceRunId": source.run_id,
         "agentsecEvidence/sourceManifestSha256": source.source_manifest_sha256,
@@ -318,78 +317,22 @@ def research_sarif(
         "agentsecEvidence/evidenceRole": source.summary.evidence_role,
         "agentsecEvidence/policyLabel": source.summary.policy.label,
     }
-    for row in source.summary.passes:
-        native = native_runs[row.key]
-        results = []
-        for finding in row.evidence.findings:
-            index = int(finding.sarif_pointer.rsplit("/", 1)[1])
-            result = json.loads(json.dumps(native["results"][index]))
-            physical = result["locations"][0]["physicalLocation"]
-            physical["artifactLocation"] = {"uri": quote(finding.anchor.path, safe="/")}
-            result["kind"] = "review"
-            result["partialFingerprints"] = {
-                "agentsecEvidence/researchAnchor/v1": semantic_hash(
-                    {
-                        "target": source.target_content_sha256,
-                        "profile": row.evidence.profile_sha256,
-                        "anchor": finding.anchor.model_dump(mode="json"),
-                    }
-                )
-            }
-            result.setdefault("properties", {}).update(
-                {
-                    "agentsecEvidence/reviewState": "unreviewed",
-                    "agentsecEvidence/nativeSuppressions": list(finding.native_suppressions),
-                    "agentsecEvidence/nativeJsonPath": row.native_json_path,
-                    "agentsecEvidence/nativeJsonSha256": row.evidence.native_json_sha256,
-                    "agentsecEvidence/nativeJsonPointer": finding.json_pointer,
-                    "agentsecEvidence/nativeSarifPath": row.native_sarif_path,
-                    "agentsecEvidence/nativeSarifSha256": row.evidence.native_sarif_sha256,
-                    "agentsecEvidence/nativeSarifPointer": finding.sarif_pointer,
-                }
-            )
-            if finding.native_suppressions:
-                result["suppressions"] = [
-                    {
-                        "kind": s["kind"],
-                        "status": "underReview",
-                        "justification": (
-                            "Native suppression retained; not approved by this platform"
-                        ),
-                    }
-                    for s in finding.native_suppressions
-                ]
-            results.append(result)
-        notification = (
-            "Recorded analysis remains "
-            + row.execution.analysis_state
-            + "; complete rule coverage is not established."
+    runs: list[dict[str, Any]] = [
+        semgrep_sarif_run(
+            evidence=row.evidence,
+            execution=row.execution,
+            native=native_runs[row.key],
+            native_json_path=row.native_json_path,
+            native_sarif_path=row.native_sarif_path,
+            target_sha256=source.target_content_sha256,
+            exit_code=row.exit_code,
+            properties={
+                **base,
+                "agentsecEvidence/researchPass": row.key,
+            },
         )
-        runs.append(
-            {
-                "tool": native["tool"],
-                **({"columnKind": native["columnKind"]} if "columnKind" in native else {}),
-                "results": results,
-                "invocations": [
-                    {
-                        "executionSuccessful": row.execution.analysis_state != "failed"
-                        and row.exit_code == 0,
-                        "toolExecutionNotifications": [
-                            {"level": "warning", "message": {"text": notification}}
-                        ],
-                    }
-                ],
-                "properties": {
-                    **base,
-                    "agentsecEvidence/researchPass": row.key,
-                    "agentsecEvidence/analysisState": row.execution.analysis_state,
-                    "agentsecEvidence/nativeExecutionSuccessful": (
-                        row.evidence.native_execution_successful
-                    ),
-                    "agentsecEvidence/nativeExitCode": row.exit_code,
-                },
-            }
-        )
+        for row in source.summary.passes
+    ]
     if not runs:
         runs.append(
             {

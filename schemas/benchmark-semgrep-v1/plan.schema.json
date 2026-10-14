@@ -1,0 +1,261 @@
+{
+  "$defs": {
+    "PlanFile": {
+      "additionalProperties": false,
+      "properties": {
+        "bytes": {
+          "maximum": 2097152,
+          "minimum": 0,
+          "title": "Bytes",
+          "type": "integer"
+        },
+        "path": {
+          "maxLength": 512,
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "bytes",
+        "sha256"
+      ],
+      "title": "PlanFile",
+      "type": "object"
+    },
+    "SemgrepCase": {
+      "additionalProperties": false,
+      "properties": {
+        "case_id": {
+          "const": "dev-semgrep-basic-v1",
+          "default": "dev-semgrep-basic-v1",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "expectation": {
+          "$ref": "#/$defs/SemgrepExpectation"
+        },
+        "expectation_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Expectation Sha256",
+          "type": "string"
+        },
+        "files": {
+          "items": {
+            "$ref": "#/$defs/PlanFile"
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "title": "Files",
+          "type": "array"
+        },
+        "selected_paths": {
+          "default": [
+            "clean.py",
+            "vulnerable.py"
+          ],
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "const": "clean.py",
+              "type": "string"
+            },
+            {
+              "const": "vulnerable.py",
+              "type": "string"
+            }
+          ],
+          "title": "Selected Paths",
+          "type": "array"
+        },
+        "source_family": {
+          "const": "semgrep-basic-development-v1",
+          "default": "semgrep-basic-development-v1",
+          "title": "Source Family",
+          "type": "string"
+        },
+        "split": {
+          "const": "development-not-held-out",
+          "default": "development-not-held-out",
+          "title": "Split",
+          "type": "string"
+        }
+      },
+      "required": [
+        "files",
+        "expectation",
+        "expectation_sha256"
+      ],
+      "title": "SemgrepCase",
+      "type": "object"
+    },
+    "SemgrepExpectation": {
+      "additionalProperties": false,
+      "properties": {
+        "corrected_path": {
+          "const": "clean.py",
+          "default": "clean.py",
+          "title": "Corrected Path",
+          "type": "string"
+        },
+        "excluded_path": {
+          "const": "ignored/ignored.py",
+          "default": "ignored/ignored.py",
+          "title": "Excluded Path",
+          "type": "string"
+        },
+        "expected_native_results": {
+          "const": 1,
+          "default": 1,
+          "title": "Expected Native Results",
+          "type": "integer"
+        },
+        "expected_rule_id": {
+          "const": "project.first-slice.python-eval",
+          "default": "project.first-slice.python-eval",
+          "title": "Expected Rule Id",
+          "type": "string"
+        },
+        "positive_path": {
+          "const": "vulnerable.py",
+          "default": "vulnerable.py",
+          "title": "Positive Path",
+          "type": "string"
+        },
+        "provenance": {
+          "const": "existing-authored-case-not-new-scanner-derived-oracle",
+          "default": "existing-authored-case-not-new-scanner-derived-oracle",
+          "title": "Provenance",
+          "type": "string"
+        },
+        "review_status": {
+          "const": "historical-engineering-expectation-not-independent",
+          "default": "historical-engineering-expectation-not-independent",
+          "title": "Review Status",
+          "type": "string"
+        }
+      },
+      "title": "SemgrepExpectation",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "admission": {
+      "const": "existing-semgrep-basic-fixture-v1",
+      "default": "existing-semgrep-basic-fixture-v1",
+      "title": "Admission",
+      "type": "string"
+    },
+    "automatic_retries": {
+      "const": 0,
+      "default": 0,
+      "title": "Automatic Retries",
+      "type": "integer"
+    },
+    "cases": {
+      "maxItems": 1,
+      "minItems": 1,
+      "prefixItems": [
+        {
+          "$ref": "#/$defs/SemgrepCase"
+        }
+      ],
+      "title": "Cases",
+      "type": "array"
+    },
+    "contract": {
+      "const": "benchmark-semgrep-plan-v1",
+      "default": "benchmark-semgrep-plan-v1",
+      "title": "Contract",
+      "type": "string"
+    },
+    "implementation": {
+      "items": {
+        "$ref": "#/$defs/PlanFile"
+      },
+      "maxItems": 2048,
+      "minItems": 1,
+      "title": "Implementation",
+      "type": "array"
+    },
+    "manual_retries": {
+      "const": 0,
+      "default": 0,
+      "title": "Manual Retries",
+      "type": "integer"
+    },
+    "max_workers": {
+      "const": 1,
+      "default": 1,
+      "title": "Max Workers",
+      "type": "integer"
+    },
+    "order": {
+      "const": "case-order-then-repetition",
+      "default": "case-order-then-repetition",
+      "title": "Order",
+      "type": "string"
+    },
+    "pins": {
+      "items": {
+        "$ref": "#/$defs/PlanFile"
+      },
+      "maxItems": 6,
+      "minItems": 6,
+      "title": "Pins",
+      "type": "array"
+    },
+    "plan_id": {
+      "pattern": "^[a-z0-9][a-z0-9_.-]{0,79}$",
+      "title": "Plan Id",
+      "type": "string"
+    },
+    "protocol_status": {
+      "const": "development-plan-not-confirmatory-freeze",
+      "default": "development-plan-not-confirmatory-freeze",
+      "title": "Protocol Status",
+      "type": "string"
+    },
+    "repetitions": {
+      "maximum": 3,
+      "minimum": 1,
+      "title": "Repetitions",
+      "type": "integer"
+    },
+    "split": {
+      "const": "development-not-held-out",
+      "default": "development-not-held-out",
+      "title": "Split",
+      "type": "string"
+    },
+    "target_execution": {
+      "const": false,
+      "default": false,
+      "title": "Target Execution",
+      "type": "boolean"
+    },
+    "treatment": {
+      "const": "authored-semgrep-first-slice-v1",
+      "default": "authored-semgrep-first-slice-v1",
+      "title": "Treatment",
+      "type": "string"
+    }
+  },
+  "required": [
+    "plan_id",
+    "pins",
+    "implementation",
+    "cases",
+    "repetitions"
+  ],
+  "title": "SemgrepBenchmarkPlan",
+  "type": "object"
+}

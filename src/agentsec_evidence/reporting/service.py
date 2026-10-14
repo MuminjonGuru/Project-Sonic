@@ -22,10 +22,12 @@ from agentsec_evidence.reporting.models import (
     AgentSource,
     CommonReport,
     DependencySource,
+    PublicPilotSource,
     ReportSource,
     ResearchSource,
     StaticSource,
 )
+from agentsec_evidence.reporting.pilot import load_pilot_source, validate_pilot_runs
 from agentsec_evidence.reporting.research import load_research_source, validate_research_runs
 from agentsec_evidence.validation.checks import validate_sarif
 
@@ -68,6 +70,10 @@ def validate_report_sarif(project_root: Path, document: dict[str, JsonValue]) ->
 def load_report_source(
     project_root: Path, bundle: Path
 ) -> tuple[ReportSource, dict[str, JsonValue]]:
+    if (bundle / "pilot-report.json").is_file():
+        pilot_source, document = load_pilot_source(project_root, bundle)
+        validate_report_sarif(project_root, document)
+        return pilot_source, document
     if (bundle.parent / "evidence-manifest.json").is_file():
         research_source, document = load_research_source(bundle)
         validate_report_sarif(project_root, document)
@@ -139,19 +145,23 @@ def write_common_report(*, project_root: Path, bundles: list[Path], output: Path
     roots = [path.absolute() for path in bundles]
     if len({path.resolve(strict=True) for path in roots}) != len(roots):
         raise ValueError("Duplicate source bundle")
+    if any(a.resolve().is_relative_to(b.resolve()) for a in roots for b in roots if a != b):
+        raise ValueError("A source and its nested constituents cannot both enter one report")
     destination = require_new_derivative(output, roots)
     sources: list[ReportSource] = []
     runs: list[JsonValue] = []
     for root in sorted(roots, key=lambda path: path.name):
         source, document = load_report_source(project_root, root)
-        if any(item.run_id == source.run_id for item in sources):
+        if any(_source_run_ids(item).intersection(_source_run_ids(source)) for item in sources):
             raise ValueError("Duplicate source run identity")
         sources.append(source)
         runs.extend(cast(list[JsonValue], document["runs"]))
     document = {"$schema": SARIF_SCHEMA_URI, "version": "2.1.0", "runs": runs}
     validate_report_sarif(project_root, document)
     report = CommonReport(
-        contract="common-report-v3"
+        contract="common-report-v4"
+        if any(isinstance(source, PublicPilotSource) for source in sources)
+        else "common-report-v3"
         if any(isinstance(source, ResearchSource) for source in sources)
         else "common-report-v2"
         if any(isinstance(source, AgentSource) for source in sources)
@@ -223,6 +233,12 @@ def validate_common_report(project_root: Path, root: Path) -> dict[str, JsonValu
             {source.run_id for source in report.sources}
         ) != len(report.sources):
             raise ValueError("Common report source binding failure")
+        seen_runs: set[str] = set()
+        for source in report.sources:
+            identities = _source_run_ids(source)
+            if seen_runs.intersection(identities):
+                raise ValueError("Duplicate source or constituent run identity")
+            seen_runs.update(identities)
         document = cast(dict[str, JsonValue], json.loads((root / "results.sarif").read_bytes()))
         validate_report_sarif(project_root, document)
         runs = cast(list[dict[str, JsonValue]], document["runs"])
@@ -249,7 +265,9 @@ def validate_common_report(project_root: Path, root: Path) -> dict[str, JsonValu
                     != source.source_manifest_sha256
                 ):
                     raise ValueError("SARIF source manifest linkage differs")
-            if isinstance(source, ResearchSource):
+            if isinstance(source, PublicPilotSource):
+                validate_pilot_runs(source, matching)
+            elif isinstance(source, ResearchSource):
                 validate_research_runs(source, matching)
             elif isinstance(source, DependencySource):
                 paths = [
@@ -282,6 +300,16 @@ def validate_common_report(project_root: Path, root: Path) -> dict[str, JsonValu
 
 
 def _source_run_count(source: ReportSource) -> int:
+    if isinstance(source, PublicPilotSource):
+        return len(source.summary.sarif_bindings)
     if isinstance(source, ResearchSource):
         return len(source.summary.passes) or 1
     return 2 if isinstance(source, DependencySource) else 1
+
+
+def _source_run_ids(source: ReportSource) -> set[str]:
+    identities = {source.run_id}
+    if isinstance(source, PublicPilotSource):
+        for repetition in source.summary.repetitions:
+            identities.update({repetition.agent_run_id, repetition.dependency.run_id})
+    return identities

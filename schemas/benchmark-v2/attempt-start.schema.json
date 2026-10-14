@@ -1,0 +1,124 @@
+{
+  "$defs": {
+    "RetryAuthorization": {
+      "additionalProperties": false,
+      "properties": {
+        "authorization": {
+          "const": "explicit-cli-request-not-authenticated-identity",
+          "default": "explicit-cli-request-not-authenticated-identity",
+          "title": "Authorization",
+          "type": "string"
+        },
+        "cause": {
+          "const": "docker-unavailable-before-launch",
+          "title": "Cause",
+          "type": "string"
+        },
+        "policy_id": {
+          "const": "missing-docker-prelaunch-once-v1",
+          "default": "missing-docker-prelaunch-once-v1",
+          "title": "Policy Id",
+          "type": "string"
+        },
+        "prior_attempt_id": {
+          "pattern": "^attempt_[0-9a-f]{32}$",
+          "title": "Prior Attempt Id",
+          "type": "string"
+        },
+        "remediation": {
+          "const": "docker-command-availability-restored",
+          "title": "Remediation",
+          "type": "string"
+        }
+      },
+      "required": [
+        "prior_attempt_id",
+        "cause",
+        "remediation"
+      ],
+      "title": "RetryAuthorization",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "attempt_id": {
+      "pattern": "^attempt_[0-9a-f]{32}$",
+      "title": "Attempt Id",
+      "type": "string"
+    },
+    "case_id": {
+      "pattern": "^[a-z0-9][a-z0-9_.-]{0,79}$",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "cell_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Cell Id",
+      "type": "string"
+    },
+    "contract": {
+      "const": "benchmark-attempt-start-v2",
+      "default": "benchmark-attempt-start-v2",
+      "title": "Contract",
+      "type": "string"
+    },
+    "ordinal": {
+      "maximum": 78,
+      "minimum": 1,
+      "title": "Ordinal",
+      "type": "integer"
+    },
+    "plan_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Plan Sha256",
+      "type": "string"
+    },
+    "previous_finish_sha256": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Previous Finish Sha256"
+    },
+    "repetition": {
+      "maximum": 3,
+      "minimum": 1,
+      "title": "Repetition",
+      "type": "integer"
+    },
+    "retry": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/RetryAuthorization"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "started_at": {
+      "format": "date-time",
+      "title": "Started At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "attempt_id",
+    "ordinal",
+    "cell_id",
+    "case_id",
+    "repetition",
+    "plan_sha256",
+    "previous_finish_sha256",
+    "started_at"
+  ],
+  "title": "AttemptStartV2",
+  "type": "object"
+}

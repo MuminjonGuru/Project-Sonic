@@ -12,6 +12,8 @@ from rich.table import Table
 
 from agentsec_evidence import __version__
 from agentsec_evidence.agents.records import AgentRunDetails
+from agentsec_evidence.benchmarks.attempts import inspect_benchmark, retry_benchmark, run_benchmark
+from agentsec_evidence.benchmarks.service import validate_plan
 from agentsec_evidence.core.doctor import collect_doctor_report
 from agentsec_evidence.core.io import json_bytes
 from agentsec_evidence.dependencies.mutations import Mutation
@@ -44,6 +46,8 @@ from agentsec_evidence.reporting.service import (
     validate_common_report,
     write_common_report,
 )
+from agentsec_evidence.research.retained import plain_path
+from agentsec_evidence.reviews.service import validate_review, write_review
 
 app = typer.Typer(
     name="agentsec-evidence",
@@ -59,6 +63,12 @@ report_app = typer.Typer(
     help="Build and validate common reports from existing evidence; no rescanning."
 )
 app.add_typer(report_app, name="report")
+review_app = typer.Typer(
+    help="Record contextual finding reviews without changing scanner evidence."
+)
+app.add_typer(review_app, name="review")
+benchmark_app = typer.Typer(help="Validate and run explicitly admitted development benchmarks.")
+app.add_typer(benchmark_app, name="benchmark")
 app.add_typer(dependency_app, name="dependencies")
 app.add_typer(target_app, name="target")
 app.add_typer(scan_app, name="scan")
@@ -728,6 +738,167 @@ def report_validate(
     """Validate report integrity, source bindings and SARIF/result accounting offline."""
     try:
         _emit_json(validate_common_report(_find_project_root(project_root), directory))
+    except (OSError, ValueError) as exc:
+        _emit_error(exc)
+        raise typer.Exit(code=5) from exc
+
+
+@review_app.command("build")
+def review_build(
+    report: Annotated[Path, typer.Argument(exists=True, file_okay=False)],
+    batch: Annotated[Path, typer.Argument(exists=True, dir_okay=False)],
+    output: Annotated[Path, typer.Option(help="New review revision directory; never overwritten.")],
+    previous: Annotated[
+        Path | None, typer.Option(exists=True, file_okay=False, help="Prior review revision.")
+    ] = None,
+    project_root: Annotated[Path | None, typer.Option()] = None,
+) -> None:
+    """Append a supplied annotation batch; declared reviewers are not authenticated."""
+    try:
+        sidecar = write_review(
+            project=_find_project_root(project_root),
+            report_root=report,
+            batch_path=batch,
+            output=output,
+            previous=previous,
+        )
+    except (OSError, ValueError) as exc:
+        _emit_error(exc)
+        raise typer.Exit(code=5) from exc
+    _emit_json(
+        {
+            "output": str(output.resolve()),
+            "annotation_count": len(sidecar.annotations),
+            "report_manifest_sha256": sidecar.report_manifest_sha256,
+            "identity_assurance": sidecar.reviewer_identity_assurance,
+        }
+    )
+
+
+@review_app.command("validate")
+def review_validate(
+    directory: Annotated[Path, typer.Argument(exists=True, file_okay=False)],
+    report: Annotated[Path, typer.Option(exists=True, file_okay=False)],
+    previous: Annotated[Path | None, typer.Option(exists=True, file_okay=False)] = None,
+    project_root: Annotated[Path | None, typer.Option()] = None,
+) -> None:
+    """Check report binding and annotation history; optionally verify the previous revision."""
+    try:
+        _emit_json(
+            validate_review(
+                project=_find_project_root(project_root),
+                report_root=report,
+                root=directory,
+                previous=previous,
+            )
+        )
+    except (OSError, ValueError) as exc:
+        _emit_error(exc)
+        raise typer.Exit(code=5) from exc
+
+
+@benchmark_app.command("validate")
+def benchmark_validate(
+    plan: Annotated[Path, typer.Argument(exists=True, dir_okay=False)],
+    project_root: Annotated[Path | None, typer.Option()] = None,
+) -> None:
+    """Check the admitted development plan's scope, expectations and exact byte pins."""
+    try:
+        if project_root is not None:
+            plain_path(project_root, directory=True)
+        result = validate_plan(_find_project_root(project_root), plan)
+        _emit_json(
+            {
+                "plan_valid": result.plan_valid,
+                "plan_id": result.plan_id,
+                "plan_sha256": result.plan_sha256,
+                "plan_semantic_sha256": result.plan_semantic_sha256,
+                "planned_cells": len(result.cells),
+                "execution_authorized": result.execution_authorized,
+                "runtime_readiness": result.runtime_readiness,
+                "validation_scope": result.validation_scope,
+            }
+        )
+    except (OSError, ValueError) as exc:
+        _emit_error(exc)
+        raise typer.Exit(code=5) from exc
+
+
+@benchmark_app.command("dry-run")
+def benchmark_dry_run(
+    plan: Annotated[Path, typer.Argument(exists=True, dir_okay=False)],
+    project_root: Annotated[Path | None, typer.Option()] = None,
+) -> None:
+    """List ordered cells and unresolved readiness without Docker, target parsing or scans."""
+    try:
+        if project_root is not None:
+            plain_path(project_root, directory=True)
+        result = validate_plan(_find_project_root(project_root), plan)
+        _emit_json(cast(JsonValue, result.model_dump(mode="json")))
+    except (OSError, ValueError) as exc:
+        _emit_error(exc)
+        raise typer.Exit(code=5) from exc
+
+
+@benchmark_app.command("status")
+def benchmark_status(
+    plan: Annotated[Path, typer.Argument(exists=True, dir_okay=False)],
+    project_root: Annotated[Path | None, typer.Option()] = None,
+) -> None:
+    """Revalidate retained attempts without launching scanners or retrying failures."""
+    try:
+        if project_root is not None:
+            plain_path(project_root, directory=True)
+        result = inspect_benchmark(_find_project_root(project_root), plan)
+        _emit_json(cast(JsonValue, result.model_dump(mode="json")))
+        if result.blocked:
+            raise typer.Exit(code=5)
+    except (OSError, ValueError) as exc:
+        _emit_error(exc)
+        raise typer.Exit(code=5) from exc
+
+
+@benchmark_app.command("run")
+def benchmark_run(
+    plan: Annotated[Path, typer.Argument(exists=True, dir_okay=False)],
+    project_root: Annotated[Path | None, typer.Option()] = None,
+    max_new_cells: Annotated[int, typer.Option(min=1, max=39)] = 39,
+) -> None:
+    """Run/resume the frozen authored treatment serially; no retries or target execution."""
+    try:
+        if project_root is not None:
+            plain_path(project_root, directory=True)
+        result = run_benchmark(_find_project_root(project_root), plan, max_new_cells=max_new_cells)
+        _emit_json(cast(JsonValue, result.model_dump(mode="json")))
+        if result.blocked:
+            raise typer.Exit(code=5)
+    except (OSError, ValueError) as exc:
+        _emit_error(exc)
+        raise typer.Exit(code=5) from exc
+
+
+@benchmark_app.command("retry")
+def benchmark_retry(
+    plan: Annotated[Path, typer.Argument(exists=True, dir_okay=False)],
+    attempt_id: Annotated[str, typer.Option()],
+    cause: Annotated[str, typer.Option()],
+    remediation: Annotated[str, typer.Option()],
+    project_root: Annotated[Path | None, typer.Option()] = None,
+) -> None:
+    """Explicitly retry one plan-authorized missing-Docker failure; preserve both attempts."""
+    try:
+        if project_root is not None:
+            plain_path(project_root, directory=True)
+        result = retry_benchmark(
+            _find_project_root(project_root),
+            plan,
+            attempt_id=attempt_id,
+            cause=cause,
+            remediation=remediation,
+        )
+        _emit_json(cast(JsonValue, result.model_dump(mode="json")))
+        if result.blocked:
+            raise typer.Exit(code=5)
     except (OSError, ValueError) as exc:
         _emit_error(exc)
         raise typer.Exit(code=5) from exc

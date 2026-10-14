@@ -4,6 +4,10 @@ import os
 import sys
 from pathlib import Path
 
+import psutil
+import pytest
+
+from agentsec_evidence.execution import process as process_module
 from agentsec_evidence.execution.process import run_bounded_process
 
 
@@ -61,3 +65,27 @@ def test_process_output_limit_terminates_process(tmp_path: Path) -> None:
     assert capture.output_limited is True
     assert capture.stdout_truncated is True
     assert len(capture.stdout) == 100
+
+
+@pytest.mark.parametrize("error", [KeyboardInterrupt, RuntimeError])
+def test_process_interruption_reaps_host_child(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, error: type[BaseException]
+) -> None:
+    observed: list[int] = []
+
+    def interrupt(pid: int) -> int:
+        observed.append(pid)
+        raise error("authored cancellation")
+
+    monkeypatch.setattr(process_module, "_rss_bytes", interrupt)
+    with pytest.raises(error):
+        run_bounded_process(
+            [sys.executable, "-c", "import time; time.sleep(30)"],
+            cwd=tmp_path,
+            environment=_environment(),
+            timeout_seconds=40,
+            max_stdout_bytes=1024,
+            max_stderr_bytes=1024,
+        )
+    assert len(observed) == 1
+    assert not psutil.pid_exists(observed[0])

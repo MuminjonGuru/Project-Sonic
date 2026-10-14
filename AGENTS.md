@@ -242,6 +242,77 @@ Use a new attempt directory after failure, never silent retries. The dedicated p
 must not masquerade as a controlled-source v3 common report. Retained hashes and replay
 establish consistency, not a public vulnerability oracle, independent labels or attestation.
 
+### Public pilot reporting follow-up: 7 October 2026
+
+The additive [public-pilot reporter](docs/public-pilot-reporting.md) now replays completed
+sealed pilot evidence into a distinct `public-source-pilot` source and `common-report-v4`.
+The earlier separate-envelope instruction remains true for original evidence; do not relabel
+the public source as controlled v3 evidence. Preserve three repetitions, both Semgrep views,
+all native finding identities and dependency-path separation. Syft remains an inventory row,
+not an extra vulnerability SARIF run. No new scanner execution or target admission follows.
+
+Build replays original evidence; standalone derivative validation does not. Known empty
+dependency runtime directories are compatible with the retained reader, not permission for
+unmanifested content. Keep public findings unreviewed and completeness unknown. Read-model
+plan metadata is not the fixed executable admission model. UI, adjudication, benchmark
+governance and release rehearsal remain separate work.
+
+### Benchmark-plan follow-up: 13 October 2026
+
+The first [MP-04 plan increment](docs/benchmark-plans.md) validates only the existing authored
+Python/MCP case registry and its exact admission/configuration pins. It inventories all source
+Python bytes and binds case expectations without executing or materializing target code.
+`benchmark validate` and `benchmark dry-run` are offline; a valid plan is not runtime readiness,
+permission to launch scanners, implemented resume/scoring or final protocol freeze. Preserve
+development family/split identities and explicit malformed/refusal cases. New treatments require
+separate admission; do not turn this contract into an arbitrary-path scanning shortcut.
+
+The student clarified that UI and final delivery follow completed development/testing/refinement
+and demonstrated usefulness of results. Keep native/historical rules and outcomes unchanged;
+refinements need separate versioned treatments and development tests, not tuning held-out cases.
+Publication remains local until the student requests otherwise. Report plan position, measured
+verification and the next step after each increment.
+
+### Bounded attempt/resume follow-up: 13 October 2026
+
+The [attempt runner](docs/benchmark-attempts.md) reuses the existing authored Agent Audit runner
+only. `benchmark run` writes a frozen development plan and unique start/finish records beneath
+`workspace/benchmarks/`; `status` replays retained evidence. Do not bypass its shared writer
+lock or reuse a status flag without native/bundle/configuration/input/source verification.
+Partial analysis and genuine input refusal can finish workflow attempts, never complete security
+analysis. Missing Docker, malformed output, diagnostics and unconfirmed cleanup remain failures.
+Interrupted/failed attempts block; no retry or automatic repair is implemented. Preserve them.
+Current previews use dry-run-v2; v1 plan/preview schema bytes and historical receipts remain intact.
+This adds no public/held-out admission, scoring, independent outcome approval or UI readiness.
+
+### Explicit pre-launch retry follow-up: 13 October 2026
+
+Opt-in `benchmark-plan-v2` freezes one manual retry per cell for the exact verified
+missing-Docker-before-launch failure. The preparation helper requires `--allow-prelaunch-retry`;
+default v1 plans remain no-retry. `benchmark retry` requires the selected failed attempt ID,
+fixed cause and remediation assertion. It replays all history under the shared lock and writes
+a new linked attempt; it never repairs or overwrites the original. Ordinary `run` never retries.
+
+V2 progress preserves all attempts as well as latest cell states. Do not report only the
+successful replacement or treat a partial result as complete. Interruptions, unknown cleanup,
+malformed native output, other execution failures and policy refusals are ineligible. No source
+changes can be smuggled into recovery: a changed implementation requires a distinct new plan.
+V2 plan/start/progress and dry-run-v3 are additive; historical schemas/receipts remain intact.
+Other producer handlers, scoring, controlled full rehearsal and usefulness review remain open.
+Keep changes local; UI and final delivery remain last. No new target or detector admission.
+
+### Controlled Semgrep governance follow-up: 14 October 2026
+
+The additive [Semgrep handler](docs/benchmark-semgrep.md) admits only the existing original
+`dev-semgrep-basic-v1` fixture, unchanged eval rule/profile/tool and one to three repetitions.
+It shares the attempt state machine/lock, but uses separate plan/preview/finish/progress contracts;
+agent retry policy does not extend to Semgrep. Replay native mappings, exports, configuration,
+invocation and retained target bytes before reuse. Workflow completion with/without findings is
+not complete security analysis, oracle agreement or safety. Null unparsed results stay null.
+Do not broaden this into research-profile/public intake or new rule admission. Interrupted
+Semgrep execution requests named-container cleanup but remains blocked without verified evidence.
+Old schemas and bundles remain intact. Keep this increment local; UI and final delivery stay last.
+
 ## Safety Controls (All Treatments)
 
 

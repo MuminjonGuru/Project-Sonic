@@ -352,6 +352,27 @@ The dedicated pilot report and offline replay are implemented. General benchmark
 controls, final profile justification, the UI and independent-machine delivery rehearsal remain
 separate work. Local unpublished extensions are not evidence of capability in this checkout.
 
+[Public-pilot common reporting](docs/public-pilot-reporting.md) now replays that completed
+sealed pilot into `common-report-v4` without rescanning. It preserves all three repetitions,
+both Semgrep policy views, the separate dependency paths, unreviewed agent findings and
+coverage limitations: 18 stage rows and 15 SARIF runs, not a combined vulnerability total.
+
+[Benchmark planning](docs/benchmark-plans.md) provides `benchmark validate` and
+`benchmark dry-run` for the existing authored Python/MCP development cases. Plans bind exact
+inputs, expectations, configuration and source-code hashes; validation launches no tools and
+does not establish runtime readiness. [Bounded execution](docs/benchmark-attempts.md) adds
+`benchmark run` and `benchmark status`: sequential, write-once attempts and verified terminal
+reuse for that same authored treatment. Partial analysis and refusals remain explicit. Opt-in
+v2 plans allow `benchmark retry` once per cell only for a verified missing-Docker failure before
+any container launch; both attempts remain visible. Legacy plans, interruptions and all other
+failures retain their no-retry boundary. The [controlled Semgrep handler](docs/benchmark-semgrep.md)
+also supports the original three-file first-slice fixture through that shared runner, with exact
+input/configuration bindings, offline native/export replay and no retry. This is not the 68-rule
+public treatment or a new detection benchmark. Remaining producer handlers, scoring, broader recovery
+and final-study freeze remain separate work. The UI follows tested, reviewed and useful
+results, including any justified
+versioned rule/profile refinement; it is not the next implementation task.
+
 ## Repository Boundary
 
 All implementation, tests, fixtures, benchmark definitions, runtime workspaces, and generated

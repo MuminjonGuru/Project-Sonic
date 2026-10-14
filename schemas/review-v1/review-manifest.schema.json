@@ -1,0 +1,41 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "annotation_count": {
+      "maximum": 4096,
+      "minimum": 1,
+      "title": "Annotation Count",
+      "type": "integer"
+    },
+    "contract": {
+      "const": "finding-review-manifest-v1",
+      "default": "finding-review-manifest-v1",
+      "title": "Contract",
+      "type": "string"
+    },
+    "report_manifest_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Report Manifest Sha256",
+      "type": "string"
+    },
+    "review_bytes": {
+      "maximum": 8388608,
+      "minimum": 1,
+      "title": "Review Bytes",
+      "type": "integer"
+    },
+    "review_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Review Sha256",
+      "type": "string"
+    }
+  },
+  "required": [
+    "review_sha256",
+    "review_bytes",
+    "report_manifest_sha256",
+    "annotation_count"
+  ],
+  "title": "ReviewManifest",
+  "type": "object"
+}

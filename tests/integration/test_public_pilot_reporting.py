@@ -25,9 +25,278 @@ from agentsec_evidence.reporting.pilot import load_pilot_source, validate_pilot_
 from agentsec_evidence.research.models import SemgrepResearchScope
 from agentsec_evidence.research.retained import read_retained_research
 from agentsec_evidence.research.semgrep import build_dual_view, reconcile_semgrep_pass
+from agentsec_evidence.reviews import service as review_service
+from agentsec_evidence.reviews.models import ReviewAnnotation, annotation_sha256
 
 ROOT = Path(__file__).resolve().parents[2]
 HASH = "a" * 64
+
+
+@pytest.fixture
+def review_inputs(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    projection: tuple[PublicPilotSource, dict[str, Any]],
+) -> tuple[Path, Path, dict[str, Any]]:
+    source, document = projection
+    bundle = tmp_path / "authored-source"
+    bundle.mkdir()
+    monkeypatch.setattr(service, "load_report_source", lambda *_: (source, document))
+    output = tmp_path / "report"
+    service.write_common_report(project_root=ROOT, bundles=[bundle], output=output)
+    finding = source.summary.repetitions[0].agent_findings[0].model_dump(mode="json")
+    context = next(r for r in source.summary.inventory.records if r.source.path == "agent.py")
+    annotation: dict[str, Any] = {
+        "review_id": "authored-1",
+        "subject": {
+            "source_run_id": source.run_id,
+            "source_manifest_sha256": source.source_manifest_sha256,
+            "finding_sha256": semantic_hash(finding),
+            "finding_snapshot": finding,
+        },
+        "reviewer": {
+            "identity": "Authored proposal",
+            "role": "ai-assistant",
+            "authorship": "ai-drafted",
+        },
+        "created_at": "2026-10-13T00:00:00Z",
+        "decision": "proposed",
+        "conclusion": "claim-not-substantiated",
+        "observed_condition": "Authored report example.",
+        "rationale": "Authored context, not an accuracy judgment.",
+        "uncertainty": "Not a real scanner evaluation or independent review.",
+        "contexts": [
+            {"artifact_path": "agent.py", "source_sha256": context.source.sha256, "start_line": 1}
+        ],
+    }
+    batch = tmp_path / "batch.json"
+    batch.write_bytes(json_bytes({"annotations": [annotation]}))
+    return output, batch, annotation
+
+
+def test_review_cli_roundtrip_and_append_only_history(
+    tmp_path: Path,
+    review_inputs: tuple[Path, Path, dict[str, Any]],
+) -> None:
+    from typer.testing import CliRunner
+
+    from agentsec_evidence.cli.app import app
+
+    report, batch, annotation = review_inputs
+    before = {p.name: p.read_bytes() for p in report.iterdir()}
+    first, second = tmp_path / "review-1", tmp_path / "review-2"
+    runner = CliRunner()
+    args = ["--project-root", str(ROOT)]
+    result = runner.invoke(
+        app, ["review", "build", str(report), str(batch), "--output", str(first), *args]
+    )
+    assert result.exit_code == 0, result.output
+    prior = {p.name: p.read_bytes() for p in first.iterdir()}
+    initial = runner.invoke(app, ["review", "validate", str(first), "--report", str(report), *args])
+    assert initial.exit_code == 0, initial.output
+    assert json.loads(initial.output)["pending_finding_occurrences"] == 1
+    changed = copy.deepcopy(annotation)
+    changed.update(
+        reviewer={
+            "identity": "Authored reviewer",
+            "role": "student",
+            "authorship": "human-authored",
+        },
+        created_at="2026-10-13T00:01:00Z",
+        decision="accepted",
+        supersedes_sha256=annotation_sha256(ReviewAnnotation.model_validate(annotation)),
+    )
+    batch.write_bytes(json_bytes({"annotations": [changed]}))
+    result = runner.invoke(
+        app,
+        [
+            "review",
+            "build",
+            str(report),
+            str(batch),
+            "--output",
+            str(second),
+            "--previous",
+            str(first),
+            *args,
+        ],
+    )
+    assert result.exit_code == 0, result.output
+    result = runner.invoke(
+        app,
+        [
+            "review",
+            "validate",
+            str(second),
+            "--report",
+            str(report),
+            "--previous",
+            str(first),
+            *args,
+        ],
+    )
+    assert result.exit_code == 0, result.output
+    checked = json.loads(result.output)
+    assert checked["previous_revision_check"] == "verified"
+    assert checked["human_decision_occurrences"] == 1
+    assert checked["pending_finding_occurrences"] == 0
+    assert checked["annotation_count"] == 2
+    assert checked["vulnerability_total"] is None
+    assert {p.name: p.read_bytes() for p in report.iterdir()} == before
+    assert {p.name: p.read_bytes() for p in first.iterdir()} == prior
+    result = runner.invoke(
+        app, ["review", "build", str(report), str(batch), "--output", str(first), *args]
+    )
+    assert result.exit_code == 5
+    assert {p.name: p.read_bytes() for p in first.iterdir()} == prior
+
+
+@pytest.mark.parametrize(
+    "mutation", ["source", "finding-id", "finding-content", "context-hash", "context-path"]
+)
+def test_review_requires_exact_evidence(
+    tmp_path: Path,
+    review_inputs: tuple[Path, Path, dict[str, Any]],
+    mutation: str,
+) -> None:
+    report, batch, annotation = review_inputs
+    data = copy.deepcopy(annotation)
+    if mutation == "source":
+        data["subject"]["source_manifest_sha256"] = "b" * 64
+    elif mutation.startswith("finding"):
+        finding = data["subject"]["finding_snapshot"]
+        if mutation == "finding-id":
+            finding["record_id"] = "invented"
+        else:
+            finding["native_extension"]["suppressed"] = True
+        data["subject"]["finding_sha256"] = semantic_hash(finding)
+    elif mutation == "context-hash":
+        data["contexts"][0]["source_sha256"] = "b" * 64
+    else:
+        data["contexts"][0]["artifact_path"] = "missing.py"
+    batch.write_bytes(json_bytes({"annotations": [data]}))
+    with pytest.raises(ValueError):
+        review_service.write_review(
+            project=ROOT, report_root=report, batch_path=batch, output=tmp_path / "bad"
+        )
+    assert not (tmp_path / "bad").exists()
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    ["report-hash", "changed-bytes", "extra-file", "missing-file", "wrong-manifest-count"],
+)
+def test_review_validation_rejects_tampering(
+    tmp_path: Path,
+    review_inputs: tuple[Path, Path, dict[str, Any]],
+    mutation: str,
+) -> None:
+    report, batch, _ = review_inputs
+    output = tmp_path / "review"
+    review_service.write_review(project=ROOT, report_root=report, batch_path=batch, output=output)
+    if mutation == "report-hash":
+        data = json.loads((output / "review.json").read_bytes())
+        data["report_manifest_sha256"] = "b" * 64
+        raw = json_bytes(data)
+        (output / "review.json").write_bytes(raw)
+        manifest = json.loads((output / "review-manifest.json").read_bytes())
+        manifest.update(
+            review_sha256=sha256_bytes(raw), review_bytes=len(raw), report_manifest_sha256="b" * 64
+        )
+        (output / "review-manifest.json").write_bytes(json_bytes(manifest))
+    elif mutation == "changed-bytes":
+        with (output / "review.json").open("ab") as handle:
+            handle.write(b" ")
+    elif mutation == "extra-file":
+        (output / "unexpected.txt").write_bytes(b"extra")
+    elif mutation == "missing-file":
+        (output / "review.json").rename(output / "different.json")
+    else:
+        manifest = json.loads((output / "review-manifest.json").read_bytes())
+        manifest["annotation_count"] = 2
+        (output / "review-manifest.json").write_bytes(json_bytes(manifest))
+    with pytest.raises(ValueError):
+        review_service.validate_review(project=ROOT, report_root=report, root=output)
+
+
+def test_review_rejects_nesting_and_altered_predecessor(
+    tmp_path: Path,
+    review_inputs: tuple[Path, Path, dict[str, Any]],
+) -> None:
+    report, batch, annotation = review_inputs
+    first, second = tmp_path / "review-1", tmp_path / "review-2"
+    review_service.write_review(project=ROOT, report_root=report, batch_path=batch, output=first)
+    for nested in (report / "new", first / "new"):
+        with pytest.raises(ValueError):
+            review_service.write_review(
+                project=ROOT, report_root=report, batch_path=batch, output=nested
+            )
+        assert not nested.exists()
+    changed = copy.deepcopy(annotation)
+    changed.update(
+        rationale="Clarified authored context.",
+        created_at="2026-10-13T00:01:00Z",
+        supersedes_sha256=annotation_sha256(ReviewAnnotation.model_validate(annotation)),
+    )
+    batch.write_bytes(json_bytes({"annotations": [changed]}))
+    review_service.write_review(
+        project=ROOT, report_root=report, batch_path=batch, output=second, previous=first
+    )
+    assert (
+        review_service.validate_review(project=ROOT, report_root=report, root=second)[
+            "previous_revision_check"
+        ]
+        == "not-provided"
+    )
+    data = json.loads((first / "review.json").read_bytes())
+    data["annotations"][0]["rationale"] = "Rewritten earlier proposal."
+    raw = json_bytes(data)
+    (first / "review.json").write_bytes(raw)
+    manifest = json.loads((first / "review-manifest.json").read_bytes())
+    manifest.update(review_sha256=sha256_bytes(raw), review_bytes=len(raw))
+    (first / "review-manifest.json").write_bytes(json_bytes(manifest))
+    with pytest.raises(ValueError, match="append-only"):
+        review_service.validate_review(
+            project=ROOT, report_root=report, root=second, previous=first
+        )
+
+
+@pytest.mark.parametrize("limit", ["MAX_REPORT_BYTES", "MAX_SARIF_BYTES", "MAX_REVIEW_BYTES"])
+def test_review_bounds_inputs_before_report_parsing(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    review_inputs: tuple[Path, Path, dict[str, Any]],
+    limit: str,
+) -> None:
+    report, batch, _ = review_inputs
+    monkeypatch.setattr(review_service, limit, 1)
+
+    def unexpected(*_: object) -> None:
+        pytest.fail("Oversized review input reached the report parser")
+
+    monkeypatch.setattr(review_service, "validate_common_report", unexpected)
+    with pytest.raises(ValueError):
+        review_service.write_review(
+            project=ROOT, report_root=report, batch_path=batch, output=tmp_path / "bad"
+        )
+    assert not (tmp_path / "bad").exists()
+
+
+@pytest.mark.parametrize("filename", ["report.json", "results.sarif", "report-manifest.json"])
+def test_review_rejects_hardlinked_report_inputs(
+    tmp_path: Path,
+    review_inputs: tuple[Path, Path, dict[str, Any]],
+    filename: str,
+) -> None:
+    import os
+
+    report, batch, _ = review_inputs
+    os.link(report / filename, tmp_path / "hardlink")
+    with pytest.raises(ValueError):
+        review_service.write_review(
+            project=ROOT, report_root=report, batch_path=batch, output=tmp_path / "bad"
+        )
+    assert not (tmp_path / "bad").exists()
 
 
 def synthetic_projection(tmp_path: Path) -> tuple[PublicPilotSource, dict[str, Any]]:

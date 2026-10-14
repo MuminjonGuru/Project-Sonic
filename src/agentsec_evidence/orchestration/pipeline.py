@@ -570,6 +570,15 @@ def run_semgrep_scan(request: SemgrepScanRequest) -> PipelineResult:
                 blob_index=blob_index,
                 desired_state=RunState.PARTIAL if failures else RunState.COMPLETE,
             )
+        except BaseException:
+            # An interrupted Docker CLI may leave its container running; never resume this attempt.
+            cleanup_container(
+                docker=docker,
+                container_name=container_name,
+                cwd=project_root,
+                environment=environment,
+            )
+            raise
         finally:
             if execution_staging.exists():
                 remove_staging(staging_root, execution_staging)

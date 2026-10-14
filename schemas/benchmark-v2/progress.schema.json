@@ -1,0 +1,209 @@
+{
+  "$defs": {
+    "CellProgress": {
+      "additionalProperties": false,
+      "properties": {
+        "attempt_id": {
+          "anyOf": [
+            {
+              "pattern": "^attempt_[0-9a-f]{32}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Attempt Id"
+        },
+        "case_id": {
+          "pattern": "^[a-z0-9][a-z0-9_.-]{0,79}$",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "cell_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Cell Id",
+          "type": "string"
+        },
+        "finding_records": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Finding Records"
+        },
+        "repetition": {
+          "title": "Repetition",
+          "type": "integer"
+        },
+        "run_id": {
+          "anyOf": [
+            {
+              "pattern": "^run_[0-9a-f]{32}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Run Id"
+        },
+        "scanner_invocations": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Scanner Invocations"
+        },
+        "state": {
+          "enum": [
+            "not-attempted",
+            "partial-analysis",
+            "refused",
+            "execution-failed",
+            "interrupted"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "verified_terminal_attempt": {
+          "default": false,
+          "title": "Verified Terminal Attempt",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "cell_id",
+        "case_id",
+        "repetition",
+        "state"
+      ],
+      "title": "CellProgress",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "analysis_complete": {
+      "const": false,
+      "default": false,
+      "title": "Analysis Complete",
+      "type": "boolean"
+    },
+    "attempts": {
+      "items": {
+        "$ref": "#/$defs/CellProgress"
+      },
+      "maxItems": 78,
+      "title": "Attempts",
+      "type": "array"
+    },
+    "blocked": {
+      "title": "Blocked",
+      "type": "boolean"
+    },
+    "cells": {
+      "items": {
+        "$ref": "#/$defs/CellProgress"
+      },
+      "title": "Cells",
+      "type": "array"
+    },
+    "contract": {
+      "const": "benchmark-progress-v2",
+      "default": "benchmark-progress-v2",
+      "title": "Contract",
+      "type": "string"
+    },
+    "limitations": {
+      "default": [
+        "Fixed authored Agent Audit development cases only; not a held-out benchmark",
+        "Cells show latest state; attempts preserve earlier failures and must be reported too",
+        "One explicit retry only for verified missing Docker before any container launch",
+        "Interrupted, unverified and other failed attempts remain blocked; no automatic retry",
+        "Partial analysis and policy refusal do not mean safe or complete security coverage",
+        "Recorded retry cause/remediation is an operator assertion, not identity attestation"
+      ],
+      "items": {
+        "type": "string"
+      },
+      "title": "Limitations",
+      "type": "array"
+    },
+    "manual_retry_attempts": {
+      "maximum": 39,
+      "minimum": 0,
+      "title": "Manual Retry Attempts",
+      "type": "integer"
+    },
+    "newly_attempted_cells": {
+      "maximum": 39,
+      "minimum": 0,
+      "title": "Newly Attempted Cells",
+      "type": "integer"
+    },
+    "newly_created_attempts": {
+      "maximum": 39,
+      "minimum": 0,
+      "title": "Newly Created Attempts",
+      "type": "integer"
+    },
+    "plan_semantic_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Plan Semantic Sha256",
+      "type": "string"
+    },
+    "plan_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Plan Sha256",
+      "type": "string"
+    },
+    "reused_verified_cells": {
+      "maximum": 39,
+      "minimum": 0,
+      "title": "Reused Verified Cells",
+      "type": "integer"
+    },
+    "scoring_implemented": {
+      "const": false,
+      "default": false,
+      "title": "Scoring Implemented",
+      "type": "boolean"
+    },
+    "session": {
+      "title": "Session",
+      "type": "string"
+    },
+    "workflow_complete": {
+      "title": "Workflow Complete",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "plan_sha256",
+    "plan_semantic_sha256",
+    "session",
+    "cells",
+    "attempts",
+    "workflow_complete",
+    "blocked",
+    "newly_attempted_cells",
+    "newly_created_attempts",
+    "reused_verified_cells",
+    "manual_retry_attempts"
+  ],
+  "title": "BenchmarkProgressV2",
+  "type": "object"
+}

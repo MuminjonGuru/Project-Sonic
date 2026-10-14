@@ -1,0 +1,303 @@
+{
+  "$defs": {
+    "PlanFile": {
+      "additionalProperties": false,
+      "properties": {
+        "bytes": {
+          "maximum": 2097152,
+          "minimum": 0,
+          "title": "Bytes",
+          "type": "integer"
+        },
+        "path": {
+          "maxLength": 512,
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "bytes",
+        "sha256"
+      ],
+      "title": "PlanFile",
+      "type": "object"
+    },
+    "PlannedCell": {
+      "additionalProperties": false,
+      "properties": {
+        "case_id": {
+          "pattern": "^[a-z0-9][a-z0-9_.-]{0,79}$",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "cell_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Cell Id",
+          "type": "string"
+        },
+        "coverage": {
+          "const": "not-measured",
+          "default": "not-measured",
+          "title": "Coverage",
+          "type": "string"
+        },
+        "expectation": {
+          "$ref": "#/$defs/PlannedExpectation"
+        },
+        "finding_records": {
+          "default": null,
+          "title": "Finding Records",
+          "type": "null"
+        },
+        "input_files": {
+          "items": {
+            "$ref": "#/$defs/PlanFile"
+          },
+          "title": "Input Files",
+          "type": "array"
+        },
+        "producer_invocations": {
+          "const": 0,
+          "default": 0,
+          "title": "Producer Invocations",
+          "type": "integer"
+        },
+        "repetition": {
+          "maximum": 3,
+          "minimum": 1,
+          "title": "Repetition",
+          "type": "integer"
+        },
+        "selected_paths": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Selected Paths",
+          "type": "array"
+        },
+        "state": {
+          "const": "not-attempted",
+          "default": "not-attempted",
+          "title": "State",
+          "type": "string"
+        }
+      },
+      "required": [
+        "cell_id",
+        "case_id",
+        "repetition",
+        "input_files",
+        "selected_paths",
+        "expectation"
+      ],
+      "title": "PlannedCell",
+      "type": "object"
+    },
+    "PlannedExpectation": {
+      "additionalProperties": false,
+      "properties": {
+        "expected_condition": {
+          "enum": [
+            "present",
+            "absent",
+            "not-assessable"
+          ],
+          "title": "Expected Condition",
+          "type": "string"
+        },
+        "expected_parse": {
+          "enum": [
+            "parsed",
+            "malformed",
+            "unsupported"
+          ],
+          "title": "Expected Parse",
+          "type": "string"
+        },
+        "policy_observation": {
+          "enum": [
+            "none",
+            "target-exclusion",
+            "inline-suppression"
+          ],
+          "title": "Policy Observation",
+          "type": "string"
+        },
+        "provenance": {
+          "const": "authored-condition-expectation-not-scanner-derived",
+          "default": "authored-condition-expectation-not-scanner-derived",
+          "title": "Provenance",
+          "type": "string"
+        },
+        "review_status": {
+          "const": "student-approved-categories-exact-text-not-independent",
+          "default": "student-approved-categories-exact-text-not-independent",
+          "title": "Review Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "expected_parse",
+        "expected_condition",
+        "policy_observation"
+      ],
+      "title": "PlannedExpectation",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "cells": {
+      "items": {
+        "$ref": "#/$defs/PlannedCell"
+      },
+      "maxItems": 39,
+      "minItems": 1,
+      "title": "Cells",
+      "type": "array"
+    },
+    "contract": {
+      "const": "benchmark-dry-run-v1",
+      "default": "benchmark-dry-run-v1",
+      "title": "Contract",
+      "type": "string"
+    },
+    "execution_authorized": {
+      "const": false,
+      "default": false,
+      "title": "Execution Authorized",
+      "type": "boolean"
+    },
+    "implementation_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Implementation Sha256",
+      "type": "string"
+    },
+    "limitations": {
+      "default": [
+        "No producer, target, container, image inspection, network call or scoring was run",
+        "Expected parse/policy states are authored assertions, not measured outcomes",
+        "Malformed, unsupported and policy-refused cases are retained, not true negatives",
+        "Only the fixed development registry/treatment is supported; no public/held-out plan",
+        "Hash consistency is not reviewer authentication or independent scientific validation"
+      ],
+      "items": {
+        "type": "string"
+      },
+      "title": "Limitations",
+      "type": "array"
+    },
+    "limits": {
+      "additionalProperties": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "number"
+          }
+        ]
+      },
+      "title": "Limits",
+      "type": "object"
+    },
+    "metric_scoring_implemented": {
+      "const": false,
+      "default": false,
+      "title": "Metric Scoring Implemented",
+      "type": "boolean"
+    },
+    "plan_id": {
+      "pattern": "^[a-z0-9][a-z0-9_.-]{0,79}$",
+      "title": "Plan Id",
+      "type": "string"
+    },
+    "plan_semantic_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Plan Semantic Sha256",
+      "type": "string"
+    },
+    "plan_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Plan Sha256",
+      "type": "string"
+    },
+    "plan_valid": {
+      "const": true,
+      "default": true,
+      "title": "Plan Valid",
+      "type": "boolean"
+    },
+    "prospective_steps": {
+      "default": [
+        "isolated-input-validation",
+        "conditional-agent-audit-only-if-input-admitted",
+        "native-evidence-capture",
+        "normalization-and-export",
+        "bundle-validation"
+      ],
+      "items": {
+        "type": "string"
+      },
+      "title": "Prospective Steps",
+      "type": "array"
+    },
+    "resume_implemented": {
+      "const": false,
+      "default": false,
+      "title": "Resume Implemented",
+      "type": "boolean"
+    },
+    "review_assurance": {
+      "const": "declared-not-independent-or-authenticated",
+      "default": "declared-not-independent-or-authenticated",
+      "title": "Review Assurance",
+      "type": "string"
+    },
+    "runtime_readiness": {
+      "const": "not-checked",
+      "default": "not-checked",
+      "title": "Runtime Readiness",
+      "type": "string"
+    },
+    "tool_image": {
+      "title": "Tool Image",
+      "type": "string"
+    },
+    "treatment_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Treatment Sha256",
+      "type": "string"
+    },
+    "validation_scope": {
+      "const": "fixed-development-metadata-and-byte-bindings",
+      "default": "fixed-development-metadata-and-byte-bindings",
+      "title": "Validation Scope",
+      "type": "string"
+    },
+    "validator_image": {
+      "title": "Validator Image",
+      "type": "string"
+    }
+  },
+  "required": [
+    "plan_id",
+    "plan_sha256",
+    "plan_semantic_sha256",
+    "treatment_sha256",
+    "implementation_sha256",
+    "cells",
+    "limits",
+    "tool_image",
+    "validator_image"
+  ],
+  "title": "BenchmarkDryRun",
+  "type": "object"
+}

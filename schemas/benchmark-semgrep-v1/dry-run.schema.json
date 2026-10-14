@@ -1,0 +1,290 @@
+{
+  "$defs": {
+    "PlanFile": {
+      "additionalProperties": false,
+      "properties": {
+        "bytes": {
+          "maximum": 2097152,
+          "minimum": 0,
+          "title": "Bytes",
+          "type": "integer"
+        },
+        "path": {
+          "maxLength": 512,
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "bytes",
+        "sha256"
+      ],
+      "title": "PlanFile",
+      "type": "object"
+    },
+    "SemgrepCell": {
+      "additionalProperties": false,
+      "properties": {
+        "case_id": {
+          "const": "dev-semgrep-basic-v1",
+          "default": "dev-semgrep-basic-v1",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "cell_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Cell Id",
+          "type": "string"
+        },
+        "coverage": {
+          "const": "not-measured",
+          "default": "not-measured",
+          "title": "Coverage",
+          "type": "string"
+        },
+        "expectation": {
+          "$ref": "#/$defs/SemgrepExpectation"
+        },
+        "finding_records": {
+          "default": null,
+          "title": "Finding Records",
+          "type": "null"
+        },
+        "input_files": {
+          "items": {
+            "$ref": "#/$defs/PlanFile"
+          },
+          "title": "Input Files",
+          "type": "array"
+        },
+        "producer_invocations": {
+          "const": 0,
+          "default": 0,
+          "title": "Producer Invocations",
+          "type": "integer"
+        },
+        "repetition": {
+          "maximum": 3,
+          "minimum": 1,
+          "title": "Repetition",
+          "type": "integer"
+        },
+        "selected_paths": {
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "const": "clean.py",
+              "type": "string"
+            },
+            {
+              "const": "vulnerable.py",
+              "type": "string"
+            }
+          ],
+          "title": "Selected Paths",
+          "type": "array"
+        },
+        "state": {
+          "const": "not-attempted",
+          "default": "not-attempted",
+          "title": "State",
+          "type": "string"
+        }
+      },
+      "required": [
+        "cell_id",
+        "repetition",
+        "input_files",
+        "selected_paths",
+        "expectation"
+      ],
+      "title": "SemgrepCell",
+      "type": "object"
+    },
+    "SemgrepExpectation": {
+      "additionalProperties": false,
+      "properties": {
+        "corrected_path": {
+          "const": "clean.py",
+          "default": "clean.py",
+          "title": "Corrected Path",
+          "type": "string"
+        },
+        "excluded_path": {
+          "const": "ignored/ignored.py",
+          "default": "ignored/ignored.py",
+          "title": "Excluded Path",
+          "type": "string"
+        },
+        "expected_native_results": {
+          "const": 1,
+          "default": 1,
+          "title": "Expected Native Results",
+          "type": "integer"
+        },
+        "expected_rule_id": {
+          "const": "project.first-slice.python-eval",
+          "default": "project.first-slice.python-eval",
+          "title": "Expected Rule Id",
+          "type": "string"
+        },
+        "positive_path": {
+          "const": "vulnerable.py",
+          "default": "vulnerable.py",
+          "title": "Positive Path",
+          "type": "string"
+        },
+        "provenance": {
+          "const": "existing-authored-case-not-new-scanner-derived-oracle",
+          "default": "existing-authored-case-not-new-scanner-derived-oracle",
+          "title": "Provenance",
+          "type": "string"
+        },
+        "review_status": {
+          "const": "historical-engineering-expectation-not-independent",
+          "default": "historical-engineering-expectation-not-independent",
+          "title": "Review Status",
+          "type": "string"
+        }
+      },
+      "title": "SemgrepExpectation",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "cells": {
+      "items": {
+        "$ref": "#/$defs/SemgrepCell"
+      },
+      "maxItems": 3,
+      "minItems": 1,
+      "title": "Cells",
+      "type": "array"
+    },
+    "contract": {
+      "const": "benchmark-semgrep-dry-run-v1",
+      "default": "benchmark-semgrep-dry-run-v1",
+      "title": "Contract",
+      "type": "string"
+    },
+    "execution_authorized": {
+      "const": false,
+      "default": false,
+      "title": "Execution Authorized",
+      "type": "boolean"
+    },
+    "implementation_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Implementation Sha256",
+      "type": "string"
+    },
+    "limitations": {
+      "default": [
+        "Existing three-file authored fixture and first-slice rule only, not the research profile",
+        "Selected paths describe intended scope, not native completion or detection coverage",
+        "No containers, target execution, network requests or scoring during plan validation",
+        "Historical engineering expectations are not independent outcome adjudication"
+      ],
+      "items": {
+        "type": "string"
+      },
+      "title": "Limitations",
+      "type": "array"
+    },
+    "limits": {
+      "additionalProperties": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "number"
+          }
+        ]
+      },
+      "title": "Limits",
+      "type": "object"
+    },
+    "metric_scoring_implemented": {
+      "const": false,
+      "default": false,
+      "title": "Metric Scoring Implemented",
+      "type": "boolean"
+    },
+    "plan_id": {
+      "pattern": "^[a-z0-9][a-z0-9_.-]{0,79}$",
+      "title": "Plan Id",
+      "type": "string"
+    },
+    "plan_semantic_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Plan Semantic Sha256",
+      "type": "string"
+    },
+    "plan_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Plan Sha256",
+      "type": "string"
+    },
+    "plan_valid": {
+      "const": true,
+      "default": true,
+      "title": "Plan Valid",
+      "type": "boolean"
+    },
+    "resume_implemented": {
+      "const": true,
+      "default": true,
+      "title": "Resume Implemented",
+      "type": "boolean"
+    },
+    "resume_scope": {
+      "const": "verified-terminal-controlled-semgrep-no-retry",
+      "default": "verified-terminal-controlled-semgrep-no-retry",
+      "title": "Resume Scope",
+      "type": "string"
+    },
+    "runtime_readiness": {
+      "const": "not-checked",
+      "default": "not-checked",
+      "title": "Runtime Readiness",
+      "type": "string"
+    },
+    "tool_image": {
+      "title": "Tool Image",
+      "type": "string"
+    },
+    "treatment_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Treatment Sha256",
+      "type": "string"
+    },
+    "validation_scope": {
+      "const": "fixed-development-metadata-and-byte-bindings",
+      "default": "fixed-development-metadata-and-byte-bindings",
+      "title": "Validation Scope",
+      "type": "string"
+    }
+  },
+  "required": [
+    "plan_id",
+    "plan_sha256",
+    "plan_semantic_sha256",
+    "treatment_sha256",
+    "implementation_sha256",
+    "cells",
+    "limits",
+    "tool_image"
+  ],
+  "title": "SemgrepPreview",
+  "type": "object"
+}

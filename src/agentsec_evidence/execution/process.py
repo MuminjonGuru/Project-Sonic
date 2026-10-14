@@ -169,23 +169,33 @@ def run_bounded_process(
     output_limited = False
     peak_rss = 0
     deadline = time.monotonic() + timeout_seconds
-    while process.poll() is None:
-        peak_rss = max(peak_rss, _rss_bytes(process.pid))
-        if overflow.is_set() or generated_limit_exceeded():
-            output_limited = True
-            _kill_process_tree(process)
-            break
-        if time.monotonic() >= deadline:
-            timed_out = True
-            _kill_process_tree(process)
-            break
-        time.sleep(0.01)
-
     try:
-        process.wait(timeout=5)
-    except subprocess.TimeoutExpired:
-        _kill_process_tree(process)
-        process.wait(timeout=5)
+        while process.poll() is None:
+            peak_rss = max(peak_rss, _rss_bytes(process.pid))
+            if overflow.is_set() or generated_limit_exceeded():
+                output_limited = True
+                _kill_process_tree(process)
+                break
+            if time.monotonic() >= deadline:
+                timed_out = True
+                _kill_process_tree(process)
+                break
+            time.sleep(0.01)
+
+        try:
+            process.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            _kill_process_tree(process)
+            process.wait(timeout=5)
+    except BaseException:
+        # Cancellation must not orphan the host process; container cleanup is a separate layer.
+        with suppress(OSError, psutil.Error):
+            _kill_process_tree(process)
+        with suppress(OSError, subprocess.TimeoutExpired):
+            process.wait(timeout=5)
+        stdout_thread.join(timeout=5)
+        stderr_thread.join(timeout=5)
+        raise
 
     stdout_thread.join(timeout=5)
     stderr_thread.join(timeout=5)

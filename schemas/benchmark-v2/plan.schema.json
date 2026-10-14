@@ -1,0 +1,326 @@
+{
+  "$defs": {
+    "PlanFile": {
+      "additionalProperties": false,
+      "properties": {
+        "bytes": {
+          "maximum": 2097152,
+          "minimum": 0,
+          "title": "Bytes",
+          "type": "integer"
+        },
+        "path": {
+          "maxLength": 512,
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "bytes",
+        "sha256"
+      ],
+      "title": "PlanFile",
+      "type": "object"
+    },
+    "PlannedCase": {
+      "additionalProperties": false,
+      "properties": {
+        "case_id": {
+          "pattern": "^[a-z0-9][a-z0-9_.-]{0,79}$",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "expectation": {
+          "$ref": "#/$defs/PlannedExpectation"
+        },
+        "expectation_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Expectation Sha256",
+          "type": "string"
+        },
+        "files": {
+          "items": {
+            "$ref": "#/$defs/PlanFile"
+          },
+          "maxItems": 8,
+          "minItems": 1,
+          "title": "Files",
+          "type": "array"
+        },
+        "property_id": {
+          "enum": [
+            "python.tool-argument-to-eval",
+            "mcp.filesystem-root-declaration"
+          ],
+          "title": "Property Id",
+          "type": "string"
+        },
+        "selected_paths": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 1,
+          "minItems": 1,
+          "title": "Selected Paths",
+          "type": "array"
+        },
+        "source_family": {
+          "const": "agent-artifact-development-v1",
+          "default": "agent-artifact-development-v1",
+          "title": "Source Family",
+          "type": "string"
+        },
+        "split": {
+          "const": "development-not-held-out",
+          "default": "development-not-held-out",
+          "title": "Split",
+          "type": "string"
+        }
+      },
+      "required": [
+        "case_id",
+        "property_id",
+        "files",
+        "selected_paths",
+        "expectation",
+        "expectation_sha256"
+      ],
+      "title": "PlannedCase",
+      "type": "object"
+    },
+    "PlannedExpectation": {
+      "additionalProperties": false,
+      "properties": {
+        "expected_condition": {
+          "enum": [
+            "present",
+            "absent",
+            "not-assessable"
+          ],
+          "title": "Expected Condition",
+          "type": "string"
+        },
+        "expected_parse": {
+          "enum": [
+            "parsed",
+            "malformed",
+            "unsupported"
+          ],
+          "title": "Expected Parse",
+          "type": "string"
+        },
+        "policy_observation": {
+          "enum": [
+            "none",
+            "target-exclusion",
+            "inline-suppression"
+          ],
+          "title": "Policy Observation",
+          "type": "string"
+        },
+        "provenance": {
+          "const": "authored-condition-expectation-not-scanner-derived",
+          "default": "authored-condition-expectation-not-scanner-derived",
+          "title": "Provenance",
+          "type": "string"
+        },
+        "review_status": {
+          "const": "student-approved-categories-exact-text-not-independent",
+          "default": "student-approved-categories-exact-text-not-independent",
+          "title": "Review Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "expected_parse",
+        "expected_condition",
+        "policy_observation"
+      ],
+      "title": "PlannedExpectation",
+      "type": "object"
+    },
+    "PrelaunchRetryPolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "cause": {
+          "const": "docker-unavailable-before-launch",
+          "default": "docker-unavailable-before-launch",
+          "title": "Cause",
+          "type": "string"
+        },
+        "explicit_attempt_selection": {
+          "const": true,
+          "default": true,
+          "title": "Explicit Attempt Selection",
+          "type": "boolean"
+        },
+        "interrupted_attempts": {
+          "const": "blocked",
+          "default": "blocked",
+          "title": "Interrupted Attempts",
+          "type": "string"
+        },
+        "max_manual_retries_per_cell": {
+          "const": 1,
+          "default": 1,
+          "title": "Max Manual Retries Per Cell",
+          "type": "integer"
+        },
+        "other_failures": {
+          "const": "blocked",
+          "default": "blocked",
+          "title": "Other Failures",
+          "type": "string"
+        },
+        "policy_id": {
+          "const": "missing-docker-prelaunch-once-v1",
+          "default": "missing-docker-prelaunch-once-v1",
+          "title": "Policy Id",
+          "type": "string"
+        }
+      },
+      "title": "PrelaunchRetryPolicy",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "admission": {
+      "const": "agent-development-2026-10-02-v1",
+      "default": "agent-development-2026-10-02-v1",
+      "title": "Admission",
+      "type": "string"
+    },
+    "automatic_retries": {
+      "default": 0,
+      "maximum": 0,
+      "minimum": 0,
+      "title": "Automatic Retries",
+      "type": "integer"
+    },
+    "cases": {
+      "items": {
+        "$ref": "#/$defs/PlannedCase"
+      },
+      "maxItems": 13,
+      "minItems": 1,
+      "title": "Cases",
+      "type": "array"
+    },
+    "contract": {
+      "const": "benchmark-plan-v2",
+      "default": "benchmark-plan-v2",
+      "title": "Contract",
+      "type": "string"
+    },
+    "implementation": {
+      "items": {
+        "$ref": "#/$defs/PlanFile"
+      },
+      "maxItems": 2048,
+      "minItems": 1,
+      "title": "Implementation",
+      "type": "array"
+    },
+    "max_workers": {
+      "default": 1,
+      "maximum": 1,
+      "minimum": 1,
+      "title": "Max Workers",
+      "type": "integer"
+    },
+    "metrics": {
+      "default": [
+        "condition-accounting-v1",
+        "execution-status-v1",
+        "semantic-repeatability-v1"
+      ],
+      "items": {
+        "enum": [
+          "condition-accounting-v1",
+          "execution-status-v1",
+          "semantic-repeatability-v1"
+        ],
+        "type": "string"
+      },
+      "title": "Metrics",
+      "type": "array"
+    },
+    "order": {
+      "const": "case-order-then-repetition",
+      "default": "case-order-then-repetition",
+      "title": "Order",
+      "type": "string"
+    },
+    "pins": {
+      "items": {
+        "$ref": "#/$defs/PlanFile"
+      },
+      "maxItems": 6,
+      "minItems": 6,
+      "title": "Pins",
+      "type": "array"
+    },
+    "plan_id": {
+      "pattern": "^[a-z0-9][a-z0-9_.-]{0,79}$",
+      "title": "Plan Id",
+      "type": "string"
+    },
+    "protocol_status": {
+      "const": "development-plan-not-confirmatory-freeze",
+      "default": "development-plan-not-confirmatory-freeze",
+      "title": "Protocol Status",
+      "type": "string"
+    },
+    "purpose": {
+      "const": "development-governance-rehearsal",
+      "default": "development-governance-rehearsal",
+      "title": "Purpose",
+      "type": "string"
+    },
+    "repetitions": {
+      "maximum": 3,
+      "minimum": 1,
+      "title": "Repetitions",
+      "type": "integer"
+    },
+    "retry_policy": {
+      "$ref": "#/$defs/PrelaunchRetryPolicy"
+    },
+    "split": {
+      "const": "development-not-held-out",
+      "default": "development-not-held-out",
+      "title": "Split",
+      "type": "string"
+    },
+    "target_execution": {
+      "const": false,
+      "default": false,
+      "title": "Target Execution",
+      "type": "boolean"
+    },
+    "treatment": {
+      "const": "authored-agent-static-v1",
+      "default": "authored-agent-static-v1",
+      "title": "Treatment",
+      "type": "string"
+    }
+  },
+  "required": [
+    "plan_id",
+    "pins",
+    "implementation",
+    "cases",
+    "repetitions",
+    "retry_policy"
+  ],
+  "title": "BenchmarkPlanV2",
+  "type": "object"
+}

@@ -321,8 +321,112 @@ class KicsProgress(ResearchModel):
     )
 
 
-type AdmittedProgress = BenchmarkProgress | BenchmarkProgressV2 | SemgrepProgress | KicsProgress
-type AdmittedFinish = AttemptFinish | SemgrepAttemptFinish | KicsAttemptFinish
-type AdmittedEvidence = AttemptEvidence | SemgrepAttemptEvidence | KicsAttemptEvidence
-type AdmittedCellProgress = CellProgress | SemgrepCellProgress | KicsCellProgress
+DependencyRunId = Annotated[str, Field(pattern=r"^dep-run-[0-9a-f]{32}$")]
+
+
+class DependencyStageProgress(ResearchModel):
+    stage: Literal["lockfile", "syft", "cyclonedx", "osv-direct", "osv-sbom"]
+    state: Literal["complete", "partial", "failed", "unsupported"]
+    package_observations: StrictInt = Field(ge=0)
+    unique_pypi_projections: StrictInt = Field(ge=0)
+    advisory_match_records: StrictInt | None = Field(default=None, ge=0)
+
+
+class DependencyAttemptEvidence(ResearchModel):
+    run_id: DependencyRunId
+    terminal_state: Literal["complete", "partial"]
+    semantic_sha256: Sha256
+    bundle_files: RetainedManifest
+    snapshot_files: RetainedManifest
+    state: Literal["completed-with-findings", "completed-without-findings", "partial-analysis"]
+    scanner_invocations: Literal[3] = 3
+    finding_records: None = None
+    stages: tuple[DependencyStageProgress, ...] = Field(min_length=5, max_length=5)
+    eligible_packages: StrictInt = Field(ge=0)
+    separate_local_packages: StrictInt = Field(ge=0)
+    per_package_matching: Literal["not-demonstrated-by-all-package-output"] = (
+        "not-demonstrated-by-all-package-output"
+    )
+
+
+class DependencyAttemptFinish(ResearchModel):
+    contract: Literal["benchmark-dependency-attempt-finish-v1"] = (
+        "benchmark-dependency-attempt-finish-v1"
+    )
+    attempt_id: AttemptId
+    start_sha256: Sha256
+    ended_at: datetime
+    duration_ns: StrictInt = Field(ge=0)
+    state: SemgrepAttemptState
+    evidence: DependencyAttemptEvidence | None = None
+    error_kind: Literal["runner-or-verification-error", "keyboard-interrupt"] | None = None
+
+    @model_validator(mode="after")
+    def check_outcome(self) -> Self:
+        if self.evidence is not None:
+            if self.state != self.evidence.state or self.error_kind is not None:
+                raise ValueError("Attempt outcome differs from verified dependency evidence")
+        elif (self.state, self.error_kind) not in {
+            ("execution-failed", "runner-or-verification-error"),
+            ("interrupted", "keyboard-interrupt"),
+        }:
+            raise ValueError("Unverified dependency attempt must remain failed or interrupted")
+        return self
+
+
+class DependencyCellProgress(ResearchModel):
+    cell_id: Sha256
+    case_id: Identifier
+    repetition: StrictInt
+    state: Literal[
+        "not-attempted",
+        "completed-with-findings",
+        "completed-without-findings",
+        "partial-analysis",
+        "execution-failed",
+        "interrupted",
+    ]
+    attempt_id: AttemptId | None = None
+    run_id: DependencyRunId | None = None
+    finding_records: None = None
+    scanner_invocations: StrictInt | None = None
+    stages: tuple[DependencyStageProgress, ...] | None = None
+    eligible_packages: StrictInt | None = None
+    separate_local_packages: StrictInt | None = None
+    verified_terminal_attempt: bool = False
+
+
+class DependencyProgress(ResearchModel):
+    contract: Literal["benchmark-dependency-progress-v1"] = "benchmark-dependency-progress-v1"
+    plan_sha256: Sha256
+    plan_semantic_sha256: Sha256
+    session: str
+    cells: tuple[DependencyCellProgress, ...]
+    workflow_complete: bool
+    blocked: bool
+    newly_attempted_cells: StrictInt = Field(ge=0, le=6)
+    reused_verified_cells: StrictInt = Field(ge=0, le=6)
+    scoring_implemented: Literal[False] = False
+    analysis_complete: Literal[False] = False
+    limitations: tuple[str, ...] = (
+        "Existing basic/corrected development fixtures; no new public or mutation admission",
+        "No cross-path vulnerability total: match records and package projections remain per stage",
+        "Complete workflow is not oracle agreement, full identity fidelity or a security verdict",
+        "Failure or interruption blocks the paired cell; no per-stage repair or retry",
+        "Native replay requires the frozen database; package visibility is not matching proof",
+    )
+
+
+type AdmittedProgress = (
+    BenchmarkProgress | BenchmarkProgressV2 | SemgrepProgress | KicsProgress | DependencyProgress
+)
+type AdmittedFinish = (
+    AttemptFinish | SemgrepAttemptFinish | KicsAttemptFinish | DependencyAttemptFinish
+)
+type AdmittedEvidence = (
+    AttemptEvidence | SemgrepAttemptEvidence | KicsAttemptEvidence | DependencyAttemptEvidence
+)
+type AdmittedCellProgress = (
+    CellProgress | SemgrepCellProgress | KicsCellProgress | DependencyCellProgress
+)
 type AdmittedState = AttemptState | SemgrepAttemptState | KicsAttemptState

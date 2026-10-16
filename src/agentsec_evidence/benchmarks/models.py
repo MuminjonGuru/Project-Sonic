@@ -262,7 +262,90 @@ class KicsBenchmarkPlan(ResearchModel):
         return self
 
 
-type AdmittedPlan = BenchmarkPlan | BenchmarkPlanV2 | SemgrepBenchmarkPlan | KicsBenchmarkPlan
+DependencyCaseId = Literal["dev-dependency-basic-v1", "dev-dependency-clean-v1"]
+
+
+class DependencyDatabase(ResearchModel):
+    path: str = Field(min_length=1, max_length=512)
+    bytes: StrictInt = Field(gt=0, le=2 * 1024**3)
+    sha256: Sha256
+
+    @model_validator(mode="after")
+    def check_path(self) -> Self:
+        canonical_artifact_path(self.path)
+        if not self.path.startswith("workspace/") or len(self.path.split("/")) > 32:
+            raise ValueError("Frozen database must use a project-workspace relative path")
+        return self
+
+
+class DependencyCase(ResearchModel):
+    case_id: DependencyCaseId
+    source_family: Literal["dependency-development-v1"] = "dependency-development-v1"
+    split: Literal["development-not-held-out"] = "development-not-held-out"
+    files: tuple[PlanFile, ...] = Field(min_length=1, max_length=2)
+    selected_paths: tuple[Literal["uv.lock"]] = ("uv.lock",)
+    expectation_reference: Literal["existing-finite-oracle-and-corrected-fixture"] = (
+        "existing-finite-oracle-and-corrected-fixture"
+    )
+    expectation_sha256: Sha256
+    review_status: Literal["finite-student-scope-not-independent-adjudication"] = (
+        "finite-student-scope-not-independent-adjudication"
+    )
+
+    @model_validator(mode="after")
+    def check_files(self) -> Self:
+        check_file_set(self.files)
+        if "uv.lock" not in {f.path for f in self.files}:
+            raise ValueError("Dependency fixture requires its recorded lockfile")
+        return self
+
+
+class DependencyBenchmarkPlan(ResearchModel):
+    contract: Literal["benchmark-dependency-plan-v1"] = "benchmark-dependency-plan-v1"
+    plan_id: Identifier
+    admission: Literal["existing-dependency-basic-clean-v1"] = "existing-dependency-basic-clean-v1"
+    treatment: Literal["paired-offline-pypi-dependency-v1"] = "paired-offline-pypi-dependency-v1"
+    split: Literal["development-not-held-out"] = "development-not-held-out"
+    pins: tuple[PlanFile, ...] = Field(min_length=9, max_length=9)
+    implementation: tuple[PlanFile, ...] = Field(min_length=1, max_length=2048)
+    database: DependencyDatabase
+    cases: tuple[DependencyCase, ...] = Field(min_length=1, max_length=2)
+    repetitions: StrictInt = Field(ge=1, le=3)
+    order: Literal["case-order-then-repetition"] = "case-order-then-repetition"
+    stage_order: tuple[Literal["osv-direct"], Literal["syft"], Literal["osv-sbom"]] = (
+        "osv-direct",
+        "syft",
+        "osv-sbom",
+    )
+    max_workers: Literal[1] = 1
+    automatic_retries: Literal[0] = 0
+    manual_retries: Literal[0] = 0
+    mutation: None = None
+    target_execution: Literal[False] = False
+    protocol_status: Literal["development-plan-not-confirmatory-freeze"] = (
+        "development-plan-not-confirmatory-freeze"
+    )
+
+    @model_validator(mode="after")
+    def check_bindings(self) -> Self:
+        check_file_set(self.pins)
+        check_file_set(self.implementation)
+        if len({c.case_id for c in self.cases}) != len(self.cases):
+            raise ValueError("Duplicate dependency benchmark case")
+        if any(
+            not f.path.startswith("src/") or not f.path.endswith(".py") for f in self.implementation
+        ):
+            raise ValueError("Implementation pins must name src Python files")
+        return self
+
+
+type AdmittedPlan = (
+    BenchmarkPlan
+    | BenchmarkPlanV2
+    | SemgrepBenchmarkPlan
+    | KicsBenchmarkPlan
+    | DependencyBenchmarkPlan
+)
 
 
 class PlannedCell(ResearchModel):
@@ -422,5 +505,51 @@ class KicsPreview(ResearchModel):
     )
 
 
-type AdmittedCell = PlannedCell | SemgrepCell | KicsCell
-type AdmittedPreview = BenchmarkDryRunV2 | BenchmarkDryRunV3 | SemgrepPreview | KicsPreview
+class DependencyCell(ResearchModel):
+    cell_id: Sha256
+    case_id: DependencyCaseId
+    repetition: StrictInt = Field(ge=1, le=3)
+    input_files: tuple[PlanFile, ...]
+    selected_paths: tuple[Literal["uv.lock"]] = ("uv.lock",)
+    expectation_sha256: Sha256
+    state: Literal["not-attempted"] = "not-attempted"
+    producer_invocations: Literal[0] = 0
+    finding_records: None = None
+    coverage: Literal["not-measured"] = "not-measured"
+
+
+class DependencyPreview(ResearchModel):
+    contract: Literal["benchmark-dependency-dry-run-v1"] = "benchmark-dependency-dry-run-v1"
+    plan_id: Identifier
+    plan_sha256: Sha256
+    plan_semantic_sha256: Sha256
+    treatment_sha256: Sha256
+    implementation_sha256: Sha256
+    cells: tuple[DependencyCell, ...] = Field(min_length=1, max_length=6)
+    database: DependencyDatabase
+    limits: dict[str, int | float]
+    tool_images: tuple[str, str]
+    plan_valid: Literal[True] = True
+    validation_scope: Literal["fixed-development-byte-bindings-and-database-hash"] = (
+        "fixed-development-byte-bindings-and-database-hash"
+    )
+    execution_authorized: Literal[False] = False
+    runtime_readiness: Literal["containers-not-checked"] = "containers-not-checked"
+    resume_implemented: Literal[True] = True
+    resume_scope: Literal["verified-paired-dependency-attempts-no-retry"] = (
+        "verified-paired-dependency-attempts-no-retry"
+    )
+    metric_scoring_implemented: Literal[False] = False
+    limitations: tuple[str, ...] = (
+        "Existing basic/corrected fixtures only; no pilot, mutation or new input admission",
+        "One attempt comprises direct OSV, one Syft discovery/export and SBOM OSV",
+        "Database bytes are checked; no containers, downloads, target installation or scoring",
+        "Package visibility is not proof of per-package matching; paired findings are not summed",
+        "Retained replay requires the same frozen database; no network or refresh fallback",
+    )
+
+
+type AdmittedCell = PlannedCell | SemgrepCell | KicsCell | DependencyCell
+type AdmittedPreview = (
+    BenchmarkDryRunV2 | BenchmarkDryRunV3 | SemgrepPreview | KicsPreview | DependencyPreview
+)

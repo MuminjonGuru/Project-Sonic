@@ -4,6 +4,7 @@ import json
 import time
 import tomllib
 import uuid
+from contextlib import suppress
 from pathlib import Path
 from typing import Literal, cast
 
@@ -38,6 +39,10 @@ from agentsec_evidence.orchestration.shared import (
 )
 
 MAX_NATIVE_BYTES = 64 * 1024 * 1024
+
+
+class _DependencyExecutionFailure(RuntimeError):
+    """Stop the pair when the process boundary cannot safely continue."""
 
 
 def _write(root: Path, relative: str, data: bytes) -> None:
@@ -272,6 +277,7 @@ def run_dependency_scan(
         if docker is None:
             raise ValueError("Docker executable not available")
         stage_results: dict[str, JsonValue] = {}
+        report["stages"] = stage_results
         stages = [lock_stage]
         started_ns = time.monotonic_ns()
         path_wall: dict[str, int] = {}
@@ -297,26 +303,45 @@ def run_dependency_scan(
                 if producer == "syft"
                 else [output / "osv.json"]
             )
-            capture = run_bounded_process(
-                argv,
-                cwd=project_root,
-                environment=prepared.environment,
-                timeout_seconds=120,
-                max_stdout_bytes=2 * 1024**2,
-                max_stderr_bytes=2 * 1024**2,
-                monitored_files=outputs,
-                max_generated_bytes=MAX_NATIVE_BYTES,
-            )
+            try:
+                capture = run_bounded_process(
+                    argv,
+                    cwd=project_root,
+                    environment=prepared.environment,
+                    timeout_seconds=120,
+                    max_stdout_bytes=2 * 1024**2,
+                    max_stderr_bytes=2 * 1024**2,
+                    monitored_files=outputs,
+                    max_generated_bytes=MAX_NATIVE_BYTES,
+                )
+            except BaseException as exc:
+                # An interrupted Docker client may leave its named container running.
+                # Cleanup failure must not fall into the per-stage continuation path.
+                with suppress(Exception):
+                    cleanup_container(
+                        docker=docker,
+                        container_name=name,
+                        cwd=project_root,
+                        environment=prepared.environment,
+                    )
+                if isinstance(exc, Exception):
+                    raise _DependencyExecutionFailure(
+                        f"{stage_name} process failed; partial evidence retained"
+                    ) from exc
+                raise
             _write(root, f"native/{stage_name}/stdout.bin", capture.stdout)
             _write(root, f"native/{stage_name}/stderr.bin", capture.stderr)
             cleanup_ok: bool | None = None
             if capture.timed_out or capture.output_limited:
-                cleanup_ok = cleanup_container(
-                    docker=docker,
-                    container_name=name,
-                    cwd=project_root,
-                    environment=prepared.environment,
-                )
+                try:
+                    cleanup_ok = cleanup_container(
+                        docker=docker,
+                        container_name=name,
+                        cwd=project_root,
+                        environment=prepared.environment,
+                    )
+                except Exception:
+                    cleanup_ok = False
             evidence: list[JsonValue] = []
             for file in outputs:
                 if file.is_symlink():
@@ -340,7 +365,7 @@ def run_dependency_scan(
             _json(root, f"native/{stage_name}/execution.json", metadata)
             stage_results[stage_name] = metadata
             if capture.timed_out or capture.output_limited:
-                raise ValueError(
+                raise _DependencyExecutionFailure(
                     f"{stage_name} exceeded time/output bounds; partial evidence retained"
                 )
             return output, capture.exit_code if capture.exit_code is not None else -1
@@ -453,7 +478,7 @@ def run_dependency_scan(
         )
         if sha256_file(frozen.path) != frozen.sha256 or sha256_file(lock) != scope.input_sha256:
             raise ValueError("Frozen input changed during execution")
-    except (OSError, ValueError, KeyError, SnapshotError) as exc:
+    except (OSError, ValueError, KeyError, SnapshotError, _DependencyExecutionFailure) as exc:
         report["state"] = "failed"
         report["error"] = str(exc)[:2000]
     _json(root, "report.json", report)

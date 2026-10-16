@@ -8,6 +8,8 @@ from agentsec_evidence.benchmarks.attempt_models import (
     AttemptStartV2,
     BenchmarkProgress,
     BenchmarkProgressV2,
+    DependencyAttemptFinish,
+    DependencyProgress,
     KicsAttemptFinish,
     KicsProgress,
     SemgrepAttemptFinish,
@@ -19,6 +21,8 @@ from agentsec_evidence.benchmarks.models import (
     BenchmarkDryRunV3,
     BenchmarkPlan,
     BenchmarkPlanV2,
+    DependencyBenchmarkPlan,
+    DependencyPreview,
     KicsBenchmarkPlan,
     KicsPreview,
     SemgrepBenchmarkPlan,
@@ -68,6 +72,15 @@ def main() -> None:
         ("progress", KicsProgress),
     ):
         (kics / f"{name}.schema.json").write_bytes(json_bytes(model.model_json_schema()))
+    dependency = root.parent / "benchmark-dependency-v1"
+    dependency.mkdir(exist_ok=True)
+    for name, model in (
+        ("plan", DependencyBenchmarkPlan),
+        ("dry-run", DependencyPreview),
+        ("attempt-finish", DependencyAttemptFinish),
+        ("progress", DependencyProgress),
+    ):
+        (dependency / f"{name}.schema.json").write_bytes(json_bytes(model.model_json_schema()))
 
 
 if __name__ == "__main__":

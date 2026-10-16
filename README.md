@@ -372,7 +372,10 @@ public treatment or a new detection benchmark. The [controlled KICS handler](doc
 governs the four existing G2 fixtures using the unchanged two-query treatment. It preserves native
 file/query counters, reports unsupported input separately from clean results and verifies evidence
 before zero-launch reuse; no KICS retry or public Dockerfile support is added.
-Remaining producer handlers, scoring, broader recovery
+The [paired dependency handler](docs/benchmark-dependencies.md) also governs the existing basic
+and corrected fixtures, binding the frozen database and replaying native evidence before reuse.
+It preserves per-stage package/match counts rather than summing both vulnerability paths.
+Other dependency cases, research/pilot handlers, scoring, broader recovery
 and final-study freeze remain separate work. The UI follows tested, reviewed and useful
 results, including any justified
 versioned rule/profile refinement; it is not the next implementation task.

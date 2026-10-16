@@ -26,6 +26,10 @@ from agentsec_evidence.benchmarks.attempt_models import (
     BenchmarkProgress,
     BenchmarkProgressV2,
     CellProgress,
+    DependencyAttemptEvidence,
+    DependencyAttemptFinish,
+    DependencyCellProgress,
+    DependencyProgress,
     KicsAttemptEvidence,
     KicsAttemptFinish,
     KicsCellProgress,
@@ -35,6 +39,8 @@ from agentsec_evidence.benchmarks.attempt_models import (
     SemgrepCellProgress,
     SemgrepProgress,
 )
+from agentsec_evidence.benchmarks.dependency_evidence import verify_dependency_attempt
+from agentsec_evidence.benchmarks.dependency_plan import CASE_ROOTS as DEPENDENCY_CASE_ROOTS
 from agentsec_evidence.benchmarks.evidence import require_prelaunch_failure, verify_attempt_run
 from agentsec_evidence.benchmarks.kics_evidence import verify_kics_attempt
 from agentsec_evidence.benchmarks.kics_plan import CASE_ROOTS as KICS_CASE_ROOTS
@@ -46,6 +52,9 @@ from agentsec_evidence.benchmarks.models import (
     BenchmarkDryRunV3,
     BenchmarkPlan,
     BenchmarkPlanV2,
+    DependencyBenchmarkPlan,
+    DependencyCell,
+    DependencyPreview,
     KicsBenchmarkPlan,
     KicsCell,
     KicsPreview,
@@ -60,6 +69,7 @@ from agentsec_evidence.benchmarks.service import load_plan, validate_plan
 from agentsec_evidence.core.identity import new_opaque_id, sha256_bytes
 from agentsec_evidence.core.io import model_bytes
 from agentsec_evidence.core.time import utc_now
+from agentsec_evidence.dependencies.pipeline import run_dependency_scan
 from agentsec_evidence.orchestration.agent_pipeline import AgentScanRequest, run_agent_scan
 from agentsec_evidence.orchestration.kics_pipeline import KicsScanRequest, run_kics_scan
 from agentsec_evidence.orchestration.pipeline import SemgrepScanRequest, run_semgrep_scan
@@ -78,7 +88,14 @@ REUSABLE = {
 
 def _row_model(
     dry: AdmittedPreview,
-) -> type[CellProgress] | type[SemgrepCellProgress] | type[KicsCellProgress]:
+) -> (
+    type[CellProgress]
+    | type[SemgrepCellProgress]
+    | type[KicsCellProgress]
+    | type[DependencyCellProgress]
+):
+    if isinstance(dry, DependencyPreview):
+        return DependencyCellProgress
     if isinstance(dry, KicsPreview):
         return KicsCellProgress
     return SemgrepCellProgress if isinstance(dry, SemgrepPreview) else CellProgress
@@ -86,7 +103,14 @@ def _row_model(
 
 def _finish_model(
     plan: AdmittedPlan,
-) -> type[AttemptFinish] | type[SemgrepAttemptFinish] | type[KicsAttemptFinish]:
+) -> (
+    type[AttemptFinish]
+    | type[SemgrepAttemptFinish]
+    | type[KicsAttemptFinish]
+    | type[DependencyAttemptFinish]
+):
+    if isinstance(plan, DependencyBenchmarkPlan):
+        return DependencyAttemptFinish
     if isinstance(plan, KicsBenchmarkPlan):
         return KicsAttemptFinish
     return SemgrepAttemptFinish if isinstance(plan, SemgrepBenchmarkPlan) else AttemptFinish
@@ -244,7 +268,19 @@ def _history(project: Path, session: Path, dry: AdmittedPreview) -> History:
             previous_finish = None
         blocked = state not in REUSABLE
         row_model = _row_model(dry)
-        counters = {}
+        counters: dict[str, object] = {}
+        if isinstance(dry, DependencyPreview):
+            counters = {
+                "stages": [s.model_dump(mode="json") for s in evidence.stages]
+                if isinstance(evidence, DependencyAttemptEvidence)
+                else None,
+                "eligible_packages": evidence.eligible_packages
+                if isinstance(evidence, DependencyAttemptEvidence)
+                else None,
+                "separate_local_packages": evidence.separate_local_packages
+                if isinstance(evidence, DependencyAttemptEvidence)
+                else None,
+            }
         if isinstance(dry, KicsPreview):
             counters = {
                 "native_files_scanned": evidence.native_files_scanned
@@ -314,6 +350,8 @@ def _progress(
         return SemgrepProgress.model_validate(fields)
     if isinstance(dry, KicsPreview):
         return KicsProgress.model_validate(fields)
+    if isinstance(dry, DependencyPreview):
+        return DependencyProgress.model_validate(fields)
     progress = BenchmarkProgress.model_validate(fields)
     if isinstance(dry, BenchmarkDryRunV3):
         return BenchmarkProgressV2.model_validate(
@@ -387,6 +425,8 @@ def _verify(
         return verify_semgrep_attempt(project, execution, run_id, plan, cell)
     if isinstance(plan, KicsBenchmarkPlan) and isinstance(cell, KicsCell):
         return verify_kics_attempt(project, execution, run_id, plan, cell)
+    if isinstance(plan, DependencyBenchmarkPlan) and isinstance(cell, DependencyCell):
+        return verify_dependency_attempt(project, execution, run_id, plan, cell)
     if isinstance(plan, BenchmarkPlan | BenchmarkPlanV2) and isinstance(cell, PlannedCell):
         return verify_attempt_run(project, execution, run_id, plan, cell)
     raise ValueError("Benchmark producer and cell contracts differ")
@@ -445,6 +485,7 @@ def _dispatch(
                     license_status="project-authored-private",
                 )
             )
+            run_id = result.run_id
         elif isinstance(plan, KicsBenchmarkPlan) and isinstance(cell, KicsCell):
             relative = KICS_CASE_ROOTS[cell.case_id]
             result = run_kics_scan(
@@ -459,9 +500,25 @@ def _dispatch(
                     license_status="project-authored-private",
                 )
             )
+            run_id = result.run_id
+        elif isinstance(plan, DependencyBenchmarkPlan) and isinstance(cell, DependencyCell):
+            relative = DEPENDENCY_CASE_ROOTS[cell.case_id]
+            paired = run_dependency_scan(
+                project_root=project,
+                workspace_root=execution,
+                source=project / relative / "target",
+                label="fixture:" + relative.rsplit("/", 1)[-1],
+                revision="fixture-v1",
+                database=project / plan.database.path,
+                database_sha256=plan.database.sha256,
+            )
+            if not isinstance(paired.get("run_id"), str):
+                raise ValueError("Dependency producer returned no run identity")
+            run_id = str(paired["run_id"])
         else:
             result = run_agent_scan(AgentScanRequest(project, execution, cell.case_id))
-        evidence = _verify(project, execution, result.run_id, plan, cell)
+            run_id = result.run_id
+        evidence = _verify(project, execution, run_id, plan, cell)
         if validate_plan(project, plan_path) != dry:
             raise ValueError("Plan changed during cell execution")
         state = evidence.state

@@ -326,6 +326,18 @@ negatives. Null unparsed counts remain null. Requests for exception cleanup do n
 failed/interrupted attempts stay blocked. No public Dockerfile support or new research admission.
 Keep this development increment local until separately requested; UI and final delivery stay last.
 
+### Controlled dependency governance follow-up: 14 October 2026
+
+The [paired dependency handler](docs/benchmark-dependencies.md) governs only the existing basic
+and corrected fixtures, one to three repetitions, through the shared runner. Preserve the
+single direct-OSV/Syft/SBOM-OSV pair per attempt, frozen PyPI database and explicit shared config.
+No target execution, database refresh, mutation admission, per-stage recovery or retry. Retained
+replay requires the original database and host path bindings. Package/match counters remain per
+stage, never a summed vulnerability total. Native reports and original bundles stay unchanged.
+Failed/unverified attempts block, including interrupted attempts after a cleanup request. Other
+dependency cases, research/pilot governance, scoring and usefulness remain open. Keep this
+increment local until publication is separately requested; UI and final delivery stay last.
+
 ## Safety Controls (All Treatments)
 
 

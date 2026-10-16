@@ -1,0 +1,272 @@
+{
+  "$defs": {
+    "DependencyAttemptEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "bundle_files": {
+          "$ref": "#/$defs/RetainedManifest"
+        },
+        "eligible_packages": {
+          "minimum": 0,
+          "title": "Eligible Packages",
+          "type": "integer"
+        },
+        "finding_records": {
+          "default": null,
+          "title": "Finding Records",
+          "type": "null"
+        },
+        "per_package_matching": {
+          "const": "not-demonstrated-by-all-package-output",
+          "default": "not-demonstrated-by-all-package-output",
+          "title": "Per Package Matching",
+          "type": "string"
+        },
+        "run_id": {
+          "pattern": "^dep-run-[0-9a-f]{32}$",
+          "title": "Run Id",
+          "type": "string"
+        },
+        "scanner_invocations": {
+          "const": 3,
+          "default": 3,
+          "title": "Scanner Invocations",
+          "type": "integer"
+        },
+        "semantic_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Semantic Sha256",
+          "type": "string"
+        },
+        "separate_local_packages": {
+          "minimum": 0,
+          "title": "Separate Local Packages",
+          "type": "integer"
+        },
+        "snapshot_files": {
+          "$ref": "#/$defs/RetainedManifest"
+        },
+        "stages": {
+          "items": {
+            "$ref": "#/$defs/DependencyStageProgress"
+          },
+          "maxItems": 5,
+          "minItems": 5,
+          "title": "Stages",
+          "type": "array"
+        },
+        "state": {
+          "enum": [
+            "completed-with-findings",
+            "completed-without-findings",
+            "partial-analysis"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "terminal_state": {
+          "enum": [
+            "complete",
+            "partial"
+          ],
+          "title": "Terminal State",
+          "type": "string"
+        }
+      },
+      "required": [
+        "run_id",
+        "terminal_state",
+        "semantic_sha256",
+        "bundle_files",
+        "snapshot_files",
+        "state",
+        "stages",
+        "eligible_packages",
+        "separate_local_packages"
+      ],
+      "title": "DependencyAttemptEvidence",
+      "type": "object"
+    },
+    "DependencyStageProgress": {
+      "additionalProperties": false,
+      "properties": {
+        "advisory_match_records": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Advisory Match Records"
+        },
+        "package_observations": {
+          "minimum": 0,
+          "title": "Package Observations",
+          "type": "integer"
+        },
+        "stage": {
+          "enum": [
+            "lockfile",
+            "syft",
+            "cyclonedx",
+            "osv-direct",
+            "osv-sbom"
+          ],
+          "title": "Stage",
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "complete",
+            "partial",
+            "failed",
+            "unsupported"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "unique_pypi_projections": {
+          "minimum": 0,
+          "title": "Unique Pypi Projections",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "stage",
+        "state",
+        "package_observations",
+        "unique_pypi_projections"
+      ],
+      "title": "DependencyStageProgress",
+      "type": "object"
+    },
+    "RetainedEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "bytes": {
+          "maximum": 16777216,
+          "minimum": 0,
+          "title": "Bytes",
+          "type": "integer"
+        },
+        "path": {
+          "maxLength": 4096,
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "bytes",
+        "sha256"
+      ],
+      "title": "RetainedEntry",
+      "type": "object"
+    },
+    "RetainedManifest": {
+      "additionalProperties": false,
+      "properties": {
+        "files": {
+          "items": {
+            "$ref": "#/$defs/RetainedEntry"
+          },
+          "maxItems": 4096,
+          "minItems": 1,
+          "title": "Files",
+          "type": "array"
+        }
+      },
+      "required": [
+        "files"
+      ],
+      "title": "RetainedManifest",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "attempt_id": {
+      "pattern": "^attempt_[0-9a-f]{32}$",
+      "title": "Attempt Id",
+      "type": "string"
+    },
+    "contract": {
+      "const": "benchmark-dependency-attempt-finish-v1",
+      "default": "benchmark-dependency-attempt-finish-v1",
+      "title": "Contract",
+      "type": "string"
+    },
+    "duration_ns": {
+      "minimum": 0,
+      "title": "Duration Ns",
+      "type": "integer"
+    },
+    "ended_at": {
+      "format": "date-time",
+      "title": "Ended At",
+      "type": "string"
+    },
+    "error_kind": {
+      "anyOf": [
+        {
+          "enum": [
+            "runner-or-verification-error",
+            "keyboard-interrupt"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Error Kind"
+    },
+    "evidence": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/DependencyAttemptEvidence"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "start_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Start Sha256",
+      "type": "string"
+    },
+    "state": {
+      "enum": [
+        "completed-with-findings",
+        "completed-without-findings",
+        "partial-analysis",
+        "execution-failed",
+        "interrupted"
+      ],
+      "title": "State",
+      "type": "string"
+    }
+  },
+  "required": [
+    "attempt_id",
+    "start_sha256",
+    "ended_at",
+    "duration_ns",
+    "state"
+  ],
+  "title": "DependencyAttemptFinish",
+  "type": "object"
+}

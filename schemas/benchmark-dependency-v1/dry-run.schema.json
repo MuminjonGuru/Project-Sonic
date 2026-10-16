@@ -1,0 +1,288 @@
+{
+  "$defs": {
+    "DependencyCell": {
+      "additionalProperties": false,
+      "properties": {
+        "case_id": {
+          "enum": [
+            "dev-dependency-basic-v1",
+            "dev-dependency-clean-v1"
+          ],
+          "title": "Case Id",
+          "type": "string"
+        },
+        "cell_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Cell Id",
+          "type": "string"
+        },
+        "coverage": {
+          "const": "not-measured",
+          "default": "not-measured",
+          "title": "Coverage",
+          "type": "string"
+        },
+        "expectation_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Expectation Sha256",
+          "type": "string"
+        },
+        "finding_records": {
+          "default": null,
+          "title": "Finding Records",
+          "type": "null"
+        },
+        "input_files": {
+          "items": {
+            "$ref": "#/$defs/PlanFile"
+          },
+          "title": "Input Files",
+          "type": "array"
+        },
+        "producer_invocations": {
+          "const": 0,
+          "default": 0,
+          "title": "Producer Invocations",
+          "type": "integer"
+        },
+        "repetition": {
+          "maximum": 3,
+          "minimum": 1,
+          "title": "Repetition",
+          "type": "integer"
+        },
+        "selected_paths": {
+          "default": [
+            "uv.lock"
+          ],
+          "maxItems": 1,
+          "minItems": 1,
+          "prefixItems": [
+            {
+              "const": "uv.lock",
+              "type": "string"
+            }
+          ],
+          "title": "Selected Paths",
+          "type": "array"
+        },
+        "state": {
+          "const": "not-attempted",
+          "default": "not-attempted",
+          "title": "State",
+          "type": "string"
+        }
+      },
+      "required": [
+        "cell_id",
+        "case_id",
+        "repetition",
+        "input_files",
+        "expectation_sha256"
+      ],
+      "title": "DependencyCell",
+      "type": "object"
+    },
+    "DependencyDatabase": {
+      "additionalProperties": false,
+      "properties": {
+        "bytes": {
+          "exclusiveMinimum": 0,
+          "maximum": 2147483648,
+          "title": "Bytes",
+          "type": "integer"
+        },
+        "path": {
+          "maxLength": 512,
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "bytes",
+        "sha256"
+      ],
+      "title": "DependencyDatabase",
+      "type": "object"
+    },
+    "PlanFile": {
+      "additionalProperties": false,
+      "properties": {
+        "bytes": {
+          "maximum": 2097152,
+          "minimum": 0,
+          "title": "Bytes",
+          "type": "integer"
+        },
+        "path": {
+          "maxLength": 512,
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "bytes",
+        "sha256"
+      ],
+      "title": "PlanFile",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "cells": {
+      "items": {
+        "$ref": "#/$defs/DependencyCell"
+      },
+      "maxItems": 6,
+      "minItems": 1,
+      "title": "Cells",
+      "type": "array"
+    },
+    "contract": {
+      "const": "benchmark-dependency-dry-run-v1",
+      "default": "benchmark-dependency-dry-run-v1",
+      "title": "Contract",
+      "type": "string"
+    },
+    "database": {
+      "$ref": "#/$defs/DependencyDatabase"
+    },
+    "execution_authorized": {
+      "const": false,
+      "default": false,
+      "title": "Execution Authorized",
+      "type": "boolean"
+    },
+    "implementation_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Implementation Sha256",
+      "type": "string"
+    },
+    "limitations": {
+      "default": [
+        "Existing basic/corrected fixtures only; no pilot, mutation or new input admission",
+        "One attempt comprises direct OSV, one Syft discovery/export and SBOM OSV",
+        "Database bytes are checked; no containers, downloads, target installation or scoring",
+        "Package visibility is not proof of per-package matching; paired findings are not summed",
+        "Retained replay requires the same frozen database; no network or refresh fallback"
+      ],
+      "items": {
+        "type": "string"
+      },
+      "title": "Limitations",
+      "type": "array"
+    },
+    "limits": {
+      "additionalProperties": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "number"
+          }
+        ]
+      },
+      "title": "Limits",
+      "type": "object"
+    },
+    "metric_scoring_implemented": {
+      "const": false,
+      "default": false,
+      "title": "Metric Scoring Implemented",
+      "type": "boolean"
+    },
+    "plan_id": {
+      "pattern": "^[a-z0-9][a-z0-9_.-]{0,79}$",
+      "title": "Plan Id",
+      "type": "string"
+    },
+    "plan_semantic_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Plan Semantic Sha256",
+      "type": "string"
+    },
+    "plan_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Plan Sha256",
+      "type": "string"
+    },
+    "plan_valid": {
+      "const": true,
+      "default": true,
+      "title": "Plan Valid",
+      "type": "boolean"
+    },
+    "resume_implemented": {
+      "const": true,
+      "default": true,
+      "title": "Resume Implemented",
+      "type": "boolean"
+    },
+    "resume_scope": {
+      "const": "verified-paired-dependency-attempts-no-retry",
+      "default": "verified-paired-dependency-attempts-no-retry",
+      "title": "Resume Scope",
+      "type": "string"
+    },
+    "runtime_readiness": {
+      "const": "containers-not-checked",
+      "default": "containers-not-checked",
+      "title": "Runtime Readiness",
+      "type": "string"
+    },
+    "tool_images": {
+      "maxItems": 2,
+      "minItems": 2,
+      "prefixItems": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "string"
+        }
+      ],
+      "title": "Tool Images",
+      "type": "array"
+    },
+    "treatment_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Treatment Sha256",
+      "type": "string"
+    },
+    "validation_scope": {
+      "const": "fixed-development-byte-bindings-and-database-hash",
+      "default": "fixed-development-byte-bindings-and-database-hash",
+      "title": "Validation Scope",
+      "type": "string"
+    }
+  },
+  "required": [
+    "plan_id",
+    "plan_sha256",
+    "plan_semantic_sha256",
+    "treatment_sha256",
+    "implementation_sha256",
+    "cells",
+    "database",
+    "limits",
+    "tool_images"
+  ],
+  "title": "DependencyPreview",
+  "type": "object"
+}

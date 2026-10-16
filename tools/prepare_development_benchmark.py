@@ -3,6 +3,7 @@
 import argparse
 from pathlib import Path
 
+from agentsec_evidence.benchmarks.dependency_plan import build_dependency_plan
 from agentsec_evidence.benchmarks.kics_plan import build_kics_plan
 from agentsec_evidence.benchmarks.semgrep_plan import build_semgrep_plan
 from agentsec_evidence.benchmarks.service import build_development_plan, plan_bytes
@@ -13,8 +14,11 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--plan-id", required=True)
     parser.add_argument(
-        "--treatment", choices=["agent", "semgrep-first-slice", "kics-g2"], default="agent"
+        "--treatment",
+        choices=["agent", "semgrep-first-slice", "kics-g2", "dependency-paired"],
+        default="agent",
     )
+    parser.add_argument("--database", help="Frozen database path relative to project workspace")
     parser.add_argument("--case", action="append", required=True, dest="case_ids")
     parser.add_argument("--repetitions", type=int, default=1)
     parser.add_argument(
@@ -43,7 +47,19 @@ def main() -> None:
             )
         ):
             raise ValueError("Output cannot be added to finalized evidence")
-    if args.treatment == "kics-g2":
+    if args.database is not None and args.treatment != "dependency-paired":
+        raise ValueError("Database input applies only to the dependency treatment")
+    if args.treatment == "dependency-paired":
+        if args.allow_prelaunch_retry or args.database is None:
+            raise ValueError("Dependency requires an explicit frozen database and no retry opt-in")
+        plan = build_dependency_plan(
+            project,
+            plan_id=args.plan_id,
+            case_ids=tuple(args.case_ids),
+            database=args.database,
+            repetitions=args.repetitions,
+        )
+    elif args.treatment == "kics-g2":
         if args.allow_prelaunch_retry:
             raise ValueError("KICS does not admit manual retries")
         plan = build_kics_plan(

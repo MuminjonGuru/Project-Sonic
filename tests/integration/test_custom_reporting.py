@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib
+import importlib.util
 import json
 import shutil
 import subprocess
@@ -30,9 +31,15 @@ from agentsec_evidence.reporting.service import (
     validate_common_report,
     write_common_report,
 )
-from tools.verify_tool_execution_repair import docker_argv
 
 ROOT = Path(__file__).resolve().parents[2]
+_HELPER_SPEC = importlib.util.spec_from_file_location(
+    "tool_execution_repair_helper", ROOT / "tools/verify_tool_execution_repair.py"
+)
+assert _HELPER_SPEC and _HELPER_SPEC.loader
+_HELPER = importlib.util.module_from_spec(_HELPER_SPEC)
+_HELPER_SPEC.loader.exec_module(_HELPER)
+docker_argv = _HELPER.docker_argv
 
 
 def put(root: Path, name: str, value: Any) -> None:

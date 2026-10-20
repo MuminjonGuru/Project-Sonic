@@ -10,7 +10,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 import portalocker
-from pydantic import BaseModel
+from pydantic import BaseModel, JsonValue, TypeAdapter
 
 from agentsec_evidence.agents.validation import load_agent_json
 from agentsec_evidence.benchmarks.attempt_models import (
@@ -28,17 +28,31 @@ from agentsec_evidence.benchmarks.attempt_models import (
     CellProgress,
     DependencyAttemptEvidence,
     DependencyAttemptFinish,
+    DependencyBoundaryEvidence,
+    DependencyBoundaryFinish,
+    DependencyBoundaryProgress,
+    DependencyBoundaryRow,
     DependencyCellProgress,
+    DependencyMutationProgress,
     DependencyProgress,
     KicsAttemptEvidence,
     KicsAttemptFinish,
     KicsCellProgress,
     KicsProgress,
+    PublicPilotEvidence,
+    PublicPilotFinish,
+    PublicPilotProgress,
+    PublicPilotRow,
+    ResearchEvidence,
+    ResearchFinish,
+    ResearchProgress,
+    ResearchRow,
     RetryAuthorization,
     SemgrepAttemptFinish,
     SemgrepCellProgress,
     SemgrepProgress,
 )
+from agentsec_evidence.benchmarks.dependency_boundary_plan import CASE_ROOTS as BOUNDARY_CASE_ROOTS
 from agentsec_evidence.benchmarks.dependency_evidence import verify_dependency_attempt
 from agentsec_evidence.benchmarks.dependency_plan import CASE_ROOTS as DEPENDENCY_CASE_ROOTS
 from agentsec_evidence.benchmarks.evidence import require_prelaunch_failure, verify_attempt_run
@@ -53,20 +67,34 @@ from agentsec_evidence.benchmarks.models import (
     BenchmarkPlan,
     BenchmarkPlanV2,
     DependencyBenchmarkPlan,
+    DependencyBoundaryCell,
+    DependencyBoundaryPlan,
+    DependencyBoundaryPreview,
     DependencyCell,
+    DependencyMutationCell,
+    DependencyMutationPlan,
+    DependencyMutationPreview,
     DependencyPreview,
     KicsBenchmarkPlan,
     KicsCell,
     KicsPreview,
     PlannedCell,
+    PublicPilotBenchmarkPlan,
+    PublicPilotCell,
+    PublicPilotPreview,
+    ResearchBenchmarkPlan,
+    ResearchCell,
+    ResearchPreview,
     SemgrepBenchmarkPlan,
     SemgrepCell,
     SemgrepPreview,
 )
+from agentsec_evidence.benchmarks.public_pilot_evidence import verify_public_pilot_attempt
+from agentsec_evidence.benchmarks.research_evidence import verify_research_attempt
 from agentsec_evidence.benchmarks.semgrep_evidence import verify_semgrep_attempt
 from agentsec_evidence.benchmarks.semgrep_plan import CASE_ROOT
 from agentsec_evidence.benchmarks.service import load_plan, validate_plan
-from agentsec_evidence.core.identity import new_opaque_id, sha256_bytes
+from agentsec_evidence.core.identity import new_opaque_id, semantic_hash, sha256_bytes, sha256_file
 from agentsec_evidence.core.io import model_bytes
 from agentsec_evidence.core.time import utc_now
 from agentsec_evidence.dependencies.pipeline import run_dependency_scan
@@ -74,6 +102,8 @@ from agentsec_evidence.orchestration.agent_pipeline import AgentScanRequest, run
 from agentsec_evidence.orchestration.kics_pipeline import KicsScanRequest, run_kics_scan
 from agentsec_evidence.orchestration.pipeline import SemgrepScanRequest, run_semgrep_scan
 from agentsec_evidence.orchestration.shared import resolve_docker
+from agentsec_evidence.pilot.runner import run_source_pilot
+from agentsec_evidence.research.controlled import run_controlled_research_case
 from agentsec_evidence.research.retained import bounded_file, plain_path
 
 MAX_RECORD_BYTES = 2 * 1024**2
@@ -93,8 +123,17 @@ def _row_model(
     | type[SemgrepCellProgress]
     | type[KicsCellProgress]
     | type[DependencyCellProgress]
+    | type[DependencyBoundaryRow]
+    | type[PublicPilotRow]
+    | type[ResearchRow]
 ):
-    if isinstance(dry, DependencyPreview):
+    if isinstance(dry, ResearchPreview):
+        return ResearchRow
+    if isinstance(dry, PublicPilotPreview):
+        return PublicPilotRow
+    if isinstance(dry, DependencyBoundaryPreview):
+        return DependencyBoundaryRow
+    if isinstance(dry, DependencyPreview | DependencyMutationPreview):
         return DependencyCellProgress
     if isinstance(dry, KicsPreview):
         return KicsCellProgress
@@ -108,8 +147,17 @@ def _finish_model(
     | type[SemgrepAttemptFinish]
     | type[KicsAttemptFinish]
     | type[DependencyAttemptFinish]
+    | type[DependencyBoundaryFinish]
+    | type[PublicPilotFinish]
+    | type[ResearchFinish]
 ):
-    if isinstance(plan, DependencyBenchmarkPlan):
+    if isinstance(plan, ResearchBenchmarkPlan):
+        return ResearchFinish
+    if isinstance(plan, PublicPilotBenchmarkPlan):
+        return PublicPilotFinish
+    if isinstance(plan, DependencyBoundaryPlan):
+        return DependencyBoundaryFinish
+    if isinstance(plan, DependencyBenchmarkPlan | DependencyMutationPlan):
         return DependencyAttemptFinish
     if isinstance(plan, KicsBenchmarkPlan):
         return KicsAttemptFinish
@@ -269,7 +317,43 @@ def _history(project: Path, session: Path, dry: AdmittedPreview) -> History:
         blocked = state not in REUSABLE
         row_model = _row_model(dry)
         counters: dict[str, object] = {}
-        if isinstance(dry, DependencyPreview):
+        if isinstance(dry, ResearchPreview):
+            counters = {
+                "rows": [r.model_dump(mode="json") for r in evidence.rows]
+                if isinstance(evidence, ResearchEvidence)
+                else None,
+                "syntax_invocations": evidence.syntax_invocations
+                if isinstance(evidence, ResearchEvidence)
+                else None,
+                "case_state": evidence.case_state
+                if isinstance(evidence, ResearchEvidence)
+                else None,
+            }
+        if isinstance(dry, PublicPilotPreview):
+            counters = {
+                "rows": [r.model_dump(mode="json") for r in evidence.rows]
+                if isinstance(evidence, PublicPilotEvidence)
+                else None,
+                "syntax_invocations": evidence.syntax_invocations
+                if isinstance(evidence, PublicPilotEvidence)
+                else None,
+            }
+        if isinstance(dry, DependencyBoundaryPreview):
+            counters = {
+                "stages": [s.model_dump(mode="json") for s in evidence.stages]
+                if isinstance(evidence, DependencyBoundaryEvidence)
+                else None,
+                "eligible_packages": evidence.eligible_packages
+                if isinstance(evidence, DependencyBoundaryEvidence)
+                else None,
+                "separate_local_packages": evidence.separate_local_packages
+                if isinstance(evidence, DependencyBoundaryEvidence)
+                else None,
+                "input_failure": evidence.input_failure
+                if isinstance(evidence, DependencyBoundaryEvidence)
+                else None,
+            }
+        if isinstance(dry, DependencyPreview | DependencyMutationPreview):
             counters = {
                 "stages": [s.model_dump(mode="json") for s in evidence.stages]
                 if isinstance(evidence, DependencyAttemptEvidence)
@@ -327,11 +411,13 @@ def _progress(
     rows = history.rows
     row_model = _row_model(dry)
     all_rows = rows + [
-        row_model(
-            cell_id=cell.cell_id,
-            case_id=cell.case_id,
-            repetition=cell.repetition,
-            state="not-attempted",
+        row_model.model_validate(
+            {
+                "cell_id": cell.cell_id,
+                "case_id": cell.case_id,
+                "repetition": cell.repetition,
+                "state": "not-attempted",
+            }
         )
         for cell in dry.cells[len(rows) :]
     ]
@@ -348,10 +434,18 @@ def _progress(
     )
     if isinstance(dry, SemgrepPreview):
         return SemgrepProgress.model_validate(fields)
+    if isinstance(dry, PublicPilotPreview):
+        return PublicPilotProgress.model_validate(fields)
+    if isinstance(dry, ResearchPreview):
+        return ResearchProgress.model_validate(fields)
     if isinstance(dry, KicsPreview):
         return KicsProgress.model_validate(fields)
     if isinstance(dry, DependencyPreview):
         return DependencyProgress.model_validate(fields)
+    if isinstance(dry, DependencyMutationPreview):
+        return DependencyMutationProgress.model_validate(fields)
+    if isinstance(dry, DependencyBoundaryPreview):
+        return DependencyBoundaryProgress.model_validate(fields)
     progress = BenchmarkProgress.model_validate(fields)
     if isinstance(dry, BenchmarkDryRunV3):
         return BenchmarkProgressV2.model_validate(
@@ -378,6 +472,90 @@ def inspect_benchmark(project: Path, plan_path: Path) -> AdmittedProgress:
         if validate_plan(project, plan_path) != dry:
             raise ValueError("Plan changed during history verification")
         return _progress(session, dry, history)
+
+
+def replay_retained_history(
+    project: Path, session: Path, *, plan_sha256: str, validation_sha256: str
+) -> tuple[AdmittedPlan, AdmittedPreview, History]:
+    """Read pinned historical evidence, not current-code execution/resume authorization."""
+    project = plain_path(project, directory=True)
+    session = plain_path(session, directory=True)
+    if session.parent != project / "workspace/benchmarks":
+        raise ValueError("Historical replay requires an existing governed session")
+    # Exclusive locking also works without optional Windows shared-lock dependencies.
+    # Open the existing lock read-only: historical replay must not create or modify it.
+    lock = plain_path(session.parent / ".writer.lock", directory=False)
+    with portalocker.Lock(
+        str(lock), mode="rb", timeout=0, flags=portalocker.LOCK_EX | portalocker.LOCK_NB
+    ):
+        raw_plan = bounded_file(session / "plan.json", MAX_PLAN_BYTES)
+        raw_validation = bounded_file(session / "validation.json", MAX_RECORD_BYTES)
+        if (
+            sha256_bytes(raw_plan) != plan_sha256
+            or sha256_bytes(raw_validation) != validation_sha256
+        ):
+            raise ValueError("Historical plan/validation pin changed")
+        plan = load_plan(session / "plan.json")
+        dry: AdmittedPreview = TypeAdapter(AdmittedPreview).validate_python(
+            load_agent_json(raw_validation, max_bytes=MAX_RECORD_BYTES)
+        )
+        expected_contract = (
+            "benchmark-dry-run-v3"
+            if isinstance(plan, BenchmarkPlanV2)
+            else "benchmark-dry-run-v2"
+            if isinstance(plan, BenchmarkPlan)
+            else plan.contract.replace("-plan-", "-dry-run-")
+        )
+        if (
+            dry.contract != expected_contract
+            or dry.plan_sha256 != plan_sha256
+            or dry.plan_semantic_sha256 != semantic_hash(plan.model_dump(mode="json"))
+            or session.name != dry.plan_semantic_sha256
+            or dry.plan_id != plan.plan_id
+            or dry.implementation_sha256
+            != semantic_hash([pin.model_dump(mode="json") for pin in plan.implementation])
+        ):
+            raise ValueError("Historical validation does not bind the frozen plan")
+        cases = (plan,) if isinstance(plan, PublicPilotBenchmarkPlan) else plan.cases
+        expected_cells = [
+            (case, repeat) for case in cases for repeat in range(1, plan.repetitions + 1)
+        ]
+        if len(dry.cells) != len(expected_cells):
+            raise ValueError("Historical preview omits frozen cells")
+        retained_cells: tuple[AdmittedCell, ...] = dry.cells
+        for cell, (case, repeat) in zip(retained_cells, expected_cells, strict=True):
+            identity: dict[str, JsonValue] = {
+                "plan": dry.plan_semantic_sha256,
+                "case": case.case_id,
+            }
+            if not isinstance(plan, ResearchBenchmarkPlan | PublicPilotBenchmarkPlan):
+                identity["repetition"] = repeat
+            if (cell.case_id, cell.repetition, cell.cell_id) != (
+                case.case_id,
+                repeat,
+                semantic_hash(identity),
+            ):
+                raise ValueError("Historical cell differs from frozen plan ordering")
+            for original, expanded in (
+                ("files", "input_files"),
+                ("selected_paths", "selected_paths"),
+                ("expectation", "expectation"),
+                ("expectation_sha256", "expectation_sha256"),
+                ("mutation", "mutation"),
+            ):
+                if (
+                    hasattr(case, original)
+                    and hasattr(cell, expanded)
+                    and getattr(case, original) != getattr(cell, expanded)
+                ):
+                    raise ValueError("Historical cell evidence binding differs from plan")
+        history = _history(project, session, dry)
+        if (
+            bounded_file(session / "plan.json", MAX_PLAN_BYTES) != raw_plan
+            or bounded_file(session / "validation.json", MAX_RECORD_BYTES) != raw_validation
+        ):
+            raise ValueError("Historical input changed during replay")
+        return plan, dry, history
 
 
 def run_benchmark(project: Path, plan_path: Path, *, max_new_cells: int = 39) -> AdmittedProgress:
@@ -421,11 +599,19 @@ def run_benchmark(project: Path, plan_path: Path, *, max_new_cells: int = 39) ->
 def _verify(
     project: Path, execution: Path, run_id: str, plan: AdmittedPlan, cell: AdmittedCell
 ) -> AdmittedEvidence:
+    if isinstance(plan, ResearchBenchmarkPlan) and isinstance(cell, ResearchCell):
+        return verify_research_attempt(project, execution, run_id, plan, cell)
+    if isinstance(plan, PublicPilotBenchmarkPlan) and isinstance(cell, PublicPilotCell):
+        return verify_public_pilot_attempt(project, execution, run_id, plan, cell)
     if isinstance(plan, SemgrepBenchmarkPlan) and isinstance(cell, SemgrepCell):
         return verify_semgrep_attempt(project, execution, run_id, plan, cell)
     if isinstance(plan, KicsBenchmarkPlan) and isinstance(cell, KicsCell):
         return verify_kics_attempt(project, execution, run_id, plan, cell)
     if isinstance(plan, DependencyBenchmarkPlan) and isinstance(cell, DependencyCell):
+        return verify_dependency_attempt(project, execution, run_id, plan, cell)
+    if isinstance(plan, DependencyMutationPlan) and isinstance(cell, DependencyMutationCell):
+        return verify_dependency_attempt(project, execution, run_id, plan, cell)
+    if isinstance(plan, DependencyBoundaryPlan) and isinstance(cell, DependencyBoundaryCell):
         return verify_dependency_attempt(project, execution, run_id, plan, cell)
     if isinstance(plan, BenchmarkPlan | BenchmarkPlanV2) and isinstance(cell, PlannedCell):
         return verify_attempt_run(project, execution, run_id, plan, cell)
@@ -472,7 +658,44 @@ def _dispatch(
     interrupted = False
     state: AdmittedState
     try:
-        if isinstance(plan, SemgrepBenchmarkPlan):
+        if isinstance(plan, ResearchBenchmarkPlan):
+            (execution / "environment").mkdir()
+            for pin in plan.pins:
+                if pin.path in {"pyproject.toml", "uv.lock"}:
+                    raw = bounded_file(project / pin.path, MAX_RECORD_BYTES)
+                    if len(raw) != pin.bytes or sha256_bytes(raw) != pin.sha256:
+                        raise ValueError("Controlled environment changed before dispatch")
+                    _write_once(execution / "environment" / pin.path, raw)
+            run_controlled_research_case(
+                project=project,
+                rule_source=project / plan.rule_source,
+                output=execution / "case",
+                case_id=cell.case_id,
+            )
+            run_id = (
+                "research-"
+                + semantic_hash(
+                    {
+                        "manifest": sha256_file(execution / "case/evidence-manifest.json"),
+                        "case": cell.case_id,
+                    }
+                )[:32]
+            )
+        elif isinstance(plan, PublicPilotBenchmarkPlan):
+            run_source_pilot(
+                project=project,
+                cache=project / plan.cache_path,
+                rule_source=project / plan.rule_source,
+                database=project / plan.database.path,
+                output=execution / "pilot",
+            )
+            run_id = (
+                "public-pilot-"
+                + semantic_hash(
+                    {"manifest": sha256_file(execution / "pilot/evidence-manifest.json")}
+                )[:32]
+            )
+        elif isinstance(plan, SemgrepBenchmarkPlan):
             result = run_semgrep_scan(
                 SemgrepScanRequest(
                     project_root=project,
@@ -501,8 +724,18 @@ def _dispatch(
                 )
             )
             run_id = result.run_id
-        elif isinstance(plan, DependencyBenchmarkPlan) and isinstance(cell, DependencyCell):
-            relative = DEPENDENCY_CASE_ROOTS[cell.case_id]
+        elif isinstance(
+            plan, DependencyBenchmarkPlan | DependencyMutationPlan | DependencyBoundaryPlan
+        ) and isinstance(cell, DependencyCell | DependencyMutationCell | DependencyBoundaryCell):
+            if isinstance(cell, DependencyBoundaryCell):
+                relative = BOUNDARY_CASE_ROOTS[cell.case_id]
+            else:
+                source_case = (
+                    "dev-dependency-basic-v1"
+                    if isinstance(cell, DependencyMutationCell)
+                    else cell.case_id
+                )
+                relative = DEPENDENCY_CASE_ROOTS[source_case]
             paired = run_dependency_scan(
                 project_root=project,
                 workspace_root=execution,
@@ -511,6 +744,7 @@ def _dispatch(
                 revision="fixture-v1",
                 database=project / plan.database.path,
                 database_sha256=plan.database.sha256,
+                mutation=cell.mutation if isinstance(cell, DependencyMutationCell) else None,
             )
             if not isinstance(paired.get("run_id"), str):
                 raise ValueError("Dependency producer returned no run identity")

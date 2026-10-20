@@ -1,0 +1,146 @@
+{
+  "$defs": {
+    "ScoringHtmlFile": {
+      "additionalProperties": false,
+      "properties": {
+        "bytes": {
+          "maximum": 33554432,
+          "minimum": 1,
+          "title": "Bytes",
+          "type": "integer"
+        },
+        "path": {
+          "enum": [
+            "report.html",
+            "evidence/plan.json",
+            "evidence/scores.json",
+            "evidence/measurements.csv",
+            "evidence/attempts.csv"
+          ],
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "sha256",
+        "bytes"
+      ],
+      "title": "ScoringHtmlFile",
+      "type": "object"
+    },
+    "ScoringHtmlInput": {
+      "additionalProperties": false,
+      "properties": {
+        "bytes": {
+          "maximum": 33554432,
+          "minimum": 1,
+          "title": "Bytes",
+          "type": "integer"
+        },
+        "name": {
+          "enum": [
+            "plan.json",
+            "scores.json",
+            "measurements.csv",
+            "attempts.csv",
+            "TABLES.md",
+            "SUMMARY.md",
+            "scoring-manifest.json"
+          ],
+          "title": "Name",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "sha256",
+        "bytes"
+      ],
+      "title": "ScoringHtmlInput",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "contract": {
+      "const": "offline-scoring-html-v1",
+      "default": "offline-scoring-html-v1",
+      "title": "Contract",
+      "type": "string"
+    },
+    "entries": {
+      "items": {
+        "$ref": "#/$defs/ScoringHtmlFile"
+      },
+      "maxItems": 5,
+      "minItems": 1,
+      "title": "Entries",
+      "type": "array"
+    },
+    "evidence_mode": {
+      "const": "retained-scoring-no-new-scan",
+      "default": "retained-scoring-no-new-scan",
+      "title": "Evidence Mode",
+      "type": "string"
+    },
+    "input_files": {
+      "items": {
+        "$ref": "#/$defs/ScoringHtmlInput"
+      },
+      "maxItems": 7,
+      "minItems": 7,
+      "title": "Input Files",
+      "type": "array"
+    },
+    "native_sources_replayed": {
+      "const": false,
+      "default": false,
+      "title": "Native Sources Replayed",
+      "type": "boolean"
+    },
+    "renderer_sources": {
+      "additionalProperties": {
+        "pattern": "^[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "title": "Renderer Sources",
+      "type": "object"
+    },
+    "scoring_manifest_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Scoring Manifest Sha256",
+      "type": "string"
+    },
+    "sensitivity": {
+      "const": "internal-not-release-cleared",
+      "default": "internal-not-release-cleared",
+      "title": "Sensitivity",
+      "type": "string"
+    },
+    "validation_scope": {
+      "const": "scoring-derivative-and-table-consistency",
+      "default": "scoring-derivative-and-table-consistency",
+      "title": "Validation Scope",
+      "type": "string"
+    }
+  },
+  "required": [
+    "scoring_manifest_sha256",
+    "input_files",
+    "renderer_sources",
+    "entries"
+  ],
+  "title": "ScoringHtmlManifest",
+  "type": "object"
+}

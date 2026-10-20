@@ -4,6 +4,7 @@ import json
 import re
 from pathlib import Path
 from typing import Annotated, Literal, cast
+from zipfile import BadZipFile
 
 import typer
 from pydantic import JsonValue
@@ -18,6 +19,11 @@ from agentsec_evidence.core.doctor import collect_doctor_report
 from agentsec_evidence.core.io import json_bytes
 from agentsec_evidence.dependencies.mutations import Mutation
 from agentsec_evidence.dependencies.pipeline import run_dependency_scan, validate_dependency_bundle
+from agentsec_evidence.intake.repository import (
+    load_intake_spec,
+    prepare_repository,
+    verify_repository,
+)
 from agentsec_evidence.intake.snapshot import SnapshotError, create_snapshot
 from agentsec_evidence.models.contracts import (
     BundleManifest,
@@ -40,6 +46,7 @@ from agentsec_evidence.reporting.dependency import (
     resolve_dependency_run,
     summarize_dependency,
 )
+from agentsec_evidence.reporting.html import validate_html_report, write_html_report
 from agentsec_evidence.reporting.service import (
     load_report_source,
     require_new_derivative,
@@ -48,6 +55,8 @@ from agentsec_evidence.reporting.service import (
 )
 from agentsec_evidence.research.retained import plain_path
 from agentsec_evidence.reviews.service import validate_review, write_review
+from agentsec_evidence.scoring.html_bundle import validate_scoring_html, write_scoring_html
+from agentsec_evidence.scoring.service import validate_scores, write_scores
 
 app = typer.Typer(
     name="agentsec-evidence",
@@ -69,6 +78,10 @@ review_app = typer.Typer(
 app.add_typer(review_app, name="review")
 benchmark_app = typer.Typer(help="Validate and run explicitly admitted development benchmarks.")
 app.add_typer(benchmark_app, name="benchmark")
+score_app = typer.Typer(
+    help="Measure retained evidence offline; no scanners or accuracy inference."
+)
+app.add_typer(score_app, name="score")
 app.add_typer(dependency_app, name="dependencies")
 app.add_typer(target_app, name="target")
 app.add_typer(scan_app, name="scan")
@@ -243,6 +256,57 @@ def target_inspect(
         _emit_json(cast(JsonValue, snapshot.model_dump(mode="json")))
     else:
         console.print_json(data=snapshot.model_dump(mode="json"))
+
+
+@target_app.command("prepare-git")
+def target_prepare_git(
+    spec: Annotated[
+        Path, typer.Option("--spec", help="Externally pinned repository-intake-spec-v1.")
+    ],
+    cache: Annotated[
+        Path, typer.Option("--cache", help="Cached source.zip, commit.bin and tree-exact.json.")
+    ],
+    output: Annotated[
+        Path, typer.Option("--output", help="New evidence directory; parent must exist.")
+    ],
+    json_output: bool = typer.Option(False, "--json", help="Emit the preparation receipt."),
+) -> None:
+    """Verify cached Git evidence and inventory it offline. Does not scan or download."""
+    try:
+        receipt = prepare_repository(load_intake_spec(spec), cache=cache, output=output)
+    except (ValueError, OSError, RuntimeError, BadZipFile) as exc:
+        _emit_error(exc)
+        raise typer.Exit(5) from exc
+    if json_output:
+        _emit_json(cast(JsonValue, receipt.model_dump(mode="json")))
+    else:
+        typer.echo(f"Prepared {receipt.observed_files} Git-verified files; no scanners launched.")
+        typer.echo(
+            "Filename inventory is not security coverage. Scanner admission remains required."
+        )
+
+
+@target_app.command("verify-git")
+def target_verify_git(
+    bundle: Annotated[Path, typer.Argument(help="Prepared repository evidence directory.")],
+    spec: Annotated[
+        Path, typer.Option("--spec", help="External original specification; not a trust claim.")
+    ],
+    json_output: bool = typer.Option(False, "--json", help="Emit the replayed receipt."),
+) -> None:
+    """Replay archive, Git objects, inventory and materialized bytes without writing or scanning."""
+    try:
+        receipt = verify_repository(bundle, spec=load_intake_spec(spec))
+    except (ValueError, OSError, RuntimeError, BadZipFile) as exc:
+        _emit_error(exc)
+        raise typer.Exit(5) from exc
+    if json_output:
+        _emit_json(cast(JsonValue, receipt.model_dump(mode="json")))
+    else:
+        typer.echo(
+            f"Reverified {receipt.observed_files} Git files against the external specification."
+        )
+        typer.echo("Source origin, security coverage and scanner admission are not established.")
 
 
 @scan_app.command("agent-audit")
@@ -743,6 +807,54 @@ def report_validate(
         raise typer.Exit(code=5) from exc
 
 
+@report_app.command("html")
+def report_html(
+    directory: Annotated[Path, typer.Argument(exists=True, file_okay=False)],
+    output: Annotated[Path, typer.Option(help="New directory under project outputs.")],
+    review: Annotated[Path | None, typer.Option(exists=True, file_okay=False)] = None,
+    include_export: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--include-export",
+            help="Explicit unredacted export: report-json, sarif or review-json.",
+        ),
+    ] = None,
+    project_root: Annotated[Path | None, typer.Option()] = None,
+) -> None:
+    """Render validated retained results as offline HTML; no scan or native replay."""
+    try:
+        manifest = write_html_report(
+            project=_find_project_root(project_root),
+            report_root=directory,
+            output=output,
+            review_root=review,
+            exports=include_export or (),
+        )
+    except (OSError, ValueError) as exc:
+        _emit_error(exc)
+        raise typer.Exit(code=5) from exc
+    _emit_json(
+        {
+            "output": str(output.resolve()),
+            "contract": manifest.contract,
+            "sensitivity": manifest.sensitivity,
+            "evidence_mode": manifest.evidence_mode,
+        }
+    )
+
+
+@report_app.command("validate-html")
+def report_validate_html(
+    directory: Annotated[Path, typer.Argument(exists=True, file_okay=False)],
+) -> None:
+    """Check a portable HTML package's hashes and accounting, not original scan evidence."""
+    try:
+        _emit_json(validate_html_report(directory))
+    except (OSError, ValueError) as exc:
+        _emit_error(exc)
+        raise typer.Exit(code=5) from exc
+
+
 @review_app.command("build")
 def review_build(
     report: Annotated[Path, typer.Argument(exists=True, file_okay=False)],
@@ -792,6 +904,79 @@ def review_validate(
                 previous=previous,
             )
         )
+    except (OSError, ValueError) as exc:
+        _emit_error(exc)
+        raise typer.Exit(code=5) from exc
+
+
+@score_app.command("build")
+def score_build(
+    plan: Annotated[Path, typer.Argument(exists=True, dir_okay=False)],
+    output: Annotated[Path, typer.Option()],
+    project_root: Annotated[Path | None, typer.Option()] = None,
+) -> None:
+    """Replay pinned historical sessions and write a new evidence-quality derivative."""
+    try:
+        report = write_scores(_find_project_root(project_root), plan, output)
+        _emit_json(
+            {
+                "passed": True,
+                "rows": len(report.rows),
+                "attempt_rows": len(report.attempts),
+                "vulnerability_total": None,
+            }
+        )
+    except (OSError, ValueError) as exc:
+        _emit_error(exc)
+        raise typer.Exit(code=5) from exc
+
+
+@score_app.command("validate")
+def score_validate(
+    bundle: Annotated[Path, typer.Argument(exists=True, file_okay=False)],
+    replay: Annotated[
+        bool, typer.Option(help="Also replay original sources and current analysis bytes.")
+    ] = False,
+    project_root: Annotated[Path | None, typer.Option()] = None,
+) -> None:
+    """Check derivative integrity; --replay additionally recomputes from pinned evidence."""
+    try:
+        _emit_json(validate_scores(_find_project_root(project_root), bundle, replay=replay))
+    except (OSError, ValueError) as exc:
+        _emit_error(exc)
+        raise typer.Exit(code=5) from exc
+
+
+@score_app.command("html")
+def score_html(
+    bundle: Annotated[Path, typer.Argument(exists=True, file_okay=False)],
+    output: Annotated[Path, typer.Option()],
+    include_export: Annotated[
+        list[str] | None,
+        typer.Option(
+            help="Explicit exports: scores-json, plan-json, measurements-csv, attempts-csv."
+        ),
+    ] = None,
+    project_root: Annotated[Path | None, typer.Option()] = None,
+) -> None:
+    """Present retained benchmark measurements separately from repository scan reports."""
+    try:
+        manifest = write_scoring_html(
+            _find_project_root(project_root), bundle, output, exports=include_export or ()
+        )
+        _emit_json(manifest.model_dump(mode="json"))
+    except (OSError, ValueError) as exc:
+        _emit_error(exc)
+        raise typer.Exit(code=5) from exc
+
+
+@score_app.command("validate-html")
+def score_validate_html(
+    directory: Annotated[Path, typer.Argument(exists=True, file_okay=False)],
+) -> None:
+    """Validate portable benchmark HTML integrity, without replaying native sources."""
+    try:
+        _emit_json(validate_scoring_html(directory))
     except (OSError, ValueError) as exc:
         _emit_error(exc)
         raise typer.Exit(code=5) from exc

@@ -1,0 +1,316 @@
+{
+  "$defs": {
+    "JsonValue": {},
+    "MeasurementRow": {
+      "additionalProperties": false,
+      "properties": {
+        "analysis_completeness": {
+          "enum": [
+            "not-established",
+            "incomplete",
+            "not-run"
+          ],
+          "title": "Analysis Completeness",
+          "type": "string"
+        },
+        "attempt_id": {
+          "title": "Attempt Id",
+          "type": "string"
+        },
+        "case_id": {
+          "title": "Case Id",
+          "type": "string"
+        },
+        "evidence_role": {
+          "enum": [
+            "development",
+            "formative-pilot"
+          ],
+          "title": "Evidence Role",
+          "type": "string"
+        },
+        "metrics": {
+          "items": {
+            "$ref": "#/$defs/Metric"
+          },
+          "title": "Metrics",
+          "type": "array"
+        },
+        "observations": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Observations",
+          "type": "object"
+        },
+        "references": {
+          "items": {
+            "$ref": "#/$defs/Reference"
+          },
+          "minItems": 1,
+          "title": "References",
+          "type": "array"
+        },
+        "repetition": {
+          "minimum": 0,
+          "title": "Repetition",
+          "type": "integer"
+        },
+        "row_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Row Id",
+          "type": "string"
+        },
+        "session": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Session",
+          "type": "string"
+        },
+        "stage": {
+          "title": "Stage",
+          "type": "string"
+        },
+        "state": {
+          "title": "State",
+          "type": "string"
+        }
+      },
+      "required": [
+        "row_id",
+        "session",
+        "case_id",
+        "evidence_role",
+        "attempt_id",
+        "repetition",
+        "stage",
+        "state",
+        "analysis_completeness",
+        "metrics",
+        "observations",
+        "references"
+      ],
+      "title": "MeasurementRow",
+      "type": "object"
+    },
+    "Metric": {
+      "additionalProperties": false,
+      "properties": {
+        "denominator": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Denominator"
+        },
+        "eligibility": {
+          "title": "Eligibility",
+          "type": "string"
+        },
+        "excluded": {
+          "minimum": 0,
+          "title": "Excluded",
+          "type": "integer"
+        },
+        "limitation": {
+          "title": "Limitation",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "numerator": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Numerator"
+        },
+        "status": {
+          "enum": [
+            "measured",
+            "undefined",
+            "unknown",
+            "not-applicable"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "unit": {
+          "title": "Unit",
+          "type": "string"
+        },
+        "unknown": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Unknown"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Value"
+        },
+        "version": {
+          "const": "evidence-scoring-v1",
+          "default": "evidence-scoring-v1",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "status",
+        "numerator",
+        "denominator",
+        "value",
+        "unit",
+        "eligibility",
+        "excluded",
+        "unknown",
+        "limitation"
+      ],
+      "title": "Metric",
+      "type": "object"
+    },
+    "Reference": {
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "pointer": {
+          "default": "",
+          "title": "Pointer",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "title": "Reference",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "analysis_sources": {
+      "items": {
+        "$ref": "#/$defs/Reference"
+      },
+      "title": "Analysis Sources",
+      "type": "array"
+    },
+    "attempts": {
+      "items": {
+        "additionalProperties": {
+          "$ref": "#/$defs/JsonValue"
+        },
+        "type": "object"
+      },
+      "title": "Attempts",
+      "type": "array"
+    },
+    "contract": {
+      "const": "evidence-scoring-v1",
+      "default": "evidence-scoring-v1",
+      "title": "Contract",
+      "type": "string"
+    },
+    "human_productivity_improvement": {
+      "default": null,
+      "title": "Human Productivity Improvement",
+      "type": "null"
+    },
+    "limitations": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Limitations",
+      "type": "array"
+    },
+    "plan_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Plan Sha256",
+      "type": "string"
+    },
+    "public_detection_accuracy": {
+      "default": null,
+      "title": "Public Detection Accuracy",
+      "type": "null"
+    },
+    "reviews": {
+      "items": {
+        "additionalProperties": {
+          "$ref": "#/$defs/JsonValue"
+        },
+        "type": "object"
+      },
+      "title": "Reviews",
+      "type": "array"
+    },
+    "rows": {
+      "items": {
+        "$ref": "#/$defs/MeasurementRow"
+      },
+      "title": "Rows",
+      "type": "array"
+    },
+    "sensitivity": {
+      "const": "internal-not-release-cleared",
+      "default": "internal-not-release-cleared",
+      "title": "Sensitivity",
+      "type": "string"
+    },
+    "source_validation": {
+      "const": "pinned-historical-ledger-and-native-replay",
+      "default": "pinned-historical-ledger-and-native-replay",
+      "title": "Source Validation",
+      "type": "string"
+    },
+    "vulnerability_total": {
+      "default": null,
+      "title": "Vulnerability Total",
+      "type": "null"
+    }
+  },
+  "required": [
+    "plan_sha256",
+    "analysis_sources",
+    "rows",
+    "attempts",
+    "reviews",
+    "limitations"
+  ],
+  "title": "ScoreReport",
+  "type": "object"
+}

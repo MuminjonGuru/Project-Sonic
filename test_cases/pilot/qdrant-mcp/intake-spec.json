@@ -1,0 +1,14 @@
+{
+  "contract": "repository-intake-spec-v1",
+  "source_label": "https://github.com/qdrant/mcp-server-qdrant",
+  "revision": "c56ae5adf62bb78d852bf7bbcbc5d7b75e2bbe41",
+  "root_tree": "dc6a6cfc205a379273aa92d5de841f126e32b161",
+  "archive_sha256": "6f6514a0b16d8bda332afb3533c7ca06d6c385e3b8e064f1b714adbad776a583",
+  "raw_commit_sha256": "23ee43fcd1643837cf640609eff78be492d5e4cf7721632299ab8585b743a4ac",
+  "tree_response_sha256": "39abadb67ab6517a3defb5559af7de0409c13feb1164cce51ec1de226500c6f4",
+  "expected_files": 34,
+  "expected_bytes": 539332,
+  "license_status": "identified",
+  "role": "formative-pilot",
+  "source_scanning_authorization": "not-granted"
+}

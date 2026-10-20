@@ -9,6 +9,7 @@ from pydantic import Field, StrictInt, model_validator
 
 from agentsec_evidence.benchmarks.models import Identifier
 from agentsec_evidence.models.contracts import Sha256
+from agentsec_evidence.pilot.models import PilotRow
 from agentsec_evidence.research.models import ResearchModel
 from agentsec_evidence.research.retained import RetainedManifest
 
@@ -417,16 +418,351 @@ class DependencyProgress(ResearchModel):
     )
 
 
+class DependencyMutationProgress(ResearchModel):
+    contract: Literal["benchmark-dependency-mutation-progress-v1"] = (
+        "benchmark-dependency-mutation-progress-v1"
+    )
+    plan_sha256: Sha256
+    plan_semantic_sha256: Sha256
+    session: str
+    cells: tuple[DependencyCellProgress, ...]
+    workflow_complete: bool
+    blocked: bool
+    newly_attempted_cells: StrictInt = Field(ge=0, le=9)
+    reused_verified_cells: StrictInt = Field(ge=0, le=9)
+    scoring_implemented: Literal[False] = False
+    analysis_complete: Literal[False] = False
+    limitations: tuple[str, ...] = (
+        "Three existing mutations of one development fixture, not independent repositories",
+        "Post-export changes are injected conditions, not defects attributed to Syft",
+        "Component, identifier and version/relationship consistency are distinct treatments",
+        "Per-stage counts remain separate; workflow completion is not oracle agreement or safety",
+        "Missing identifiers and partial analysis remain visible; failures block without retry",
+        "Replay needs the frozen database and original host paths; no independent-host claim",
+    )
+
+
+class DependencyBoundaryStage(ResearchModel):
+    stage: Literal["lockfile", "syft", "cyclonedx", "osv-direct", "osv-sbom"]
+    state: Literal["complete", "partial", "failed", "unsupported", "not-produced"]
+    package_observations: StrictInt | None = Field(default=None, ge=0)
+    unique_pypi_projections: StrictInt | None = Field(default=None, ge=0)
+    advisory_match_records: StrictInt | None = Field(default=None, ge=0)
+    native_exit_code: StrictInt | None = None
+    output_status: Literal["parsed", "no-report-no-packages", "not-run", "input-parse-failed"]
+
+
+class DependencyBoundaryEvidence(ResearchModel):
+    run_id: DependencyRunId
+    terminal_state: Literal["complete", "partial", "failed"]
+    semantic_sha256: Sha256 | None
+    bundle_files: RetainedManifest
+    snapshot_files: RetainedManifest
+    state: Literal[
+        "completed-with-findings",
+        "completed-without-findings",
+        "partial-analysis",
+        "execution-failed",
+    ]
+    scanner_invocations: Literal[0, 3]
+    finding_records: None = None
+    stages: tuple[DependencyBoundaryStage, ...] = Field(min_length=5, max_length=5)
+    eligible_packages: StrictInt | None = Field(default=None, ge=0)
+    separate_local_packages: StrictInt | None = Field(default=None, ge=0)
+    input_failure: Literal["malformed-lockfile", "unsupported-lockfile-version"] | None = None
+
+
+class DependencyBoundaryFinish(ResearchModel):
+    contract: Literal["benchmark-dependency-boundary-attempt-finish-v1"] = (
+        "benchmark-dependency-boundary-attempt-finish-v1"
+    )
+    attempt_id: AttemptId
+    start_sha256: Sha256
+    ended_at: datetime
+    duration_ns: StrictInt = Field(ge=0)
+    state: SemgrepAttemptState
+    evidence: DependencyBoundaryEvidence | None = None
+    error_kind: Literal["runner-or-verification-error", "keyboard-interrupt"] | None = None
+
+    @model_validator(mode="after")
+    def check_outcome(self) -> Self:
+        if self.evidence is not None:
+            if self.state != self.evidence.state or self.error_kind is not None:
+                raise ValueError("Boundary outcome differs from verified evidence")
+        elif (self.state, self.error_kind) not in {
+            ("execution-failed", "runner-or-verification-error"),
+            ("interrupted", "keyboard-interrupt"),
+        }:
+            raise ValueError("Unverified boundary attempt must remain failed or interrupted")
+        return self
+
+
+class DependencyBoundaryRow(ResearchModel):
+    cell_id: Sha256
+    case_id: Identifier
+    repetition: StrictInt
+    state: Literal[
+        "not-attempted",
+        "completed-with-findings",
+        "completed-without-findings",
+        "partial-analysis",
+        "execution-failed",
+        "interrupted",
+    ]
+    attempt_id: AttemptId | None = None
+    run_id: DependencyRunId | None = None
+    finding_records: None = None
+    scanner_invocations: StrictInt | None = None
+    stages: tuple[DependencyBoundaryStage, ...] | None = None
+    eligible_packages: StrictInt | None = None
+    separate_local_packages: StrictInt | None = None
+    input_failure: Literal["malformed-lockfile", "unsupported-lockfile-version"] | None = None
+    verified_terminal_attempt: bool = False
+
+
+class DependencyBoundaryProgress(ResearchModel):
+    contract: Literal["benchmark-dependency-boundary-progress-v1"] = (
+        "benchmark-dependency-boundary-progress-v1"
+    )
+    plan_sha256: Sha256
+    plan_semantic_sha256: Sha256
+    session: str
+    cells: tuple[DependencyBoundaryRow, ...]
+    workflow_complete: bool
+    blocked: bool
+    newly_attempted_cells: StrictInt = Field(ge=0, le=12)
+    reused_verified_cells: StrictInt = Field(ge=0, le=12)
+    scoring_implemented: Literal[False] = False
+    analysis_complete: Literal[False] = False
+    limitations: tuple[str, ...] = (
+        "Existing empty/unresolved/malformed/unsupported development inputs only",
+        "Expected parser failures remain failed and block the session; no retry or bypass",
+        "Missing scanner reports have null counts, even when native exit says no packages",
+        "Partial evidence is not clean analysis, safety or independent oracle agreement",
+        "No target execution or tool/database refresh; UI and scoring are separate work",
+    )
+
+
+class PublicPilotEvidence(ResearchModel):
+    run_id: Annotated[str, Field(pattern=r"^public-pilot-[0-9a-f]{32}$")]
+    state: Literal["partial-analysis"] = "partial-analysis"
+    manifest_sha256: Sha256
+    semantic_sha256: Sha256
+    finding_records: None = None
+    scanner_invocations: Literal[18] = 18
+    syntax_invocations: Literal[3] = 3
+    rows: tuple[PilotRow, ...] = Field(min_length=18, max_length=18)
+
+
+class PublicPilotFinish(ResearchModel):
+    contract: Literal["benchmark-public-pilot-attempt-finish-v1"] = (
+        "benchmark-public-pilot-attempt-finish-v1"
+    )
+    attempt_id: AttemptId
+    start_sha256: Sha256
+    ended_at: datetime
+    duration_ns: StrictInt = Field(ge=0)
+    state: Literal["partial-analysis", "execution-failed", "interrupted"]
+    evidence: PublicPilotEvidence | None = None
+    error_kind: Literal["runner-or-verification-error", "keyboard-interrupt"] | None = None
+
+    @model_validator(mode="after")
+    def check_outcome(self) -> Self:
+        if self.evidence is not None:
+            if self.state != self.evidence.state or self.error_kind is not None:
+                raise ValueError("Pilot outcome differs from verified evidence")
+        elif (self.state, self.error_kind) not in {
+            ("execution-failed", "runner-or-verification-error"),
+            ("interrupted", "keyboard-interrupt"),
+        }:
+            raise ValueError("Unverified pilot attempt must remain failed or interrupted")
+        return self
+
+
+class PublicPilotRow(ResearchModel):
+    cell_id: Sha256
+    case_id: Identifier
+    repetition: StrictInt = Field(default=1, ge=1, le=1)
+    state: Literal["not-attempted", "partial-analysis", "execution-failed", "interrupted"]
+    attempt_id: AttemptId | None = None
+    run_id: str | None = None
+    finding_records: None = None
+    scanner_invocations: StrictInt | None = None
+    syntax_invocations: StrictInt | None = None
+    rows: tuple[PilotRow, ...] | None = None
+    verified_terminal_attempt: bool = False
+
+
+class PublicPilotProgress(ResearchModel):
+    contract: Literal["benchmark-public-pilot-progress-v1"] = "benchmark-public-pilot-progress-v1"
+    plan_sha256: Sha256
+    plan_semantic_sha256: Sha256
+    session: str
+    cells: tuple[PublicPilotRow, ...] = Field(min_length=1, max_length=1)
+    workflow_complete: bool
+    blocked: bool
+    newly_attempted_cells: StrictInt = Field(ge=0, le=1)
+    reused_verified_cells: StrictInt = Field(ge=0, le=1)
+    scoring_implemented: Literal[False] = False
+    analysis_complete: Literal[False] = False
+    limitations: tuple[str, ...] = (
+        "Whole fixed three-repetition public pilot; never a held-out or independent sample",
+        "Unknown analysis completeness remains partial despite finished workflow",
+        "No heterogeneous finding sum or accuracy score; keep 18 stage rows separate",
+        "Failure/interruption blocks without retry; retained native failure files remain local",
+        "Replay requires original host paths and frozen input resources",
+    )
+
+
+class ResearchPassRow(ResearchModel):
+    key: str
+    role: Literal["research", "repository-policy"]
+    repetition: StrictInt = Field(ge=1, le=2)
+    analysis_state: Literal["not-established", "incomplete"]
+    native_exit_code: Literal[0, 2]
+    finding_records: StrictInt = Field(ge=0)
+    semantic_sha256: Sha256
+
+
+class ResearchEvidence(ResearchModel):
+    run_id: Annotated[str, Field(pattern=r"^research-[0-9a-f]{32}$")]
+    state: Literal["partial-analysis", "refused"]
+    case_state: Literal["observed", "policy-refused", "syntax-refused"]
+    manifest_sha256: Sha256
+    semantic_sha256: Sha256
+    finding_records: None = None
+    scanner_invocations: Literal[0, 2, 4]
+    syntax_invocations: Literal[0, 1]
+    rows: tuple[ResearchPassRow, ...] = Field(max_length=4)
+
+    @model_validator(mode="after")
+    def check_counts(self) -> Self:
+        if self.case_state == "observed":
+            if (
+                self.state != "partial-analysis"
+                or self.syntax_invocations != 1
+                or len(self.rows) not in {2, 4}
+            ):
+                raise ValueError("Observed research case requires partial dual-view evidence")
+            expected = [
+                (r, role)
+                for r in range(1, len(self.rows) // 2 + 1)
+                for role in ("research", "repository-policy")
+            ]
+            if [(r.repetition, r.role) for r in self.rows] != expected or any(
+                r.key != f"{r.role}-{r.repetition}" for r in self.rows
+            ):
+                raise ValueError("Controlled research pass ordering differs")
+        elif (
+            self.state != "refused"
+            or self.rows
+            or self.syntax_invocations != int(self.case_state == "syntax-refused")
+        ):
+            raise ValueError("Refused research case cannot claim scanner evidence")
+        if self.scanner_invocations != len(self.rows):
+            raise ValueError("Research invocation count differs from pass evidence")
+        return self
+
+
+class ResearchFinish(ResearchModel):
+    contract: Literal["benchmark-research-attempt-finish-v1"] = (
+        "benchmark-research-attempt-finish-v1"
+    )
+    attempt_id: AttemptId
+    start_sha256: Sha256
+    ended_at: datetime
+    duration_ns: StrictInt = Field(ge=0)
+    state: Literal["partial-analysis", "refused", "execution-failed", "interrupted"]
+    evidence: ResearchEvidence | None = None
+    error_kind: Literal["runner-or-verification-error", "keyboard-interrupt"] | None = None
+
+    @model_validator(mode="after")
+    def check_outcome(self) -> Self:
+        if self.evidence is not None:
+            if self.state != self.evidence.state or self.error_kind is not None:
+                raise ValueError("Research completion differs from verified evidence")
+        elif (self.state, self.error_kind) not in {
+            ("execution-failed", "runner-or-verification-error"),
+            ("interrupted", "keyboard-interrupt"),
+        }:
+            raise ValueError("Unverified research attempt must remain failed or interrupted")
+        return self
+
+
+class ResearchRow(ResearchModel):
+    cell_id: Sha256
+    case_id: Identifier
+    repetition: Literal[1] = 1
+    state: Literal[
+        "not-attempted", "partial-analysis", "refused", "execution-failed", "interrupted"
+    ]
+    attempt_id: AttemptId | None = None
+    run_id: str | None = None
+    finding_records: None = None
+    scanner_invocations: StrictInt | None = None
+    syntax_invocations: StrictInt | None = None
+    case_state: Literal["observed", "policy-refused", "syntax-refused"] | None = None
+    rows: tuple[ResearchPassRow, ...] | None = None
+    verified_terminal_attempt: bool = False
+
+
+class ResearchProgress(ResearchModel):
+    contract: Literal["benchmark-research-progress-v1"] = "benchmark-research-progress-v1"
+    plan_sha256: Sha256
+    plan_semantic_sha256: Sha256
+    session: str
+    cells: tuple[ResearchRow, ...] = Field(min_length=15, max_length=15)
+    workflow_complete: bool
+    blocked: bool
+    newly_attempted_cells: StrictInt = Field(ge=0, le=15)
+    reused_verified_cells: StrictInt = Field(ge=0, le=15)
+    scoring_implemented: Literal[False] = False
+    analysis_complete: Literal[False] = False
+    limitations: tuple[str, ...] = (
+        "Controlled development evidence, not independent accuracy or held-out evaluation",
+        "Expected findings are frozen but never control execution success",
+        "Keep views/repetitions separate; no aggregated vulnerability count",
+        "Only verified whole-cell reuse; failure/interruption blocks without retry",
+        "Replay requires original host paths and frozen source/rules",
+    )
+
+
 type AdmittedProgress = (
-    BenchmarkProgress | BenchmarkProgressV2 | SemgrepProgress | KicsProgress | DependencyProgress
+    BenchmarkProgress
+    | BenchmarkProgressV2
+    | SemgrepProgress
+    | KicsProgress
+    | DependencyProgress
+    | DependencyMutationProgress
+    | DependencyBoundaryProgress
+    | PublicPilotProgress
+    | ResearchProgress
 )
 type AdmittedFinish = (
-    AttemptFinish | SemgrepAttemptFinish | KicsAttemptFinish | DependencyAttemptFinish
+    AttemptFinish
+    | SemgrepAttemptFinish
+    | KicsAttemptFinish
+    | DependencyAttemptFinish
+    | DependencyBoundaryFinish
+    | PublicPilotFinish
+    | ResearchFinish
 )
 type AdmittedEvidence = (
-    AttemptEvidence | SemgrepAttemptEvidence | KicsAttemptEvidence | DependencyAttemptEvidence
+    AttemptEvidence
+    | SemgrepAttemptEvidence
+    | KicsAttemptEvidence
+    | DependencyAttemptEvidence
+    | DependencyBoundaryEvidence
+    | PublicPilotEvidence
+    | ResearchEvidence
 )
 type AdmittedCellProgress = (
-    CellProgress | SemgrepCellProgress | KicsCellProgress | DependencyCellProgress
+    CellProgress
+    | SemgrepCellProgress
+    | KicsCellProgress
+    | DependencyCellProgress
+    | DependencyBoundaryRow
+    | PublicPilotRow
+    | ResearchRow
 )
 type AdmittedState = AttemptState | SemgrepAttemptState | KicsAttemptState

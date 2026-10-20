@@ -1,0 +1,257 @@
+{
+  "$defs": {
+    "DependencyBoundaryCase": {
+      "additionalProperties": false,
+      "properties": {
+        "case_id": {
+          "enum": [
+            "dev-dependency-empty-v1",
+            "dev-dependency-unresolved-v1",
+            "dev-dependency-malformed-v1",
+            "dev-dependency-unsupported-v1"
+          ],
+          "title": "Case Id",
+          "type": "string"
+        },
+        "expectation_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Expectation Sha256",
+          "type": "string"
+        },
+        "files": {
+          "items": {
+            "$ref": "#/$defs/PlanFile"
+          },
+          "maxItems": 1,
+          "minItems": 1,
+          "title": "Files",
+          "type": "array"
+        },
+        "review_status": {
+          "const": "historical-engineering-expectation-not-independent",
+          "default": "historical-engineering-expectation-not-independent",
+          "title": "Review Status",
+          "type": "string"
+        },
+        "selected_paths": {
+          "default": [
+            "uv.lock"
+          ],
+          "maxItems": 1,
+          "minItems": 1,
+          "prefixItems": [
+            {
+              "const": "uv.lock",
+              "type": "string"
+            }
+          ],
+          "title": "Selected Paths",
+          "type": "array"
+        },
+        "source_family": {
+          "const": "dependency-development-v1",
+          "default": "dependency-development-v1",
+          "title": "Source Family",
+          "type": "string"
+        },
+        "split": {
+          "const": "development-not-held-out",
+          "default": "development-not-held-out",
+          "title": "Split",
+          "type": "string"
+        }
+      },
+      "required": [
+        "case_id",
+        "files",
+        "expectation_sha256"
+      ],
+      "title": "DependencyBoundaryCase",
+      "type": "object"
+    },
+    "DependencyDatabase": {
+      "additionalProperties": false,
+      "properties": {
+        "bytes": {
+          "exclusiveMinimum": 0,
+          "maximum": 2147483648,
+          "title": "Bytes",
+          "type": "integer"
+        },
+        "path": {
+          "maxLength": 512,
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "bytes",
+        "sha256"
+      ],
+      "title": "DependencyDatabase",
+      "type": "object"
+    },
+    "PlanFile": {
+      "additionalProperties": false,
+      "properties": {
+        "bytes": {
+          "maximum": 2097152,
+          "minimum": 0,
+          "title": "Bytes",
+          "type": "integer"
+        },
+        "path": {
+          "maxLength": 512,
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "bytes",
+        "sha256"
+      ],
+      "title": "PlanFile",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "automatic_retries": {
+      "const": 0,
+      "default": 0,
+      "title": "Automatic Retries",
+      "type": "integer"
+    },
+    "cases": {
+      "items": {
+        "$ref": "#/$defs/DependencyBoundaryCase"
+      },
+      "maxItems": 4,
+      "minItems": 1,
+      "title": "Cases",
+      "type": "array"
+    },
+    "contract": {
+      "const": "benchmark-dependency-boundary-plan-v1",
+      "default": "benchmark-dependency-boundary-plan-v1",
+      "title": "Contract",
+      "type": "string"
+    },
+    "database": {
+      "$ref": "#/$defs/DependencyDatabase"
+    },
+    "implementation": {
+      "items": {
+        "$ref": "#/$defs/PlanFile"
+      },
+      "maxItems": 2048,
+      "minItems": 1,
+      "title": "Implementation",
+      "type": "array"
+    },
+    "manual_retries": {
+      "const": 0,
+      "default": 0,
+      "title": "Manual Retries",
+      "type": "integer"
+    },
+    "max_workers": {
+      "const": 1,
+      "default": 1,
+      "title": "Max Workers",
+      "type": "integer"
+    },
+    "mutation": {
+      "default": null,
+      "title": "Mutation",
+      "type": "null"
+    },
+    "order": {
+      "const": "case-order-then-repetition",
+      "default": "case-order-then-repetition",
+      "title": "Order",
+      "type": "string"
+    },
+    "pins": {
+      "items": {
+        "$ref": "#/$defs/PlanFile"
+      },
+      "maxItems": 10,
+      "minItems": 10,
+      "title": "Pins",
+      "type": "array"
+    },
+    "plan_id": {
+      "pattern": "^[a-z0-9][a-z0-9_.-]{0,79}$",
+      "title": "Plan Id",
+      "type": "string"
+    },
+    "protocol_status": {
+      "const": "development-plan-not-confirmatory-freeze",
+      "default": "development-plan-not-confirmatory-freeze",
+      "title": "Protocol Status",
+      "type": "string"
+    },
+    "repetitions": {
+      "maximum": 3,
+      "minimum": 1,
+      "title": "Repetitions",
+      "type": "integer"
+    },
+    "stage_order": {
+      "default": [
+        "osv-direct",
+        "syft",
+        "osv-sbom"
+      ],
+      "maxItems": 3,
+      "minItems": 3,
+      "prefixItems": [
+        {
+          "const": "osv-direct",
+          "type": "string"
+        },
+        {
+          "const": "syft",
+          "type": "string"
+        },
+        {
+          "const": "osv-sbom",
+          "type": "string"
+        }
+      ],
+      "title": "Stage Order",
+      "type": "array"
+    },
+    "target_execution": {
+      "const": false,
+      "default": false,
+      "title": "Target Execution",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "plan_id",
+    "pins",
+    "implementation",
+    "database",
+    "cases",
+    "repetitions"
+  ],
+  "title": "DependencyBoundaryPlan",
+  "type": "object"
+}

@@ -1,0 +1,236 @@
+{
+  "$defs": {
+    "FamilyInventory": {
+      "additionalProperties": false,
+      "properties": {
+        "candidate_file_count": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Candidate File Count"
+        },
+        "family": {
+          "enum": [
+            "python-source",
+            "mcp-config",
+            "agent-config",
+            "instructions",
+            "skill",
+            "memory-context",
+            "identity-permissions",
+            "dependencies",
+            "iac"
+          ],
+          "title": "Family",
+          "type": "string"
+        },
+        "interpretation": {
+          "enum": [
+            "candidates-observed",
+            "no-candidate-recognized",
+            "unknown"
+          ],
+          "title": "Interpretation",
+          "type": "string"
+        },
+        "recognition_support": {
+          "enum": [
+            "filename-candidates",
+            "no-recognizer"
+          ],
+          "title": "Recognition Support",
+          "type": "string"
+        }
+      },
+      "required": [
+        "family",
+        "recognition_support",
+        "candidate_file_count",
+        "interpretation"
+      ],
+      "title": "FamilyInventory",
+      "type": "object"
+    }
+  },
+  "$id": "urn:agentsec-evidence:schema:repository-intake-receipt-v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "author_signature_verification": {
+      "const": "not-performed",
+      "default": "not-performed",
+      "title": "Author Signature Verification",
+      "type": "string"
+    },
+    "content_parsing": {
+      "const": "not-performed",
+      "default": "not-performed",
+      "title": "Content Parsing",
+      "type": "string"
+    },
+    "contract": {
+      "const": "repository-intake-receipt-v1",
+      "default": "repository-intake-receipt-v1",
+      "title": "Contract",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "error": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Error"
+    },
+    "error_type": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Error Type"
+    },
+    "families": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/FamilyInventory"
+      },
+      "title": "Families",
+      "type": "array"
+    },
+    "findings": {
+      "default": null,
+      "title": "Findings",
+      "type": "null"
+    },
+    "inventory_semantic_sha256": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Inventory Semantic Sha256"
+    },
+    "observed_bytes": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Observed Bytes"
+    },
+    "observed_files": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Observed Files"
+    },
+    "origin_authentication": {
+      "const": "not-established",
+      "default": "not-established",
+      "title": "Origin Authentication",
+      "type": "string"
+    },
+    "scanner_invocations": {
+      "const": 0,
+      "default": 0,
+      "title": "Scanner Invocations",
+      "type": "integer"
+    },
+    "source_content_sha256": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Source Content Sha256"
+    },
+    "source_scanning_authorization": {
+      "const": "not-granted",
+      "default": "not-granted",
+      "title": "Source Scanning Authorization",
+      "type": "string"
+    },
+    "spec_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Spec Sha256",
+      "type": "string"
+    },
+    "state": {
+      "enum": [
+        "prepared",
+        "failed",
+        "unsupported"
+      ],
+      "title": "State",
+      "type": "string"
+    },
+    "target_code_executed": {
+      "const": false,
+      "default": false,
+      "title": "Target Code Executed",
+      "type": "boolean"
+    },
+    "unclassified_files": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Unclassified Files"
+    }
+  },
+  "required": [
+    "created_at",
+    "spec_sha256",
+    "state"
+  ],
+  "title": "RepositoryIntakeReceipt",
+  "type": "object"
+}

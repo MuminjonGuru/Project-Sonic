@@ -20,12 +20,16 @@ from agentsec_evidence.benchmarks.models import (
     BenchmarkPlan,
     BenchmarkPlanV2,
     DependencyBenchmarkPlan,
+    DependencyBoundaryPlan,
+    DependencyMutationPlan,
     KicsBenchmarkPlan,
     PlanFile,
     PlannedCase,
     PlannedCell,
     PlannedExpectation,
     PrelaunchRetryPolicy,
+    PublicPilotBenchmarkPlan,
+    ResearchBenchmarkPlan,
     SemgrepBenchmarkPlan,
 )
 from agentsec_evidence.core.identity import semantic_hash, sha256_bytes
@@ -195,14 +199,22 @@ def build_development_plan(
 
 def _parse_plan(data: bytes) -> AdmittedPlan:
     raw = load_agent_json(data, max_bytes=MAX_PLAN_BYTES)
+    if raw.get("contract") == "benchmark-research-plan-v1":
+        return ResearchBenchmarkPlan.model_validate(raw)
     if raw.get("contract") == "benchmark-plan-v2":
         return BenchmarkPlanV2.model_validate(raw)
+    if raw.get("contract") == "benchmark-public-pilot-plan-v1":
+        return PublicPilotBenchmarkPlan.model_validate(raw)
     if raw.get("contract") == "benchmark-semgrep-plan-v1":
         return SemgrepBenchmarkPlan.model_validate(raw)
     if raw.get("contract") == "benchmark-kics-plan-v1":
         return KicsBenchmarkPlan.model_validate(raw)
     if raw.get("contract") == "benchmark-dependency-plan-v1":
         return DependencyBenchmarkPlan.model_validate(raw)
+    if raw.get("contract") == "benchmark-dependency-mutation-plan-v1":
+        return DependencyMutationPlan.model_validate(raw)
+    if raw.get("contract") == "benchmark-dependency-boundary-plan-v1":
+        return DependencyBoundaryPlan.model_validate(raw)
     return BenchmarkPlan.model_validate(raw)
 
 
@@ -215,6 +227,26 @@ def validate_plan(project: Path, path: Path) -> AdmittedPreview:
     project = plain_path(project, directory=True)
     raw = bounded_file(path, MAX_PLAN_BYTES)
     plan = _parse_plan(raw)
+    if isinstance(plan, ResearchBenchmarkPlan):
+        from agentsec_evidence.benchmarks.research_plan import validate_research_plan
+
+        return validate_research_plan(project, path, raw, plan)
+    if isinstance(plan, PublicPilotBenchmarkPlan):
+        from agentsec_evidence.benchmarks.public_pilot_plan import validate_public_pilot_plan
+
+        return validate_public_pilot_plan(project, path, raw, plan)
+    if isinstance(plan, DependencyBoundaryPlan):
+        from agentsec_evidence.benchmarks.dependency_boundary_plan import (
+            validate_dependency_boundary_plan,
+        )
+
+        return validate_dependency_boundary_plan(project, path, raw, plan)
+    if isinstance(plan, DependencyMutationPlan):
+        from agentsec_evidence.benchmarks.dependency_mutation_plan import (
+            validate_dependency_mutation_plan,
+        )
+
+        return validate_dependency_mutation_plan(project, path, raw, plan)
     if isinstance(plan, DependencyBenchmarkPlan):
         from agentsec_evidence.benchmarks.dependency_plan import validate_dependency_plan
 

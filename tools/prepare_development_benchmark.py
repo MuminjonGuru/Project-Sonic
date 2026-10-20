@@ -3,8 +3,11 @@
 import argparse
 from pathlib import Path
 
+from agentsec_evidence.benchmarks.dependency_boundary_plan import build_dependency_boundary_plan
+from agentsec_evidence.benchmarks.dependency_mutation_plan import build_dependency_mutation_plan
 from agentsec_evidence.benchmarks.dependency_plan import build_dependency_plan
 from agentsec_evidence.benchmarks.kics_plan import build_kics_plan
+from agentsec_evidence.benchmarks.models import AdmittedPlan
 from agentsec_evidence.benchmarks.semgrep_plan import build_semgrep_plan
 from agentsec_evidence.benchmarks.service import build_development_plan, plan_bytes
 from agentsec_evidence.research.retained import plain_path
@@ -15,7 +18,14 @@ def main() -> None:
     parser.add_argument("--plan-id", required=True)
     parser.add_argument(
         "--treatment",
-        choices=["agent", "semgrep-first-slice", "kics-g2", "dependency-paired"],
+        choices=[
+            "agent",
+            "semgrep-first-slice",
+            "kics-g2",
+            "dependency-paired",
+            "dependency-mutations",
+            "dependency-boundaries",
+        ],
         default="agent",
     )
     parser.add_argument("--database", help="Frozen database path relative to project workspace")
@@ -47,12 +57,24 @@ def main() -> None:
             )
         ):
             raise ValueError("Output cannot be added to finalized evidence")
-    if args.database is not None and args.treatment != "dependency-paired":
+    if args.database is not None and args.treatment not in {
+        "dependency-paired",
+        "dependency-mutations",
+        "dependency-boundaries",
+    }:
         raise ValueError("Database input applies only to the dependency treatment")
-    if args.treatment == "dependency-paired":
+    plan: AdmittedPlan
+    if args.treatment in {"dependency-paired", "dependency-mutations", "dependency-boundaries"}:
         if args.allow_prelaunch_retry or args.database is None:
             raise ValueError("Dependency requires an explicit frozen database and no retry opt-in")
-        plan = build_dependency_plan(
+        builder = (
+            build_dependency_boundary_plan
+            if args.treatment == "dependency-boundaries"
+            else build_dependency_mutation_plan
+            if args.treatment == "dependency-mutations"
+            else build_dependency_plan
+        )
+        plan = builder(
             project,
             plan_id=args.plan_id,
             case_ids=tuple(args.case_ids),

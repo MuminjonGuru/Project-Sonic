@@ -11,6 +11,7 @@ from typer.testing import CliRunner
 from agentsec_evidence.agents.bundle_validation import validate_agent_bundle
 from agentsec_evidence.agents.development import APPROVED_CASES
 from agentsec_evidence.agents.records import AgentRunDetails
+from agentsec_evidence.agents.url_contrast import CASE_IDS as URL_CONTRAST_CASE_IDS
 from agentsec_evidence.agents.worker import validate_view
 from agentsec_evidence.cli.app import app
 from agentsec_evidence.core.time import utc_now
@@ -193,6 +194,23 @@ def test_bounded_case_admission(tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
     assert details.native_result_count == (1 if case in ADMITTED else None)
     if case not in ADMITTED:
         assert details.blockers and details.assessments[0].finding_count is None
+
+
+@pytest.mark.parametrize("case_id", URL_CONTRAST_CASE_IDS)
+def test_url_contrasts_reuse_isolation_and_distinct_source_family(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, case_id: str
+) -> None:
+    calls = fake_runner(monkeypatch, tmp_path)
+    workspace = tmp_path / "workspace"
+    result = run_agent_scan(AgentScanRequest(PROJECT, workspace, case_id))
+    existing = load_existing_run(workspace, result.run_id)
+    details = validate_agent_bundle(existing)
+    assert calls == ["validation", "scanner"]
+    assert result.terminal_state == RunState.PARTIAL
+    assert details.admitted and details.input_unchanged
+    assert existing.target.revision == "agent-url-contrast-development-v1"
+    assert details.case_id == case_id
+    assert existing.findings[0].rule.native_id == "EXAMPLE-001"
 
 
 @pytest.mark.parametrize(

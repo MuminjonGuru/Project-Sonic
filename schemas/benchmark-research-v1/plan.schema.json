@@ -1,0 +1,185 @@
+{
+  "$defs": {
+    "PlanFile": {
+      "additionalProperties": false,
+      "properties": {
+        "bytes": {
+          "maximum": 2097152,
+          "minimum": 0,
+          "title": "Bytes",
+          "type": "integer"
+        },
+        "path": {
+          "maxLength": 512,
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "bytes",
+        "sha256"
+      ],
+      "title": "PlanFile",
+      "type": "object"
+    },
+    "ResearchCase": {
+      "additionalProperties": false,
+      "properties": {
+        "case_id": {
+          "pattern": "^[a-z0-9][a-z0-9_.-]{0,79}$",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "case_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Case Sha256",
+          "type": "string"
+        },
+        "internal_repetitions": {
+          "maximum": 2,
+          "minimum": 1,
+          "title": "Internal Repetitions",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "case_id",
+        "case_sha256",
+        "internal_repetitions"
+      ],
+      "title": "ResearchCase",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "automatic_retries": {
+      "const": 0,
+      "default": 0,
+      "title": "Automatic Retries",
+      "type": "integer"
+    },
+    "cases": {
+      "items": {
+        "$ref": "#/$defs/ResearchCase"
+      },
+      "maxItems": 15,
+      "minItems": 15,
+      "title": "Cases",
+      "type": "array"
+    },
+    "contract": {
+      "const": "benchmark-research-plan-v1",
+      "default": "benchmark-research-plan-v1",
+      "title": "Contract",
+      "type": "string"
+    },
+    "execution_unit": {
+      "const": "whole-controlled-case",
+      "default": "whole-controlled-case",
+      "title": "Execution Unit",
+      "type": "string"
+    },
+    "implementation": {
+      "items": {
+        "$ref": "#/$defs/PlanFile"
+      },
+      "maxItems": 2048,
+      "minItems": 1,
+      "title": "Implementation",
+      "type": "array"
+    },
+    "manual_retries": {
+      "const": 0,
+      "default": 0,
+      "title": "Manual Retries",
+      "type": "integer"
+    },
+    "max_workers": {
+      "const": 1,
+      "default": 1,
+      "title": "Max Workers",
+      "type": "integer"
+    },
+    "oracle": {
+      "const": "authored-engineering-expectations-not-independent-labels",
+      "default": "authored-engineering-expectations-not-independent-labels",
+      "title": "Oracle",
+      "type": "string"
+    },
+    "order": {
+      "const": "registry-order",
+      "default": "registry-order",
+      "title": "Order",
+      "type": "string"
+    },
+    "pins": {
+      "items": {
+        "$ref": "#/$defs/PlanFile"
+      },
+      "maxItems": 6,
+      "minItems": 6,
+      "title": "Pins",
+      "type": "array"
+    },
+    "plan_id": {
+      "pattern": "^[a-z0-9][a-z0-9_.-]{0,79}$",
+      "title": "Plan Id",
+      "type": "string"
+    },
+    "repetitions": {
+      "const": 1,
+      "default": 1,
+      "title": "Repetitions",
+      "type": "integer"
+    },
+    "rule_files": {
+      "items": {
+        "$ref": "#/$defs/PlanFile"
+      },
+      "maxItems": 69,
+      "minItems": 69,
+      "title": "Rule Files",
+      "type": "array"
+    },
+    "rule_source": {
+      "title": "Rule Source",
+      "type": "string"
+    },
+    "source_family": {
+      "const": "controlled-research-runner",
+      "default": "controlled-research-runner",
+      "title": "Source Family",
+      "type": "string"
+    },
+    "split": {
+      "const": "development-not-held-out",
+      "default": "development-not-held-out",
+      "title": "Split",
+      "type": "string"
+    },
+    "target_execution": {
+      "const": false,
+      "default": false,
+      "title": "Target Execution",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "plan_id",
+    "pins",
+    "implementation",
+    "rule_source",
+    "rule_files",
+    "cases"
+  ],
+  "title": "ResearchBenchmarkPlan",
+  "type": "object"
+}

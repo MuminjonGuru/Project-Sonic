@@ -1,0 +1,342 @@
+{
+  "$defs": {
+    "PilotRow": {
+      "additionalProperties": false,
+      "properties": {
+        "duration_ns": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Duration Ns"
+        },
+        "evidence": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Evidence",
+          "type": "array"
+        },
+        "exit_code": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Exit Code"
+        },
+        "finding_records": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Finding Records"
+        },
+        "package_identities": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Package Identities"
+        },
+        "reasons": {
+          "default": [
+            "not-attempted"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "title": "Reasons",
+          "type": "array"
+        },
+        "repetition": {
+          "maximum": 3,
+          "minimum": 1,
+          "title": "Repetition",
+          "type": "integer"
+        },
+        "semantic_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Semantic Sha256"
+        },
+        "stage": {
+          "$ref": "#/$defs/PilotStage"
+        },
+        "state": {
+          "default": "not-run",
+          "enum": [
+            "not-run",
+            "refused",
+            "failed",
+            "partial",
+            "complete"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "unit": {
+          "enum": [
+            "native-rule-reports",
+            "package-advisory-occurrences",
+            "package-identities"
+          ],
+          "title": "Unit",
+          "type": "string"
+        }
+      },
+      "required": [
+        "repetition",
+        "stage",
+        "unit"
+      ],
+      "title": "PilotRow",
+      "type": "object"
+    },
+    "PilotStage": {
+      "enum": [
+        "semgrep-research",
+        "semgrep-policy",
+        "agent-audit",
+        "osv-direct",
+        "syft",
+        "osv-sbom"
+      ],
+      "type": "string"
+    },
+    "PublicPilotRow": {
+      "additionalProperties": false,
+      "properties": {
+        "attempt_id": {
+          "anyOf": [
+            {
+              "pattern": "^attempt_[0-9a-f]{32}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Attempt Id"
+        },
+        "case_id": {
+          "pattern": "^[a-z0-9][a-z0-9_.-]{0,79}$",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "cell_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Cell Id",
+          "type": "string"
+        },
+        "finding_records": {
+          "default": null,
+          "title": "Finding Records",
+          "type": "null"
+        },
+        "repetition": {
+          "default": 1,
+          "maximum": 1,
+          "minimum": 1,
+          "title": "Repetition",
+          "type": "integer"
+        },
+        "rows": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/PilotRow"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rows"
+        },
+        "run_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Run Id"
+        },
+        "scanner_invocations": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Scanner Invocations"
+        },
+        "state": {
+          "enum": [
+            "not-attempted",
+            "partial-analysis",
+            "execution-failed",
+            "interrupted"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "syntax_invocations": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Syntax Invocations"
+        },
+        "verified_terminal_attempt": {
+          "default": false,
+          "title": "Verified Terminal Attempt",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "cell_id",
+        "case_id",
+        "state"
+      ],
+      "title": "PublicPilotRow",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "analysis_complete": {
+      "const": false,
+      "default": false,
+      "title": "Analysis Complete",
+      "type": "boolean"
+    },
+    "blocked": {
+      "title": "Blocked",
+      "type": "boolean"
+    },
+    "cells": {
+      "items": {
+        "$ref": "#/$defs/PublicPilotRow"
+      },
+      "maxItems": 1,
+      "minItems": 1,
+      "title": "Cells",
+      "type": "array"
+    },
+    "contract": {
+      "const": "benchmark-public-pilot-progress-v1",
+      "default": "benchmark-public-pilot-progress-v1",
+      "title": "Contract",
+      "type": "string"
+    },
+    "limitations": {
+      "default": [
+        "Whole fixed three-repetition public pilot; never a held-out or independent sample",
+        "Unknown analysis completeness remains partial despite finished workflow",
+        "No heterogeneous finding sum or accuracy score; keep 18 stage rows separate",
+        "Failure/interruption blocks without retry; retained native failure files remain local",
+        "Replay requires original host paths and frozen input resources"
+      ],
+      "items": {
+        "type": "string"
+      },
+      "title": "Limitations",
+      "type": "array"
+    },
+    "newly_attempted_cells": {
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Newly Attempted Cells",
+      "type": "integer"
+    },
+    "plan_semantic_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Plan Semantic Sha256",
+      "type": "string"
+    },
+    "plan_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Plan Sha256",
+      "type": "string"
+    },
+    "reused_verified_cells": {
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Reused Verified Cells",
+      "type": "integer"
+    },
+    "scoring_implemented": {
+      "const": false,
+      "default": false,
+      "title": "Scoring Implemented",
+      "type": "boolean"
+    },
+    "session": {
+      "title": "Session",
+      "type": "string"
+    },
+    "workflow_complete": {
+      "title": "Workflow Complete",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "plan_sha256",
+    "plan_semantic_sha256",
+    "session",
+    "cells",
+    "workflow_complete",
+    "blocked",
+    "newly_attempted_cells",
+    "reused_verified_cells"
+  ],
+  "title": "PublicPilotProgress",
+  "type": "object"
+}

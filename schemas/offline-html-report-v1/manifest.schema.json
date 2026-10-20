@@ -1,0 +1,157 @@
+{
+  "$defs": {
+    "HtmlFile": {
+      "additionalProperties": false,
+      "properties": {
+        "bytes": {
+          "maximum": 67108864,
+          "minimum": 1,
+          "title": "Bytes",
+          "type": "integer"
+        },
+        "path": {
+          "enum": [
+            "report.html",
+            "evidence/report.json",
+            "evidence/results.sarif",
+            "evidence/review.json"
+          ],
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "sha256",
+        "bytes"
+      ],
+      "title": "HtmlFile",
+      "type": "object"
+    },
+    "HtmlInput": {
+      "additionalProperties": false,
+      "properties": {
+        "bytes": {
+          "maximum": 67108864,
+          "minimum": 1,
+          "title": "Bytes",
+          "type": "integer"
+        },
+        "group": {
+          "enum": [
+            "report",
+            "review"
+          ],
+          "title": "Group",
+          "type": "string"
+        },
+        "name": {
+          "enum": [
+            "report.json",
+            "results.sarif",
+            "report-manifest.json",
+            "review.json",
+            "review-manifest.json"
+          ],
+          "title": "Name",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "group",
+        "name",
+        "sha256",
+        "bytes"
+      ],
+      "title": "HtmlInput",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "contract": {
+      "const": "offline-html-report-v1",
+      "default": "offline-html-report-v1",
+      "title": "Contract",
+      "type": "string"
+    },
+    "entries": {
+      "items": {
+        "$ref": "#/$defs/HtmlFile"
+      },
+      "maxItems": 4,
+      "minItems": 1,
+      "title": "Entries",
+      "type": "array"
+    },
+    "evidence_mode": {
+      "const": "retained-report-no-new-scan",
+      "default": "retained-report-no-new-scan",
+      "title": "Evidence Mode",
+      "type": "string"
+    },
+    "input_files": {
+      "items": {
+        "$ref": "#/$defs/HtmlInput"
+      },
+      "maxItems": 5,
+      "minItems": 3,
+      "title": "Input Files",
+      "type": "array"
+    },
+    "original_sources_revalidated": {
+      "const": false,
+      "default": false,
+      "title": "Original Sources Revalidated",
+      "type": "boolean"
+    },
+    "renderer_sources": {
+      "additionalProperties": {
+        "pattern": "^[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "title": "Renderer Sources",
+      "type": "object"
+    },
+    "report_manifest_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Report Manifest Sha256",
+      "type": "string"
+    },
+    "review_provided": {
+      "title": "Review Provided",
+      "type": "boolean"
+    },
+    "sensitivity": {
+      "const": "internal-not-release-cleared",
+      "default": "internal-not-release-cleared",
+      "title": "Sensitivity",
+      "type": "string"
+    },
+    "validation_scope": {
+      "const": "common-report-derivative-and-optional-review-bindings",
+      "default": "common-report-derivative-and-optional-review-bindings",
+      "title": "Validation Scope",
+      "type": "string"
+    }
+  },
+  "required": [
+    "report_manifest_sha256",
+    "review_provided",
+    "input_files",
+    "renderer_sources",
+    "entries"
+  ],
+  "title": "HtmlManifest",
+  "type": "object"
+}

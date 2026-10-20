@@ -1,0 +1,451 @@
+{
+  "contract": "agent-to-agent-repair-cases-v1",
+  "scope": "Authored development syntax contrasts only; not held-out or public accuracy evidence",
+  "expectation_provenance": "AI-authored expectations from the bounded syntax contract before native rehearsal; not independent labels or mentor approval",
+  "cases": [
+    {
+      "id": "fixed-call",
+      "source": "agent.call('worker')\n",
+      "rules": [],
+      "inventory": [
+        "A2A-001"
+      ]
+    },
+    {
+      "id": "dynamic-call",
+      "source": "agent1.call(agent2)\n",
+      "rules": [],
+      "inventory": [
+        "A2A-001"
+      ]
+    },
+    {
+      "id": "route",
+      "source": "agent.route(task=agent3)\n",
+      "rules": [],
+      "inventory": [
+        "A2A-001"
+      ]
+    },
+    {
+      "id": "forward",
+      "source": "agent.forward(agent=agent2, data=memory)\n",
+      "rules": [],
+      "inventory": [
+        "A2A-001"
+      ]
+    },
+    {
+      "id": "select-model",
+      "source": "agent.select(agent=llm.choose())\n",
+      "rules": [],
+      "inventory": [
+        "A2A-001"
+      ]
+    },
+    {
+      "id": "member-receiver",
+      "source": "self.agent2.call(other)\n",
+      "rules": [],
+      "inventory": [
+        "A2A-001"
+      ]
+    },
+    {
+      "id": "fixed-update",
+      "source": "agent.update(prompt='I am agent1')\n",
+      "rules": [],
+      "inventory": [
+        "A2A-002"
+      ]
+    },
+    {
+      "id": "dynamic-update",
+      "source": "agent.update(prompt=f'I am {name}')\n",
+      "rules": [],
+      "inventory": [
+        "A2A-002"
+      ]
+    },
+    {
+      "id": "rewrite",
+      "source": "agent.rewrite_system_prompt(agent=agent2)\n",
+      "rules": [],
+      "inventory": [
+        "A2A-002"
+      ]
+    },
+    {
+      "id": "impersonate-name",
+      "source": "agent.impersonate(agent=agent2)\n",
+      "rules": [],
+      "inventory": [
+        "A2A-002"
+      ]
+    },
+    {
+      "id": "authorize",
+      "source": "agent1.authorize(agent2)\n",
+      "rules": [],
+      "inventory": [
+        "A2A-003"
+      ]
+    },
+    {
+      "id": "trust",
+      "source": "agent2.trust(agent3)\n",
+      "rules": [],
+      "inventory": [
+        "A2A-003"
+      ]
+    },
+    {
+      "id": "trust-chain",
+      "source": "agent.trust_chain(agent=agent2)\n",
+      "rules": [],
+      "inventory": [
+        "A2A-003"
+      ]
+    },
+    {
+      "id": "fixed-verify",
+      "source": "agent.verify(agent2)\n",
+      "rules": [],
+      "inventory": [
+        "A2A-005"
+      ]
+    },
+    {
+      "id": "sign",
+      "source": "agent.sign(agent2, task)\n",
+      "rules": [],
+      "inventory": [
+        "A2A-005"
+      ]
+    },
+    {
+      "id": "share-memory",
+      "source": "agent.share_memory(to=agent2)\n",
+      "rules": [],
+      "inventory": [
+        "A2A-004"
+      ]
+    },
+    {
+      "id": "state-copy",
+      "source": "agent2.context = agent1.memory\n",
+      "rules": [],
+      "inventory": [
+        "A2A-004"
+      ]
+    },
+    {
+      "id": "annotated-state",
+      "source": "agent.context: object = agent2.state\n",
+      "rules": [],
+      "inventory": [
+        "A2A-004"
+      ]
+    },
+    {
+      "id": "role-copy",
+      "source": "agent.role = agent2.role\n",
+      "rules": [],
+      "inventory": [
+        "A2A-105"
+      ]
+    },
+    {
+      "id": "permission-copy",
+      "source": "agent.permissions = agent2.permissions\n",
+      "rules": [],
+      "inventory": [
+        "A2A-105"
+      ]
+    },
+    {
+      "id": "same-object-copy",
+      "source": "agent.role = agent.role\n",
+      "rules": [],
+      "inventory": [
+        "A2A-105"
+      ]
+    },
+    {
+      "id": "langchain-import",
+      "source": "import langchain_core as lc\n",
+      "rules": [],
+      "inventory": [
+        "A2A-007"
+      ]
+    },
+    {
+      "id": "autogen-import",
+      "source": "from autogen_agentchat import teams\n",
+      "rules": [],
+      "inventory": [
+        "A2A-008"
+      ]
+    },
+    {
+      "id": "both-frameworks",
+      "source": "import langgraph, autogen\n",
+      "rules": [],
+      "inventory": [
+        "A2A-007",
+        "A2A-008"
+      ]
+    },
+    {
+      "id": "relative-import",
+      "source": "from .langchain import AgentExecutor\n",
+      "rules": [],
+      "inventory": []
+    },
+    {
+      "id": "fake-framework",
+      "source": "import autogen_fake\n",
+      "rules": [],
+      "inventory": []
+    },
+    {
+      "id": "persist",
+      "source": "agent.save_a2a_config()\n",
+      "rules": [],
+      "inventory": []
+    },
+    {
+      "id": "persist-exact",
+      "source": "save_a2a(state)\n",
+      "rules": [],
+      "inventory": [
+        "A2A-010"
+      ]
+    },
+    {
+      "id": "persist-attribute",
+      "source": "storage.write_a2a_config(data)\n",
+      "rules": [],
+      "inventory": [
+        "A2A-010"
+      ]
+    },
+    {
+      "id": "persist-variant",
+      "source": "agent.persist_a2a(data)\n",
+      "rules": [],
+      "inventory": [
+        "A2A-010"
+      ]
+    },
+    {
+      "id": "nested",
+      "source": "agent.call(agent2.call(agent3))\n",
+      "rules": [],
+      "inventory": [
+        "A2A-001",
+        "A2A-101"
+      ]
+    },
+    {
+      "id": "nested-multiple",
+      "source": "agent.call(agent2.call(), agent3.call())\n",
+      "rules": [],
+      "inventory": [
+        "A2A-001",
+        "A2A-101"
+      ]
+    },
+    {
+      "id": "nested-await",
+      "source": "async def f():\n    agent.forward(data=await agent2.call())\n",
+      "rules": [],
+      "inventory": [
+        "A2A-001",
+        "A2A-101"
+      ]
+    },
+    {
+      "id": "nested-helper",
+      "source": "agent.call(helper())\n",
+      "rules": [],
+      "inventory": [
+        "A2A-001"
+      ]
+    },
+    {
+      "id": "nested-list",
+      "source": "agent.call([agent2.call()])\n",
+      "rules": [],
+      "inventory": [
+        "A2A-001"
+      ]
+    },
+    {
+      "id": "nested-lambda",
+      "source": "agent.call(callback=lambda: agent2.call())\n",
+      "rules": [],
+      "inventory": [
+        "A2A-001"
+      ]
+    },
+    {
+      "id": "response-attribute",
+      "source": "agent.route(task=agent2.response)\n",
+      "rules": [],
+      "inventory": [
+        "A2A-001"
+      ]
+    },
+    {
+      "id": "unrecognized-receiver",
+      "source": "worker.call(agent2)\n",
+      "rules": [],
+      "inventory": []
+    },
+    {
+      "id": "factory-receiver",
+      "source": "make_agent().call(agent2)\n",
+      "rules": [],
+      "inventory": []
+    },
+    {
+      "id": "number-nearmiss",
+      "source": "agent02.call(agent2)\n",
+      "rules": [],
+      "inventory": []
+    },
+    {
+      "id": "ordinary-helper",
+      "source": "def calculate(x):\n    return x + 1\n",
+      "rules": [],
+      "inventory": []
+    },
+    {
+      "id": "comment-only",
+      "source": "# agent.call(agent2); agent.role = agent2.role\n",
+      "rules": [],
+      "inventory": []
+    },
+    {
+      "id": "string-only",
+      "source": "text='agent.call(agent2); I am agent1'\n",
+      "rules": [],
+      "inventory": []
+    },
+    {
+      "id": "plain-source",
+      "source": "x = 1\n",
+      "rules": [],
+      "inventory": []
+    },
+    {
+      "id": "expanded-args",
+      "source": "agent.call(*values, **options)\n",
+      "rules": [],
+      "inventory": [
+        "A2A-001"
+      ]
+    },
+    {
+      "id": "duplicate-key",
+      "source": "agent.call(task=first, task=second)\n",
+      "rules": [],
+      "inventory": [
+        "A2A-001"
+      ]
+    },
+    {
+      "id": "unknown-update",
+      "source": "agent.update(response=answer)\n",
+      "rules": [],
+      "inventory": []
+    },
+    {
+      "id": "unknown-method",
+      "source": "agent.run(agent2)\n",
+      "rules": [],
+      "inventory": []
+    },
+    {
+      "id": "property-call",
+      "source": "agent.role = get_role()\n",
+      "rules": [],
+      "inventory": []
+    },
+    {
+      "id": "property-mismatch",
+      "source": "agent.role = agent2.permissions\n",
+      "rules": [],
+      "inventory": []
+    },
+    {
+      "id": "property-tuple",
+      "source": "agent.role, other = values\n",
+      "rules": [],
+      "inventory": []
+    },
+    {
+      "id": "property-augmented",
+      "source": "agent.permissions += agent2.permissions\n",
+      "rules": [],
+      "inventory": []
+    },
+    {
+      "id": "annotation-only",
+      "source": "x: agent.call()\n",
+      "rules": [],
+      "inventory": []
+    },
+    {
+      "id": "type-alias",
+      "source": "type Alias = agent.call()\n",
+      "rules": [],
+      "inventory": []
+    },
+    {
+      "id": "comprehension",
+      "source": "[agent.call(x) for x in values]\n",
+      "rules": [],
+      "inventory": []
+    },
+    {
+      "id": "secret-canary",
+      "source": "agent.forward(PRIVATE_KEY='DO_NOT_EXPORT_SECRET')\n",
+      "rules": [],
+      "inventory": [
+        "A2A-001"
+      ]
+    },
+    {
+      "id": "multiline",
+      "source": "agent.call(\n    agent2,\n    task='fixed'\n)\n",
+      "rules": [],
+      "inventory": [
+        "A2A-001"
+      ]
+    },
+    {
+      "id": "unreachable-import",
+      "source": "if False:\n    import langchain\n",
+      "rules": [],
+      "inventory": [
+        "A2A-007"
+      ]
+    },
+    {
+      "id": "wildcard",
+      "source": "from elsewhere import *\nagent.call(agent2)\n",
+      "rules": [],
+      "inventory": [
+        "A2A-001"
+      ]
+    },
+    {
+      "id": "malformed",
+      "source": "def broken(:\n",
+      "rules": null,
+      "inventory": []
+    }
+  ]
+}

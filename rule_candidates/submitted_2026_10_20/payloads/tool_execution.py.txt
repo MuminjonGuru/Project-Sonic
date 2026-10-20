@@ -1,0 +1,665 @@
+"""
+tool_execution.py
+
+Security scanner for AI agent tool execution patterns:
+- eval/exec usage (code injection)
+- shell command execution (shell, subprocess, os.system, etc.)
+- tool parameters reaching eval/exec (command injection, LLM-driven codegen)
+- safe/unsafe patterns across agent frameworks (LangChain, AutoGen, LlamaIndex, etc.)
+
+Designed for integration into a broader scanner platform — supports pluggable rules,
+CI mode, risk scoring, and differential scanning.
+
+Version: 0.4.0
+"""
+
+from _future_ import annotations
+
+_doc_ = """
+Tool execution scanner for AI agents.
+
+Detects unsafe eval/exec, shell commands, and parameter flows leading to code execution.
+Designed for LangChain, AutoGen, LlamaIndex, MCP, and custom agents.
+"""
+
+_version_ = "0.4.0"
+
+import ast
+import re
+import os
+import json
+import importlib.util
+from pathlib import Path
+from dataclasses import dataclass, field
+from typing import List, Dict, Any, Optional, Tuple, Callable, Union
+from enum import Enum
+from datetime import datetime
+
+
+
+# === CORE TYPES ===
+
+class Severity(Enum):
+    CRITICAL = "critical"
+    HIGH = "high"
+    MEDIUM = "medium"
+    LOW = "low"
+
+
+
+class Category(Enum):
+    CODE_INJECTION = "code_injection"
+    SHELL_INJECTION = "shell_injection"
+    PARAM_FLOW = "param_flow"
+    LLM_DRIVEN_EXEC = "llm_driven_execution"
+
+
+
+@dataclass
+class Finding:
+    id: str
+    title: str
+    severity: Severity
+    category: Category
+    description: str
+    evidence: Dict[str, Any]
+    location: Optional[str] = None
+    rule_id: Optional[str] = None
+    remediation_hint: Optional[str] = None
+    references: List[str] = field(default_factory=list)
+    tags: List[str] = field(default_factory=list)
+    context: Dict[str, Any] = field(default_factory=dict)
+    file_line_range: Optional[Tuple[int, int]] = None
+
+
+
+@dataclass
+class ScannerContext:
+    source_path: Path
+    config: Dict[str, Any] = field(default_factory=dict)
+    rules: List[Dict[str, Any]] = field(default_factory=list)
+
+
+
+# === BUILT-IN RULES ===
+
+SAFE_PATTERNS = [
+    r"eval\s*\(\s*json\.loads",
+    r"eval\s*\(\s*ast\.literal_eval",
+    r"exec\s*\(\s*code\s*,\s*globals\s*=\s*safe_globals",
+]
+
+DEFAULT_RULES = {
+    "tool_execution": {
+        "id_prefix": "TOOL-EXEC",
+        "description": "Detection of eval/exec and shell command execution in AI agents",
+        "rules": [
+            {
+                "id": "TOOL-EXEC-001",
+                "name": "Unsanitized user input reaching eval/exec",
+                "category": Category.CODE_INJECTION,
+                "severity": Severity.CRITICAL,
+                "patterns": [
+                    r"eval\s*\(\s*(?P<input>\$?\{?.*user.*\}?)",
+                    r"exec\s*\(\s*(?P<input>.*)",
+                    r"ast\.eval\(.*user",
+                    r"exec_globals\s*=\s*globals\(\)",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "code_snippet": _extract_snippet(node),
+                    "input_source": match.group("input") if match else None,
+                    "line": node.lineno,
+                    "function": node.func.id if hasattr(node.func, "id") else "unknown",
+                },
+                "remediation_hint": "Sanitize user inputs before eval/exec. Consider AST parsing or whitelisted ops.",
+            },
+            {
+                "id": "TOOL-EXEC-002",
+                "name": "eval/exec with dynamic code from LLM or config",
+                "category": Category.LLM_DRIVEN_EXEC,
+                "severity": Severity.HIGH,
+                "patterns": [
+                    r"eval\s*\(\s*response\.choices\[0\]\.message\.content",
+                    r"exec\s*\(\s*llm_result\.output",
+                    r"eval\s*\(\s*agent\.response",
+                    r"eval\s*\(\s*\$\{.*llm.*\}",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "source": match.group(0).split("(")[0].strip() if match else "LLM output",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Restrict LLM outputs: validate JSON, enforce schema, avoid raw text injection.",
+            },
+            {
+                "id": "TOOL-EXEC-003",
+                "name": "shell command execution (subprocess/os.system)",
+                "category": Category.SHELL_INJECTION,
+                "severity": Severity.HIGH,
+                "patterns": [
+                    r"subprocess\.run\s*\(\s*(?P<cmd>.*shell\s*=\s*True)",
+                    r"os\.system\s*\(\s*(?P<cmd>.+)",
+                    r"Popen.*shell\s*=\s*True",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "shell_flag": match.group("cmd") if match and "shell" in match.group("cmd") else True,
+                    "line": node.lineno,
+                    "command_pattern": _extract_cmd_pattern(node),
+                },
+                "remediation_hint": "Prefer `shell=False` where possible; avoid string concatenation in commands.",
+            },
+            {
+                "id": "TOOL-EXEC-004",
+                "name": "Tool parameters reaching exec/eval (command injection)",
+                "category": Category.PARAM_FLOW,
+                "severity": Severity.MEDIUM,
+                "patterns": [
+                    r"\.run_tool\s*\(\s*command\s*=\s*\$?\{?\w*\s*user",
+                    r"execute_tool\(.*args=.*user_input",
+                    r"invoke_tool\(.*cmd=\$?.*eval",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "tool_name": match.group("tool") if match else "unknown",
+                    "parameter": match.group("cmd") if match else "command",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Validate tool params before execution; sanitize paths, flags, and arguments.",
+            },
+            {
+                "id": "TOOL-EXEC-005",
+                "name": "Dynamic imports/`_import_` + eval/exec chain",
+                "category": Category.CODE_INJECTION,
+                "severity": Severity.MEDIUM,
+                "patterns": [
+                    r"_import_\s*\(\s*(?P<mod>.*user)",
+                    r"importlib\.import_module\s*\(\s*(?P<mod>.*user)",
+                    r"globals\(\)\[.*\]\.eval",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "module": match.group("mod") if match else "unknown",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Restrict dynamic imports; avoid user-controlled module names.",
+            },
+        ],
+        "rule_map": {}, # Populated later
+    }
+}
+
+# Initialize rule_map for quick lookup
+DEFAULT_RULES["tool_execution"]["rule_map"] = {
+    rule["id"]: rule for rule in DEFAULT_RULES["tool_execution"]["rules"]
+}
+
+
+
+# === AST SCANNER (Static Analysis) ===
+
+def scan_ast_file(path: Path, context: ScannerContext) -> List[Finding]:
+    """Scan a single Python file using AST for eval/exec patterns."""
+    findings = []
+    try:
+        source = path.read_text(encoding="utf-8")
+        tree = ast.parse(source, filename=str(path))
+
+        call_nodes = [n for n in ast.walk(tree) if isinstance(n, ast.Call)]
+
+        for node in call_nodes:
+            func_name = _get_call_name(node.func)
+            if not func_name:
+                continue
+
+            func_lower = func_name.lower()
+            if any(f in func_lower for f in ["eval", "exec", "subprocess", "os.system", "import"]):
+                source_snippet = _get_line_snippet(source, node.lineno)
+                for rule in context.rules:
+                    for pattern in rule["patterns"]:
+                        if re.search(pattern, source_snippet, re.IGNORECASE):
+                            evidence = rule["evidence_extractor"](node, None) | {
+                                "file": str(path),
+                                "code_line": source_snippet.strip(),
+                                "safe": is_safe_eval(node),
+                            }
+                            # Adjust severity if safe eval
+                            severity = (
+                                Severity.MEDIUM
+                                if evidence.get("safe")
+                                else rule["severity"]
+                            )
+
+                            findings.append(
+                                Finding(
+                                    id=rule["id"],
+                                    title=rule["name"],
+                                    severity=severity,
+                                    category=rule["category"],
+                                    description=f"Found {func_name} usage matching pattern: {pattern}",
+                                    evidence=evidence,
+                                    location=f"{path}:{node.lineno}",
+                                    rule_id=rule["id"],
+                                    remediation_hint=rule.get("remediation_hint"),
+                                    references=[
+                                        "https://github.com/NVIDIA/SkillSpector",
+                                        "https://owasp.org/www-community/attacks/Code_Injection",
+                                        "https://cwe.mitre.org/data/definitions/95.html",
+                                    ],
+                                    tags=[
+                                        "eval" if "eval" in func_lower else "exec",
+                                        "user-input" if "user" in source_snippet.lower() else "fixed",
+                                        "high-risk" if severity.value in ["critical", "high"] else "moderate",
+                                    ],
+                                    context={"framework": "generic"},
+                                    file_line_range=(node.lineno, node.end_lineno or node.lineno),
+                                )
+                            )
+    except Exception as e:
+        findings.append(
+            Finding(
+                id="TOOL-EXEC-099",
+                title="AST parse failed",
+                severity=Severity.LOW,
+                category=Category.CODE_INJECTION,
+                description=f"Failed to parse {path}: {e}",
+                evidence={"exception": str(e)},
+                context={"path": str(path)},
+            )
+        )
+    return findings
+
+
+
+def _get_call_name(func_node: ast.AST) -> Optional[str]:
+    if isinstance(func_node, ast.Name):
+        return func_node.id
+    if isinstance(func_node, ast.Attribute):
+        return f"{_get_call_name(func_node.value)}.{func_node.attr}"
+    if isinstance(func_node, ast.Call):
+        return f"{_get_call_name(func_node.func)}()"
+    return None
+
+
+
+def _get_line_snippet(source: str, lineno: int, context_lines: int = 3) -> str:
+    lines = source.splitlines()
+    start = max(0, lineno - 1 - context_lines)
+    end = min(len(lines), lineno + context_lines)
+    return "\n".join(
+        f"{i + 1:>5} | {line}"
+        for i, line in enumerate(lines[start:end], start=start)
+    )
+
+
+
+def _extract_snippet(node: ast.AST) -> str:
+    if isinstance(node, ast.Call):
+        args_str = ", ".join(ast.unparse(arg) if hasattr(ast, "unparse") else str(arg) for arg in node.args)
+        kwargs_str = ", ".join(
+            f"{kw.arg}={ast.unparse(kw.value)}" if kw.arg else ast.unparse(kw.value)
+            for kw in node.keywords
+        )
+        return f"{_get_call_name(node.func)}({args_str}{', ' if args_str and kwargs_str else ''}{kwargs_str})"
+    return str(node)
+
+
+
+def _extract_cmd_pattern(node: ast.AST) -> str:
+    if isinstance(node, ast.Call):
+        if node.args:
+            first = node.args[0]
+            if isinstance(first, ast.Constant) and isinstance(first.value, str):
+                return first.value
+            if isinstance(first, ast.JoinedStr):
+                return ast.unparse(first)
+    return "unknown"
+
+
+
+def is_safe_eval(node: ast.Call) -> bool:
+    code_snippet = _extract_snippet(node)
+    return any(re.search(p, code_snippet) for p in SAFE_PATTERNS)
+
+
+
+# === IMPORT & TOOL SCANNING ===
+
+def scan_imports_and_tools(path: Path, context: ScannerContext) -> List[Finding]:
+    """Scan for registered tool definitions (LangChain, AutoGen, MCP, etc.)."""
+    findings = []
+    try:
+        source = path.read_text()
+        tree = ast.parse(source)
+
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Assign):
+                for target in node.targets:
+                    if isinstance(target, ast.Name) and target.id.endswith("tools"):
+                        findings.append(
+                            Finding(
+                                id="TOOL-EXEC-IMP-001",
+                                title=f"Detected tools registry: {target.id}",
+                                severity=Severity.MEDIUM,
+                                category=Category.PARAM_FLOW,
+                                description="Found a named tools collection; verify its contents for dynamic execution.",
+                                evidence={"variable": target.id, "value": ast.unparse(node.value)},
+                                location=f"{path}:{node.lineno}",
+                                tags=["registry", "tools"],
+                                context={"type": "assignment"},
+                            )
+                        )
+
+            elif isinstance(node, ast.Call):
+                func_name = _get_call_name(node.func)
+                if func_name and "tool" in func_name.lower() and hasattr(node.func, "id") and node.func.id == "tool":
+                    findings.append(
+                        Finding(
+                            id="TOOL-EXEC-DEC-001",
+                            title=f"Tool decorator used: {func_name}",
+                            severity=Severity.LOW,
+                            category=Category.PARAM_FLOW,
+                            description="Agent may dynamically invoke decorated tools.",
+                            evidence={"decorator": func_name},
+                            location=f"{path}:{node.lineno}",
+                            tags=["decorator", "registration"],
+                        )
+                    )
+    except Exception as e:
+        findings.append(
+            Finding(
+                id="TOOL-EXEC-IMP-999",
+                title="Tool import analysis failed",
+                severity=Severity.LOW,
+                category=Category.PARAM_FLOW,
+                description=str(e),
+                evidence={"exception": str(e)},
+            )
+        )
+    return findings
+
+
+
+# === MCP CONFIG SCANNER ===
+
+def scan_mcp_configs(root: Path, context: ScannerContext) -> List[Finding]:
+    """Scan MCP config files (YAML/JSON) for tool execution risks."""
+    findings = []
+    config_files = list(root.rglob("mcp*.yaml")) + list(root.rglob("mcp*.yml")) + list(root.rglob("mcp*.json"))
+    for cfg_path in config_files:
+        try:
+            text = cfg_path.read_text()
+            data = _load_config(text, cfg_path.suffix)
+            for tool in data.get("tools", []) if isinstance(data, dict) else []:
+                name = tool.get("name", "unnamed")
+                config_str = str(tool)
+                if any(p in config_str.lower() for p in ["eval", "exec", "command", "shell"]):
+                    severity = Severity.HIGH if "shell" in config_str.lower() else Severity.MEDIUM
+                    findings.append(
+                        Finding(
+                            id="TOOL-EXEC-MCP-001",
+                            title=f"Tool '{name}' may execute dynamic code",
+                            severity=severity,
+                            category=Category.PARAM_FLOW,
+                            description=f"MCP tool config contains execution-capable field: {tool.get('type', 'unknown')}",
+                            evidence={
+                                "file": str(cfg_path),
+                                "tool_name": name,
+                                "tool_schema": tool,
+                                "field_match": [k for k in tool.keys() if k.lower() in ["command", "code", "script", "shell"]],
+                            },
+                            location=f"{cfg_path}:{cfg_path.read_text().find(name)}",
+                            rule_id="TOOL-EXEC-MCP-001",
+                            remediation_hint="Pin command interfaces; avoid arbitrary strings passed to `eval/exec`.",
+                            references=["https://github.com/NVIDIA/SkillSpector"],
+                            tags=["MCP", "dynamic-exec"],
+                            context={"config_type": "yaml" if cfg_path.suffix == ".yaml" else "json"},
+                        )
+                    )
+        except Exception as e:
+            findings.append(
+                Finding(
+                    id="TOOL-EXEC-MCP-999",
+                    title=f"Failed to parse MCP config: {cfg_path}",
+                    severity=Severity.LOW,
+                    category=Category.PARAM_FLOW,
+                    description=str(e),
+                    evidence={"path": str(cfg_path)},
+                )
+            )
+    return findings
+
+
+
+def _load_config(text: str, ext: str) -> Dict[str, Any]:
+    if ext in (".json",):
+        return json.loads(text)
+    import yaml
+    return yaml.safe_load(text) or {}
+
+
+
+# === RULE LOADING & MERGING ===
+
+def load_additional_rules(rule_paths: List[Path]) -> List[Dict[str, Any]]:
+    """Load additional rules from YAML/JSON/Python files."""
+    rules = []
+    for path in rule_paths:
+        if not path.exists():
+            continue
+        if path.suffix in (".yaml", ".yml"):
+            import yaml
+            data = yaml.safe_load(path.read_text())
+            rules.extend(data.get("rules", data.get("tool_execution", {}).get("rules", [])))
+        elif path.suffix == ".json":
+            rules.extend(json.load(path))
+        elif path.suffix == ".py":
+            spec = importlib.util.spec_from_file_location("custom_rules", path)
+            mod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(mod)
+            rules.extend(getattr(mod, "RULES", []))
+    return rules
+
+
+
+# === RISK SCORING ===
+
+def compute_risk_score(finding: Finding) -> int:
+    """Compute dynamic risk score (0–100) for a finding."""
+    base = {
+        "critical": 90,
+        "high": 70,
+        "medium": 50,
+        "low": 30,
+    }.get(finding.severity.value, 40)
+
+    # Context modifiers
+    if "LLM" in finding.title:
+        base += 10
+    if "user" in (finding.evidence.get("input_source", "") or ""):
+        base += 20
+    if "shell" in (finding.evidence.get("shell_flag", "") or ""):
+        base += 15
+    if "LLM" in (finding.evidence.get("source", "") or ""):
+        base += 10
+
+    return min(base, 100)
+
+
+
+# === DIFFERENTIAL SCANNING ===
+
+def load_previous_results(cache_path: Path) -> List[Finding]:
+    """Load findings from a previous run (for differential scanning)."""
+    history_path = cache_path / ".scanner_cache" / "tool_execution.json"
+    if history_path.exists():
+        data = json.loads(history_path.read_text())
+        return [Finding(**f) for f in data.get("findings", [])]
+    return []
+
+
+
+def compute_diff(prev: List[Finding], curr: List[Finding]) -> Dict[str, List[Finding]]:
+    """Compute diff between previous and current findings."""
+    prev_ids = {f.id for f in prev}
+    curr_ids = {f.id for f in curr}
+    prev_id_severity = {f.id: f.severity.value for f in prev}
+
+    new = [f for f in curr if f.id not in prev_ids]
+    fixed = [f for f in prev if f.id not in curr_ids]
+    regressed = [
+        f for f in curr
+        if f.id in prev_ids and Severity(f.severity.value).value > Severity(prev_id_severity.get(f.id, "low")).value
+    ]
+
+    return {"new": new, "fixed": fixed, "regressed": regressed}
+
+
+
+# === MAIN ENTRYPOINT ===
+
+def run_tool_execution_scan(
+    source_path: Path,
+    context: Optional[ScannerContext] = None,
+    scan_mcp: bool = True,
+    min_severity: Severity = Severity.LOW,
+    rule_paths: Optional[List[Path]] = None,
+    use_diff: bool = True,
+    cache_path: Optional[Path] = None,
+) -> List[Finding]:
+    """Main entrypoint for tool execution analysis."""
+    ctx = context or ScannerContext(source_path=source_path, rules=DEFAULT_RULES["tool_execution"]["rules"].copy())
+
+    # Merge additional rules
+    if rule_paths:
+        custom_rules = load_additional_rules(rule_paths)
+        ctx.rules.extend(custom_rules)
+
+    all_findings: List[Finding] = []
+
+    py_files = list(source_path.rglob("*.py"))
+    for py_file in py_files:
+        # AST analysis
+        all_findings.extend(scan_ast_file(py_file, ctx))
+
+        # Import/tool scanning
+        all_findings.extend(scan_imports_and_tools(py_file, ctx))
+
+    if scan_mcp:
+        all_findings.extend(scan_mcp_configs(source_path, ctx))
+
+    # Filter by severity
+    all_findings = [f for f in all_findings if f.severity.value >= min_severity.value]
+
+    # Deduplicate
+    seen = set()
+    unique_findings: List[Finding] = []
+    for f in all_findings:
+        key = (f.id, f.location, hash(tuple(sorted(f.evidence.items()))))
+        if key not in seen:
+            seen.add(key)
+            unique_findings.append(f)
+
+    # Optional: differential scanning
+    if use_diff and cache_path:
+        prev_results = load_previous_results(cache_path)
+        diff = compute_diff(prev_results, unique_findings)
+        unique_findings.extend(diff.get("new", []))
+
+    # Sort by risk score
+    unique_findings.sort(key=lambda f: compute_risk_score(f), reverse=True)
+
+    return unique_findings
+
+
+
+# === CLI ===
+
+if _name_ == "_main_":
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description="Scan for tool execution risks in AI agents",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  tool_execution.py . # Scan current directory
+  tool_execution.py ./my_agent --min-severity=high
+  tool_execution.py . --rule-paths rules.yaml --ci
+
+For more info: https://github.com/yourorg/tool-execution-scanner
+""",
+    )
+    parser.add_argument("path", type=Path, help="Project root to scan")
+    parser.add_argument("--no-mcp", action="store_true", help="Skip MCP config scanning")
+    parser.add_argument(
+        "--format", choices=["table", "json", "markdown"], default="table", help="Output format"
+    )
+    parser.add_argument(
+        "--min-severity",
+        choices=["low", "medium", "high", "critical"],
+        default="low",
+        help="Minimum severity to report",
+    )
+    parser.add_argument(
+        "--rule-paths",
+        nargs="*",
+        type=Path,
+        help="Additional rule files (YAML/JSON/Python) to merge into rules",
+    )
+    parser.add_argument(
+        "--ci", action="store_true", help="CI mode: non-interactive, exit non-zero on critical findings"
+    )
+    parser.add_argument(
+        "--cache", type=Path, help="Path to cache for differential scanning (e.g., .scanner_cache/)"
+    )
+    args = parser.parse_args()
+
+    ctx = ScannerContext(
+        source_path=args.path,
+        config={"min_severity": args.min_severity, "rules": args.rule_paths},
+    )
+
+    findings = run_tool_execution_scan(
+        args.path,
+        context=ctx,
+        scan_mcp=not args.no_mcp,
+        min_severity=Severity(args.min_severity),
+        rule_paths=args.rule_paths,
+        use_diff=bool(args.cache),
+        cache_path=args.cache or args.path / ".scanner_cache",
+    )
+
+    if args.format == "json":
+        output = [
+            {
+                **vars(f),
+                "risk_score": compute_risk_score(f),
+            }
+            for f in findings
+        ]
+        print(json.dumps(output, indent=2, default=str))
+    else:
+        print("\n🔧 Tool Execution Scan Results")
+        print("=" * 60)
+
+        for f in findings:
+            risk = compute_risk_score(f)
+            print(f"\n[{f.severity.value.upper()}] {f.id}: {f.title}")
+            print(f" Location: {f.location}")
+            print(f" Risk Score: {risk}/100")
+            print(f" Evidence: {f.evidence.get('code_line', f.evidence.get('tool_name', 'N/A'))}")
+            print(f" Tags: {', '.join(f.tags)}")
+            if f.context:
+                print(f" Context: {f.context}")
+            if f.remediation_hint:
+                print(f" Remediation: {f.remediation_hint}")
+            if f.file_line_range:
+                print(f" Lines: {f.file_line_range[0]}–{f.file_line_range[1]}")
+
+        # CI exit code
+        if args.ci:
+            critical_count = sum(1 for f in findings if f.severity == Severity.CRITICAL)
+            if critical_count > 0:
+                print(f"\n❌ CI fail: {critical_count} critical findings")
+                exit(1)
+            else:
+                print(f"\n✅ CI pass: {len(findings)} total findings")
+
+        print("\n✅ Done.")

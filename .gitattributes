@@ -11,3 +11,6 @@
 *.pdf binary
 *.png binary
 *.zip binary
+
+# Preserve verbatim provenance payloads, including original whitespace defects.
+rule_candidates/**/payloads/*.txt -text -whitespace

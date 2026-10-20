@@ -1,0 +1,819 @@
+"""
+filesystem_access_final.py — Part 1 of 2
+
+Security scanner for AI agent filesystem access — final, production-grade edition.
+
+First half: types, helpers, rule definitions, and base scanner.
+"""
+
+from _future_ import annotations
+
+_doc_ = """
+Filesystem Access scanner (final edition) for AI agents.
+
+Detects dynamic paths, MCP filesystem roots, write-depth, secret hygiene,
+state persistence, and agent-specific patterns like LLM-determined paths.
+"""
+
+_version_ = "1.2.0"
+
+import ast
+import re
+import os
+import json
+import math
+from pathlib import Path
+from dataclasses import dataclass, field
+from typing import List, Dict, Any, Optional, Tuple, Set, Callable
+from enum import Enum
+
+
+
+class Severity(Enum):
+    CRITICAL = "critical"
+    HIGH = "high"
+    MEDIUM = "medium"
+    LOW = "low"
+
+
+
+class Category(Enum):
+    DYNAMIC_PATH = "dynamic_path"
+    MCP_FILESYSTEM_ROOT = "mcp_filesystem_root"
+    WRITE_DEPTH = "write_depth"
+    FILETYPE_RISK = "filetype_risk"
+    SECRET_HYGIENE = "secret_hygiene"
+    STATE_PERSISTENCE = "state_persistence"
+    TRAVERSAL = "traversal"
+    AGENT_NATIVE = "agent_native"
+
+
+
+@dataclass
+class Finding:
+    id: str
+    title: str
+    severity: Severity
+    category: Category
+    description: str
+    evidence: Dict[str, Any]
+    location: Optional[str] = None
+    rule_id: Optional[str] = None
+    remediation_hint: Optional[str] = None
+    references: List[str] = field(default_factory=list)
+    tags: List[str] = field(default_factory=list)
+    context: Dict[str, Any] = field(default_factory=dict)
+
+
+
+@dataclass
+class ScannerContext:
+    source_path: Path
+    config: Dict[str, Any] = field(default_factory=dict)
+    rules: List[Dict[str, Any]] = field(default_factory=list)
+    mcp_roots: List[Dict[str, Any]] = field(default_factory=list)
+    known_safe_paths: List[str] = field(default_factory=list)
+    severity_calculator: Optional[Callable[[Finding], Severity]] = None
+
+
+
+# === PATH ENTROPY & DYNAMISM (NEW) ===
+
+def calculate_path_entropy(path: str) -> float:
+    """
+    Calculate Shannon entropy of a path — higher = more dynamic.
+    e.g., 'logs/{user_id}/{date}/output.json' → high entropy
+    """
+    dynamic_segments = re.findall(r"\$\{.*?\}|\{.*?\}|%\w+%|\$\w+", path)
+    if not dynamic_segments:
+        return 1.0 # Static path
+
+    entropy = 0.0
+    segment_counts: Dict[str, int] = {}
+
+    for seg in dynamic_segments:
+        segment_counts[seg] = segment_counts.get(seg, 0) + 1
+
+    total = len(dynamic_segments)
+    for count in segment_counts.values():
+        p = count / total
+        entropy -= p * math.log2(p)
+
+    return entropy
+
+
+
+def is_path_dynamic(path: str) -> bool:
+    """Return True if path contains dynamic segments."""
+    dynamic_patterns = [r"\{.*?\}", r"\$\{.*?\}", r"%\w+%"]
+    return any(re.search(p, path) for p in dynamic_patterns)
+
+
+
+def calculate_path_volatility(path: str) -> Dict[str, Any]:
+    """Calculate path volatility: how likely a path is to change at runtime."""
+    parts = path.split("/")
+    volatility = 0.0
+    for part in parts:
+        if re.search(r"\{.*?\}", part):
+            volatility += 0.3
+        if re.search(r"\$\{.*?\}", part):
+            volatility += 0.35
+        if re.search(r"\*\*?", part):
+            volatility += 0.25
+    return {
+        "score": min(volatility, 1.0),
+        "high_risk_parts": [
+            p for p in parts if re.search(r"\{.*?\}|\$\{.*?\}|\*\*?", p)
+        ],
+    }
+
+
+
+# === WRITE DEPTH ANALYSIS (NEW) ===
+
+def analyze_write_depth(path: str, base_paths: List[str] = None) -> Dict[str, Any]:
+    """Analyze write depth: how far into the filesystem tree a path goes."""
+    if base_paths is None:
+        base_paths = ["", "/tmp", "/run", "/home", "/app"]
+
+    path_obj = Path(path)
+    parts = [p for p in path_obj.parts if p not in {"", ".", "..", "..\\", "..//"}]
+
+    depth = len(parts)
+    is_deep = depth > 4 # arbitrary but reasonable threshold
+    risk_score = min(100, depth * 15 + (20 if is_deep else 0))
+
+    safe_base = any(str(path_obj).startswith(bp) for bp in base_paths)
+    relative_depth = depth - (1 if safe_base else 0)
+
+    return {
+        "depth": depth,
+        "is_deep": is_deep,
+        "relative_depth": relative_depth,
+        "risk_score": risk_score,
+    }
+
+
+
+# === MCP FILESYSTEM ROOT TRUST MODEL (NEW) ===
+
+def evaluate_mcp_root_trust(root: Dict[str, Any]) -> Dict[str, Any]:
+    """Evaluate MCP filesystem root trust."""
+    permissions = root.get("permissions", [])
+    path = root.get("path", "/")
+    is_explicit_write = "write" in permissions
+    is_wildcard = "**" in path or "*" in path
+
+    trust_score = 0
+    if is_explicit_write:
+        trust_score += 40
+    if is_wildcard:
+        trust_score += 30
+    if not is_explicit_write and not is_wildcard:
+        trust_score += 20 # implicit trust
+
+    return {
+        "explicit_write": is_explicit_write,
+        "wildcard_depth": is_wildcard,
+        "trust_score": trust_score,
+        "risk_level": "high" if trust_score < 40 else "medium" if trust_score < 70 else "low",
+    }
+
+
+
+# === SECRET HYGIENE CHECKER (NEW) ===
+
+SECRET_PATTERNS = {
+    "aws": ["AWS_", "aws_access", "aws_secret", "aws_profile"],
+    "gcp": ["GCP_", "service_account", "gcp_key"],
+    "jwt": ["JWT_", "jwt_secret", "access_token", "refresh_token"],
+    "generic": ["password", "secret", "token", "api_key", "credential", "key"],
+}
+
+FILETYPE_RISK = {
+    "code": {
+        "extensions": [".py", ".js", ".ts", ".sh", ".rb", ".go"],
+        "risk_reason": "Code execution risk (e.g., eval/exec on load)",
+    },
+    "config": {
+        "extensions": [".json", ".yaml", ".yml", ".toml", ".xml"],
+        "risk_reason": "Config parsing may interpret strings as code",
+    },
+    "data": {
+        "extensions": [".csv", ".parquet", ".ndjson", ".jsonl"],
+        "risk_reason": "Large datasets; may contain malicious paths or metadata",
+    },
+    "secrets": {
+        "extensions": [".env", ".secret", ".pem", ".key"],
+        "risk_reason": "Often world-readable or committed to repos",
+    },
+}
+
+
+
+def detect_secrets_in_file(file_content: str) -> List[Dict[str, Any]]:
+    """Detect unmasked secrets in file content (e.g., logs, configs)."""
+    secrets_found = []
+    for cat, patterns in SECRET_PATTERNS.items():
+        for pattern in patterns:
+            matches = re.findall(rf"(?i){pattern}[\s:=]+\s*['\"]?[\w\-\_]+", file_content)
+            if matches:
+                secrets_found.append({
+                    "category": cat,
+                    "pattern": pattern,
+                    "matches": matches[:3], # sample up to 3 matches
+                })
+    return secrets_found
+
+
+
+# === STATE PERSISTENCE DETECTOR (NEW) ===
+
+STATE_PATTERNS = [
+    "state.json",
+    "memory/",
+    "session_",
+    "history",
+    "memory/",
+    "context",
+    "persist",
+    "cache",
+    "snapshot",
+    "workspace",
+]
+
+
+
+def is_state_file(path: Path, name: str = None) -> bool:
+    """Detect if file is likely used for state persistence."""
+    name = name or path.name.lower()
+    return any(p in name for p in STATE_PATTERNS)
+
+
+
+# === TRAVERSAL SAFETY SCORER (NEW) ===
+
+def score_traversal_safety(path: str, base_path: str = None) -> Dict[str, Any]:
+    """Score how safe a traversal-heavy path is."""
+    depth = path.count("..")
+    safe_indicators = [
+        r"\.resolve\(\)",
+        r"os\.path\.commonpath",
+        r"Path\(\).*\.resolve",
+    ]
+    safety_score = 100 - depth * 10
+    for pattern in safe_indicators:
+        if re.search(pattern, path):
+            safety_score += 15
+    safety_score = min(100, safety_score)
+    return {
+        "traversal_depth": depth,
+        "safety_score": safety_score,
+        "is_safe": safety_score >= 60,
+    }
+
+
+
+# === FILETYPE RISK SCORER (NEW) ===
+
+def evaluate_filetype_risk(path: Path, content: Optional[str] = None) -> Dict[str, Any]:
+    """Evaluate risk profile for a file based on extension and content."""
+    ext = path.suffix.lower()
+    risk = FILETYPE_RISK.get(ext.lstrip("."), {"extensions": [ext], "risk_reason": "generic"})
+
+    code_like = False
+    if content:
+        code_like = any(
+            p in content for p in ["eval(", "exec(", "import ", "def ", "class ", "return "]
+        )
+
+    return {
+        "extension": ext,
+        "risk_category": risk["risk_reason"],
+        "code_like": code_like,
+        "risk_score": 80 if ext in [".py"] else 60 if ext in [".yaml", ".yml"] else 40,
+    }
+
+
+
+# === SECURITY SCORING ENGINE (NEW) ===
+
+def compute_risk_score(finding: Finding, context: ScannerContext = None) -> Dict[str, Any]:
+    """Compute dynamic risk score (0–100) and confidence level."""
+    base = {
+        "critical": 90,
+        "high": 70,
+        "medium": 50,
+        "low": 30,
+    }.get(finding.severity.value, 40)
+
+    entropy = finding.evidence.get("path_entropy", 0)
+    entropy_modifier = int(entropy * 15) if isinstance(entropy, float) else 0
+
+    depth = finding.evidence.get("write_depth", {})
+    depth_modifier = (
+        depth.get("risk_score", 0) if isinstance(depth, dict) else depth * 5
+    )
+
+    if "agent" in finding.evidence.get("source", ""):
+        context_modifier = 10
+    elif "llm" in finding.evidence.get("source", ""):
+        context_modifier = 15
+    else:
+        context_modifier = 0
+
+    final_score = min(100, base + entropy_modifier + depth_modifier + context_modifier)
+
+    evidence_items = list(finding.evidence.items())
+    confidence = 0.5 + (len(evidence_items) / 8)
+
+    return {
+        "risk_score": final_score,
+        "entropy_modifier": entropy_modifier,
+        "depth_modifier": depth_modifier,
+        "context_modifier": context_modifier,
+        "confidence": round(confidence, 2),
+    }
+
+
+
+# === RULES (24 RULES) — START — ===
+
+DEFAULT_RULES = {
+    "filesystem_access": {
+        "id_prefix": "FS-ACCESS",
+        "description": "Detection of dynamic filesystem access patterns in AI agents",
+        "rules": [
+            # BASE (001–012)
+            {
+                "id": "FS-ACCESS-001",
+                "name": "Dynamic file path (user/LLM-controlled)",
+                "category": Category.DYNAMIC_PATH,
+                "severity": Severity.HIGH,
+                "patterns": [
+                    r"open\s*\(\s*f['\"].*\$\{.*user",
+                    r"Path\s*\(\s*f['\"].*\$\{.*path",
+                    r"read_text\s*\(\s*path\s*=\s*\$\{",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "path_template": match.group(0)[:60] if match else "dynamic",
+                    "line": node.lineno,
+                    "operation": "read" if "read" in str(node.func) else "write",
+                },
+                "remediation_hint": "Validate dynamic paths against allowlist; avoid concatenating user input directly.",
+            },
+            {
+                "id": "FS-ACCESS-002",
+                "name": "MCP filesystem root with permissive write access",
+                "category": Category.MCP_FILESYSTEM_ROOT,
+                "severity": Severity.HIGH,
+                "patterns": [
+                    r"filesystem_roots\s*:\s*\[.*\{.*write.*\}",
+                    r"permissions\s*:\s*\{.*write.*:\s*\[.*\]",
+                    r"writable_paths\s*:\s*\[.*\{.*\*.*\}",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "root_path": match.group(0)[:50] if match else "unspecified",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Pin filesystem roots; use explicit paths over wildcards.",
+            },
+            {
+                "id": "FS-ACCESS-003",
+                "name": "Write destination controlled by agent or user",
+                "category": Category.WRITE_DEPTH,
+                "severity": Severity.MEDIUM,
+                "patterns": [
+                    r"shutil\.copy\s*\(\s*src\s*=\s*.*dst\s*=\s*\$\{",
+                    r"save_as\s*\(\s*name\s*=\s*user_input",
+                    r"write\s*\(\s*data\s*,\s*path\s*=\s*llm_output",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "destination": match.group(0).split("=")[-1].strip() if match else "unknown",
+                    "line": node.lineno,
+                    "operation": "copy" if "copy" in str(node.func) else "write",
+                },
+                "remediation_hint": "Sanitize write destinations; avoid overwriting critical files (e.g., `config.yaml`).",
+            },
+            {
+                "id": "FS-ACCESS-004",
+                "name": "Filetype risk: code or config file loaded from dynamic source",
+                "category": Category.FILETYPE_RISK,
+                "severity": Severity.MEDIUM,
+                "patterns": [
+                    r"yaml\.load\s*\(\s*loader\s*=\s*yaml\.SafeLoader",
+                    r"importlib\.import_module\s*\(\s*config\.path",
+                    r"exec\s*\(\s*Path\('config\.py'\)\.read_text\(\)",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "filetype": "yaml" if "yaml" in str(node.func) else "code" if "exec" in str(node.func) else "config",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Restrict dynamic filetypes (e.g., only `.json`, `.yaml`); avoid `.py` unless sandboxed.",
+            },
+            {
+                "id": "FS-ACCESS-005",
+                "name": "Path traversal risk (e.g., `/../` in dynamic path)",
+                "category": Category.TRAVERSAL,
+                "severity": Severity.HIGH,
+                "patterns": [
+                    r"open\s*\(\s*f['\"].*\.\./",
+                    r"Path\s*\(\s*user_path\s*\)\.resolve\(\)",
+                    r"joinpath\('..',\s*\$\{.*\}\)",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "traversal_depth": len(re.findall(r"\.\./", match.group(0))) if match else 0,
+                    "line": node.lineno,
+                    "operation": "read" if "read" in str(node.func) else "write",
+                },
+                "remediation_hint": "Sanitize paths with `Path.resolve()` and `os.path.commonpath()`; avoid `/../` in user-controlled inputs.",
+            },
+            {
+                "id": "FS-ACCESS-006",
+                "name": "Secret hygiene: unmasked secrets in logs or config files",
+                "category": Category.SECRET_HYGIENE,
+                "severity": Severity.MEDIUM,
+                "patterns": [
+                    r"log\.info\s*\(\s*f?.*\$\{.*secret\}",
+                    r"write\s*\(\s*data\s*=\s*response\.content\s*#.*token",
+                    r"dump\s*\(\s*secrets\s*=\s*os\.environ",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "secret_pattern": match.group(0).split("secret")[-1][:40] if match else "unknown",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Mask secrets before writing; avoid writing `.env`, `.pem`, or raw API responses to logs.",
+            },
+            {
+                "id": "FS-ACCESS-007",
+                "name": "Shadow write: files written to unexpected paths (e.g., /tmp, /run)",
+                "category": Category.WRITE_DEPTH,
+                "severity": Severity.MEDIUM,
+                "patterns": [
+                    r"write\s*\(\s*path\s*=\s*Path\s*\(.*tmp\)",
+                    r"Path\s*\(\s*f['\"].*run\$\{",
+                    r"open\s*\(\s*'\/tmp\/.*\.log'",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "shadow_path": match.group(0).split("/")[-1] if match else "unknown",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Pin shadow paths to known directories; avoid `/tmp` for sensitive data.",
+            },
+            {
+                "id": "FS-ACCESS-008",
+                "name": "High-entropy dynamic path (complex LLM-generated)",
+                "category": Category.DYNAMIC_PATH,
+                "severity": Severity.HIGH,
+                "patterns": [
+                    r"Path\s*\(\s*f['\"].*\$\{.*user\}\s*-\s*\$\{.*date\}\s*-\s*\$\{.*model\}",
+                    r"joinpath\s*\(\s*user_input\s*,\s*model\s*=\s*llm_output",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "entropy": calculate_path_entropy(match.group(0)[:80]) if match else 2.0,
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Cap max entropy; validate dynamic paths before use.",
+            },
+            {
+                "id": "FS-ACCESS-009",
+                "name": "Write depth analysis: deep write to sensitive directories",
+                "category": Category.WRITE_DEPTH,
+                "severity": Severity.MEDIUM,
+                "patterns": [
+                    r"write\s*\(\s*path\s*=\s*Path\s*\(.*\).resolve\(\)",
+                    r"copytree\s*\(\s*src\s*,\s*dst\s*=\s*f['\"].*etc",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "depth_analysis": analyze_write_depth(match.group(0)[:60]) if match else {"depth": 3},
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Limit write depth for untrusted sources; use `base_path` for sandboxing.",
+            },
+            {
+
+                "id": "FS-ACCESS-010",
+                "name": "MCP root with implicit trust (no explicit permissions)",
+                "category": Category.MCP_FILESYSTEM_ROOT,
+                "severity": Severity.MEDIUM,
+                "patterns": [
+                    r"filesystem_roots\s*:\s*\[.*path.*\{.*\}\]",
+                    r"paths\s*:\s*\[.*data.*\]",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "trust_model": evaluate_mcp_root_trust({}),
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Explicitly declare permissions for all filesystem roots.",
+            },
+            {
+                "id": "FS-ACCESS-011",
+                "name": "Code-as-config: dynamic `.py` or `.yaml` loaded as code",
+                "category": Category.FILETYPE_RISK,
+                "severity": Severity.HIGH,
+                "patterns": [
+                    r"importlib\.import_module\s*\(\s*config\.path",
+                    r"exec\s*\(\s*Path\('config\.py'\)\.read_text\(\)",
+                    r"yaml\.load\s*\(\s*loader\s*=\s*yaml\.SafeLoader",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "filetype": "code" if "exec" in str(node.func) else "config",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Sandbox `.py` loads; avoid `exec` on untrusted content.",
+            },
+            {
+                "id": "FS-ACCESS-012",
+                "name": "State persistence: agent writes to memory or session files",
+                "category": Category.STATE_PERSISTENCE,
+                "severity": Severity.MEDIUM,
+                "patterns": [
+                    r"agent\.save_state\s*\(\s*data\s*=\s*llm_output",
+                    r"session\.write\s*\(\s*data\s*=\s*response\.json\(\)",
+                    r"write_memory\s*\(\s*path\s*=\s*f['\"].*memory",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "state_type": "memory" if "memory" in str(node.func) else "session",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Pin state files to known directories; avoid writing to `/tmp` or user-writable paths.",
+            },
+        ],
+        "rule_map": {},
+    }
+}
+
+# Initialize rule_map
+DEFAULT_RULES["filesystem_access"]["rule_map"] = {
+    rule["id"]: rule for rule in DEFAULT_RULES["filesystem_access"]["rules"]
+}
+
+
+
+# === AST SCANNER (FINAL) — START — ===
+
+def scan_ast_file(path: Path, context: ScannerContext) -> List[Finding]:
+    """Scan Python files for filesystem access patterns (final)."""
+    findings = []
+    try:
+        source = path.read_text(encoding="utf-8")
+        tree = ast.parse(source, filename=str(path))
+
+        call_nodes = [n for n in ast.walk(tree) if isinstance(n, ast.Call)]
+
+        for node in call_nodes:
+            func_name = _get_call_name(node.func)
+            if not func_name:
+                continue
+
+            func_lower = func_name.lower()
+            if any(f in func_lower for f in ["open", "read", "write", "copy", "save", "load"]):
+                source_snippet = _get_line_snippet(source, node.lineno)
+
+                for rule in context.rules:
+                    for pattern in rule["patterns"]:
+                        if re.search(pattern, source_snippet, re.IGNORECASE):
+                            # Compute additional metrics
+                            path_match = re.search(r"(?:Path\(|f['\"].*?)(\$\{.*?\}|\{.*?\}|%.*?%)", source_snippet)
+                            entropy = calculate_path_entropy(source_snippet) if path_match else None
+                            depth_analysis = analyze_write_depth(source_snippet) if "write" in func_lower else {}
+
+                            evidence = rule["evidence_extractor"](node, None) | {
+                                "file": str(path),
+                                "code_line": source_snippet.strip(),
+                                "path_entropy": entropy,
+                                "write_depth": depth_analysis,
+                                "path_volatility": calculate_path_volatility(source_snippet) if path_match else {},
+                                "filetype_risk": evaluate_filetype_risk(path),
+                            }
+
+                            # Adjust severity based on metrics
+                            severity = rule["severity"]
+                            if entropy and entropy > 3.0:
+                                severity = Severity.HIGH
+                            if depth_analysis.get("is_deep"):
+                                severity = Severity.MEDIUM if severity.value == "low" else severity
+
+                            findings.append(
+                                Finding(
+                                    id=rule["id"],
+                                    title=rule["name"],
+                                    severity=severity,
+                                    category=rule["category"],
+                                    description=f"Found {func_name} usage matching pattern: {pattern}",
+                                    evidence=evidence,
+                                    location=f"{path}:{node.lineno}",
+                                    rule_id=rule["id"],
+                                    remediation_hint=rule.get("remediation_hint"),
+                                    references=[
+                                        "https://owasp.org/www-community/vulnerabilities/Insecure_File_Upload",
+                                        "https://cwe.mitre.org/data/definitions/59.html",
+                                    ],
+                                    tags=[
+                                        "dynamic" if "$" in source_snippet else "static",
+                                        "write" if "write" in func_lower else "read",
+                                        "traversal" if ".." in source_snippet else "safe",
+                                        "high-entropy" if entropy and entropy > 2.5 else None,
+                                        "deep-write" if depth_analysis.get("is_deep") else None,
+                                    ],
+                                    context={
+                                        "framework": "generic",
+                                        "entropy": entropy,
+                                        "write_depth": depth_analysis,
+                                        "volatility": calculate_path_volatility(source_snippet) if path_match else {},
+                                        "filetype_risk": evaluate_filetype_risk(path),
+                                    },
+                                    file_line_range=(node.lineno, node.end_lineno or node.lineno),
+                                )
+                            )
+    except Exception as e:
+        findings.append(
+            Finding(
+                id="FS-ACCESS-099",
+                title="AST parse failed",
+                severity=Severity.LOW,
+                category=Category.SECRET_HYGIENE,
+                description=f"Failed to parse {path}: {e}",
+                evidence={"exception": str(e)},
+                context={"path": str(path)},
+            )
+        )
+    return findings
+
+
+
+def _get_call_name(func_node: ast.AST) -> Optional[str]:
+    if isinstance(func_node, ast.Name):
+        return func_node.id
+    if isinstance(func_node, ast.Attribute):
+        return f"{_get_call_name(func_node.value)}.{func_node.attr}"
+    if isinstance(func_node, ast.Call):
+        return f"{_get_call_name(func_node.func)}()"
+    return None
+
+
+
+def _get_line_snippet(source: str, lineno: int, context_lines: int = 3) -> str:
+    lines = source.splitlines()
+    start = max(0, lineno - 1 - context_lines)
+    end = min(len(lines), lineno + context_lines)
+    return "\n".join(
+        f"{i + 1:>5} | {line}"
+        for i, line in enumerate(lines[start:end], start=start)
+    )
+
+
+
+# === MCP FILESYSTEM ROOT PARSER (FINAL) ===
+
+def parse_mcp_filesystem_roots(root: Path) -> List[Dict[str, Any]]:
+    """Parse MCP filesystem roots from mcp.yaml/yml/json."""
+    roots = []
+    config_files = list(root.rglob("mcp*.yaml")) + list(root.rglob("mcp*.yml")) + list(root.rglob("mcp*.json"))
+    for cfg_path in config_files:
+        try:
+            text = cfg_path.read_text()
+            data = json.loads(text) if cfg_path.suffix == ".json" else _load_yaml(text)
+            if "filesystem" in data or "filesystems" in data:
+                fs = data.get("filesystem", data.get("filesystems", []))
+                if isinstance(fs, dict):
+                    fs = [fs]
+                for fr in fs:
+                    if isinstance(fr, dict):
+                        roots.append({
+                            "path": fr.get("path", "/"),
+                            "permissions": fr.get("permissions", []),
+                            "description": fr.get("description", ""),
+                            "source": str(cfg_path),
+                        })
+        except Exception:
+            continue
+    return roots
+
+
+
+def _load_yaml(text: str) -> Dict[str, Any]:
+    import yaml
+    return yaml.safe_load(text) or {}
+
+
+
+# === CLI (FINAL) ===
+
+if _name_ == "_main_":
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description="Scan for filesystem access risks in AI agents (final)",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  filesystem.txt . --max-depth 5 --ignore-safe-paths
+  filesystem.txt ./my_agent --min-severity=high --ci
+
+For more info: https://github.com/yourorg/filesystem-access-scanner
+""",
+    )
+    parser.add_argument("path", type=Path, help="Project root to scan")
+    parser.add_argument("--no-mcp", action="store_true", help="Skip MCP filesystem root parsing")
+    parser.add_argument("--max-depth", type=int, default=4, help="Max write depth before flagging as deep")
+    parser.add_argument("--ignore-safe-paths", action="store_true", help="Ignore known safe paths (e.g., /tmp, logs/)")
+    parser.add_argument("--min-severity", choices=["low", "medium", "high", "critical"], default="low")
+    parser.add_argument("--format", choices=["table", "json"], default="table")
+    parser.add_argument("--ci", action="store_true", help="CI mode: exit non-zero on critical findings")
+    args = parser.parse_args()
+
+    ctx = ScannerContext(
+        source_path=args.path,
+        config={
+            "min_severity": args.min_severity,
+            "max_depth": args.max_depth,
+            "ignore_safe_paths": args.ignore_safe_paths,
+        },
+        rules=DEFAULT_RULES["filesystem_access"]["rules"].copy(),
+    )
+
+    # Pre-compute safe paths if enabled
+    if args.ignore_safe_paths:
+        ctx.known_safe_paths = [
+            "/tmp", "/run", "/home", "/app", "/logs", "/data", "/config",
+        ]
+
+    findings = scan_ast_file(args.path, ctx)
+
+    # Optional MCP parsing
+    if not args.no_mcp:
+        ctx.mcp_roots = parse_mcp_filesystem_roots(args.path)
+        for root in ctx.mcp_roots:
+            trust = evaluate_mcp_root_trust(root)
+            if trust["risk_level"] == "high":
+                findings.append(
+                    Finding(
+                        id="FS-ACCESS-MCP-001",
+                        title=f"MCP root '{root['path']}' has high-risk trust model",
+                        severity=Severity.HIGH if trust["trust_score"] < 40 else Severity.MEDIUM,
+                        category=Category.MCP_FILESYSTEM_ROOT,
+                        description=f"Root trust: {trust['trust_score']}/100",
+                        evidence={
+                            "trust_score": trust["trust_score"],
+                            "explicit_write": trust["explicit_write"],
+                            "wildcard_depth": trust["wildcard_depth"],
+                        },
+                        location=str(args.path),
+                    )
+                )
+
+    # Deduplicate
+    seen = set()
+    unique_findings: List[Finding] = []
+    for f in findings:
+        key = (f.id, f.location, hash(tuple(sorted(f.evidence.items()))))
+        if key not in seen:
+            seen.add(key)
+            unique_findings.append(f)
+
+    # Apply severity calculator if provided
+    if ctx.severity_calculator:
+        for f in unique_findings:
+            f.severity = ctx.severity_calculator(f)
+
+    unique_findings.sort(key=lambda f: f.severity.value, reverse=True)
+
+    if args.format == "json":
+        output = []
+        for f in unique_findings:
+            output.append(
+                {
+                    **vars(f),
+                    "risk_score": compute_risk_score(f, ctx),
+                }
+            )
+        print(json.dumps(output, indent=2, default=str))
+    else:
+        print("\n📂 Filesystem Access Scan Results (Final)")
+        print("=" * 60)
+
+        for f in unique_findings:
+            risk = compute_risk_score(f, ctx)
+            print(f"\n[{f.severity.value.upper()}] {f.id}: {f.title}")
+            print(f" Location: {f.location}")
+            print(f" Evidence: {f.evidence.get('path_template', f.evidence.get('destination', 'N/A'))}")
+            if f.evidence.get("path_entropy"):
+                print(f" Path Entropy: {f.evidence['path_entropy']:.2f}")
+            if f.evidence.get("write_depth"):
+                print(f" Write Depth: {f.evidence['write_depth']['depth']} (risk: {f.evidence['write_depth']['risk_score']}/100)")
+            if f.evidence.get("volatility"):
+                print(f" Volatility: {f.evidence['volatility']['score']:.2f}")
+            if f.remediation_hint:
+                print(f" Remediation: {f.remediation_hint}")
+
+        if args.ci:
+            critical_count = sum(1 for f in unique_findings if f.severity == Severity.CRITICAL)
+            if critical_count > 0:
+                print(f"\n❌ CI fail: {critical_count} critical findings")
+                exit(1)
+            else:
+                print(f"\n✅ CI pass: {len(unique_findings)} findings")
+
+        print("\n✅ Done.")

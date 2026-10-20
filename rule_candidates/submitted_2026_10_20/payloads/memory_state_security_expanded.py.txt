@@ -1,0 +1,1123 @@
+"""
+
+from _future_ import annotations
+
+_doc_ = """
+Memory & State Security scanner (expanded edition) for AI agents.
+
+Detects memory persistence, state tampering, secret exposure,
+and agent-specific patterns like LLM-determined memory writes.
+"""
+
+_version_ = "1.1.0"
+
+import ast
+import re
+import os
+import json
+from pathlib import Path
+from dataclasses import dataclass, field
+from typing import List, Dict, Any, Optional, Tuple, Set
+from enum import Enum
+
+
+
+class Severity(Enum):
+    CRITICAL = "critical"
+    HIGH = "high"
+    MEDIUM = "medium"
+    LOW = "low"
+
+
+
+class Category(Enum):
+    MEMORY_PERSISTENCE = "memory_persistence"
+    STATE_TAMPERING = "state_tampering"
+    CONTEXT_INJECTION = "context_injection"
+    SECRET_EXPOSURE = "secret_exposure"
+    FRAMEWORK_PATTERNS = "framework_patterns"
+    CONTEXT_OVERFLOW = "context_overflow"
+    MEMORY_COMPRESSION = "memory_compression"
+
+
+
+@dataclass
+class Finding:
+    id: str
+    title: str
+    severity: Severity
+    category: Category
+    description: str
+    evidence: Dict[str, Any]
+    location: Optional[str] = None
+    rule_id: Optional[str] = None
+    remediation_hint: Optional[str] = None
+    references: List[str] = field(default_factory=list)
+    tags: List[str] = field(default_factory=list)
+    context: Dict[str, Any] = field(default_factory=dict)
+
+
+
+@dataclass
+class ScannerContext:
+    source_path: Path
+    config: Dict[str, Any] = field(default_factory=dict)
+    rules: List[Dict[str, Any]] = field(default_factory=list)
+    mcp_state_roots: List[Dict[str, Any]] = field(default_factory=list)
+
+
+
+# === MEMORY PATTERN DETECTORS (EXPANDED) ===
+
+MEMORY_PATTERNS = {
+    "chat_history": [
+        "ChatMessageHistory",
+        "ConversationBufferMemory",
+        "chat_history",
+        "history",
+    ],
+    "session_state": [
+        "session_state",
+        "agent_state",
+        "context_state",
+        "global_state",
+    ],
+    "memory_store": [
+        "memory_store",
+        "state_store",
+        "context_store",
+        "persistent_memory",
+    ],
+}
+
+# Common state persistence patterns
+STATE_PERSISTENCE_PATTERNS = {
+    "file": [
+        r"save.*state",
+        r"write.*memory",
+        r"persist.*context",
+    ],
+    "db": [
+        r"db\.save",
+        r"redis\.set",
+        r"sqlite\.execute",
+    ],
+    "cloud": [
+        r"s3\.put_object",
+        r"gcs\.upload",
+        r"azure\.blob\.upload",
+    ],
+}
+
+
+
+def is_memory_operation(func_name: str) -> bool:
+    """Detect if function is likely a memory/state operation."""
+    func_lower = func_name.lower()
+    return any(
+        p in func_lower
+        for p in ["save", "load", "write", "persist", "archive", "cache", "memory"]
+    )
+
+
+
+def analyze_state_persistence(path: str, content: Optional[str] = None) -> Dict[str, Any]:
+    """Analyze state persistence: file, db, or cloud."""
+    if content and any(p in content for p in ["db.save", "redis.set", "sqlite.execute"]):
+        return {"type": "db", "confidence": 0.8}
+    if any(path.endswith(ext) for ext in [".json", ".yaml", ".pkl"]):
+        return {"type": "file", "confidence": 0.7}
+    if any(ext in path.lower() for ext in ["/s3/", "/gcs/", "azure/"]):
+        return {"type": "cloud", "confidence": 0.9}
+    return {"type": "unknown", "confidence": 0.5}
+
+
+
+# === SECRET DETECTION IN MEMORY (EXPANDED) ===
+
+SECRET_PATTERNS = {
+    "api_keys": ["api_key", "secret_key", "token", "credential"],
+    "credentials": ["password", "passwd", "pwd", "password", "passphrase"],
+    "secrets": ["secret", "key", "token", "oauth", "jwt"],
+    "context": ["context", "memory", "session", "history"],
+}
+
+
+
+def detect_secrets_in_state(content: str) -> List[Dict[str, Any]]:
+    """Detect unmasked secrets in state files/memory dumps."""
+    secrets_found = []
+    for cat, patterns in SECRET_PATTERNS.items():
+        for pattern in patterns:
+            matches = re.findall(rf"(?i){pattern}[\s:=]+\s*['\"]?[\w\-_]+", content)
+            if matches:
+                secrets_found.append({
+                    "category": cat,
+                    "pattern": pattern,
+                    "matches": matches[:3],
+                })
+    return secrets_found
+
+
+
+# === STATE TAMPERING SCORER (EXPANDED) ===
+
+def score_state_tampering(path: str, content: Optional[str] = None) -> Dict[str, Any]:
+    """Score how vulnerable a state file is to tampering."""
+    tamper_risks = 0
+    if "write" in path or "save" in path:
+        tamper_risks += 20
+    if content and ("eval(" in content or "exec(" in content):
+        tamper_risks += 30
+    if any(ext in path for ext in [".py", ".yaml", ".yml"]):
+        tamper_risks += 20
+    if not content or ("read_text()" in content and "json.loads()" in content):
+        tamper_risks += 10
+
+    return {
+        "tamper_risk_score": min(100, tamper_risks),
+        "tamper_vectors": [
+            "direct-write",
+            "code-exec",
+            "file-format" if "yaml" in path else None,
+        ],
+        "is_vulnerable": tamper_risks >= 40,
+    }
+
+
+
+# === FRAMEWORK DETECTION (EXPANDED) ===
+
+FRAMEWORK_PATTERNS = {
+    "langchain": [
+        r"ChatMessageHistory",
+        r"ConversationBufferMemory",
+        r"chat_memory",
+    ],
+    "autogen": [
+        r"ConversableAgent",
+        r"chat_history",
+        r"save_chat_history",
+    ],
+    "mcp": [
+        r"state\.store",
+        r"context\.store",
+        r"memory\.persist",
+    ],
+}
+
+
+
+def detect_framework(path: Path, source: str) -> List[str]:
+    """Detect which agent frameworks are used in the code."""
+    frameworks = []
+    for fw, patterns in FRAMEWORK_PATTERNS.items():
+        if any(re.search(p, source, re.IGNORECASE) for p in patterns):
+            frameworks.append(fw)
+    return frameworks
+
+
+
+# === CONTEXT INJECTION DETECTOR (EXPANDED) ===
+
+def score_context_injection(code_snippet: str) -> Dict[str, Any]:
+    """Score how prone a code snippet is to context injection."""
+    injection_vectors = 0
+    if re.search(r"\$\{.*\}", code_snippet):
+        injection_vectors += 20
+    if re.search(r"eval\(|exec\(", code_snippet):
+        injection_vectors += 30
+    if re.search(r"context\s*=\s*llm", code_snippet):
+        injection_vectors += 25
+    if re.search(r"prompt\s*=\s*user", code_snippet):
+        injection_vectors += 15
+
+    return {
+        "injection_risk_score": min(100, injection_vectors),
+        "injection_vectors": [
+            "template-injection",
+            "code-exec",
+            "llm-context",
+            "user-prompt",
+        ],
+        "is_vulnerable": injection_vectors >= 50,
+    }
+
+
+
+# === CONTEXT WINDOW OVERFLOW DETECTOR (NEW) ===
+
+def score_context_overflow(code_snippet: str) -> Dict[str, Any]:
+    """Score how likely a memory operation is to hit context window limits."""
+    overflow_risks = 0
+    if re.search(r"messages\[:\d+", code_snippet):
+        overflow_risks += 15
+    if re.search(r"truncate.*before|truncate.*after", code_snippet):
+        overflow_risks += 25
+    if re.search(r"limit\s*=\s*\d+", code_snippet):
+        overflow_risks += 20
+    if re.search(r"window.*=\s*\d+", code_snippet):
+        overflow_risks += 20
+    if re.search(r"max_tokens", code_snippet):
+        overflow_risks += 20
+
+    return {
+        "overflow_risk_score": min(100, overflow_risks),
+        "overflow_patterns": [
+            "truncation",
+            "limit-window",
+            "max-tokens",
+        ],
+        "is_vulnerable": overflow_risks >= 50,
+    }
+
+
+
+# === MEMORY COMPRESSION DETECTOR (NEW) ===
+
+def score_memory_compression(code_snippet: str) -> Dict[str, Any]:
+    """Score how likely a memory operation includes compression/summarization."""
+    compression_risks = 0
+    if re.search(r"summarize.*history|compress.*memory", code_snippet):
+        compression_risks += 30
+    if re.search(r"summarization|summarizer", code_snippet):
+        compression_risks += 25
+    if re.search(r"reduce.*context|condense.*memory", code_snippet):
+        compression_risks += 20
+    if re.search(r"llm.*summariz|summariz.*llm", code_snippet):
+        compression_risks += 25
+
+    return {
+        "compression_risk_score": min(100, compression_risks),
+        "compression_vectors": [
+            "summarization",
+            "condensation",
+            "llm-driven-compression",
+        ],
+        "is_vulnerable": compression_risks >= 50,
+    }
+
+
+
+# === MEMORY TO CODE PIPELINE DETECTOR (NEW) ===
+
+def score_memory_to_code(code_snippet: str) -> Dict[str, Any]:
+    """Score how likely memory is used in `eval()`/`exec()` pipelines."""
+    to_code_risks = 0
+    if re.search(r"eval\s*\(\s*memory", code_snippet):
+        to_code_risks += 30
+    if re.search(r"exec\s*\(\s*memory", code_snippet):
+        to_code_risks += 30
+    if re.search(r"memory\s*=\s*eval", code_snippet):
+        to_code_risks += 20
+    if re.search(r"code\s*=\s*memory", code_snippet):
+        to_code_risks += 20
+
+    return {
+        "to_code_risk_score": min(100, to_code_risks),
+        "to_code_patterns": [
+            "eval-memory",
+            "exec-memory",
+            "memory-as-code",
+        ],
+        "is_vulnerable": to_code_risks >= 50,
+    }
+
+
+
+# === MEMORY EXFILTRATION DETECTOR (NEW) ===
+
+def score_memory_exfiltration(code_snippet: str) -> Dict[str, Any]:
+    """Score how likely memory is exfiltrated (logged, sent to APIs)."""
+    exfil_risks = 0
+    if re.search(r"log\s*\(\s*memory", code_snippet):
+        exfil_risks += 25
+    if re.search(r"send\s*\(\s*memory", code_snippet):
+        exfil_risks += 25
+    if re.search(r"publish\s*\(\s*memory", code_snippet):
+        exfil_risks += 20
+    if re.search(r"upload.*memory|send.*memory.*api", code_snippet):
+        exfil_risks += 30
+
+    return {
+        "exfil_risk_score": min(100, exfil_risks),
+        "exfil_vectors": [
+            "logging",
+            "api-send",
+            "publish",
+        ],
+        "is_vulnerable": exfil_risks >= 50,
+    }
+
+
+
+# === AGENT SELF-MEMORY DETECTOR (NEW) ===
+
+def detect_agent_self_memory(code_snippet: str) -> Dict[str, Any]:
+    """Detect agent self-memory writes (e.g., agent.update_memory())."""
+    self_mem = {
+        "is_self_memory": bool(
+            re.search(r"agent\.update_memory|agent\.save_memory|agent\.write_memory", code_snippet)
+            or re.search(r"self\.memory\s*=\s*|self\.update_memory", code_snippet)
+        ),
+        "method": None,
+    }
+
+    if re.search(r"agent\.", code_snippet):
+        self_mem["method"] = "agent"
+    elif re.search(r"self\.", code_snippet):
+        self_mem["method"] = "self"
+    elif re.search(r"memory\.store|memory\.save", code_snippet):
+        self_mem["method"] = "store"
+
+    return self_mem
+
+
+
+# === MEMORY VERSIONING DETECTOR (NEW) ===
+
+def score_memory_versioning(code_snippet: str) -> Dict[str, Any]:
+    """Score how likely memory includes versioning/diffing."""
+    versioning_risks = 0
+    if re.search(r"version\s*=\s*|version_tag", code_snippet):
+        versioning_risks += 20
+    if re.search(r"snapshot.*memory|diff.*memory", code_snippet):
+        versioning_risks += 25
+    if re.search(r"commit.*memory|history.*memory", code_snippet):
+        versioning_risks += 20
+
+    return {
+        "versioning_risk_score": min(100, versioning_risks),
+        "versioning_vectors": [
+            "version-tags",
+            "snapshots",
+            "history",
+        ],
+        "is_vulnerable": versioning_risks >= 40,
+    }
+
+
+
+# === CONTEXT POISONING DETECTOR (NEW) ===
+
+def score_context_poisoning(code_snippet: str) -> Dict[str, Any]:
+    """Score how prone a code snippet is to context poisoning."""
+    poisoning_risks = 0
+    if re.search(r"add_message.*role.*system|inject.*context", code_snippet):
+        poisoning_risks += 30
+    if re.search(r"context\s*=\s*llm|context\s*=\s*user", code_snippet):
+        poisoning_risks += 25
+    if re.search(r"system_prompt\s*=\s*|prompt_injection", code_snippet):
+        poisoning_risks += 25
+    if re.search(r"pre_prompt|pre_prompt\s*=\s*", code_snippet):
+        poisoning_risks += 20
+
+    return {
+        "poisoning_risk_score": min(100, poisoning_risks),
+        "poisoning_vectors": [
+            "role-injection",
+            "context-injection",
+            "system-prompt",
+            "pre-prompt",
+        ],
+        "is_vulnerable": poisoning_risks >= 50,
+    }
+
+
+
+# === SECURITY SCORING ENGINE (EXPANDED) ===
+
+def compute_risk_score(finding: Finding, context: ScannerContext = None) -> Dict[str, Any]:
+    """Compute dynamic risk score (0–100) and confidence level for memory/state findings."""
+    base = {
+        "critical": 90,
+        "high": 70,
+        "medium": 50,
+        "low": 30,
+    }.get(finding.severity.value, 40)
+
+    evidence = finding.evidence
+    tampering = evidence.get("tampering", {})
+    overflow = evidence.get("context_overflow", {})
+    compression = evidence.get("compression", {})
+    to_code = evidence.get("to_code", {})
+    exfil = evidence.get("exfiltration", {})
+    versioning = evidence.get("versioning", {})
+    poisoning = evidence.get("poisoning", {})
+
+    tampering_modifier = tampering.get("tamper_risk_score", 0) if isinstance(tampering, dict) else 0
+    overflow_modifier = overflow.get("overflow_risk_score", 0) if isinstance(overflow, dict) else 0
+    compression_modifier = compression.get("compression_risk_score", 0) if isinstance(compression, dict) else 0
+    to_code_modifier = to_code.get("to_code_risk_score", 0) if isinstance(to_code, dict) else 0
+    exfil_modifier = exfil.get("exfil_risk_score", 0) if isinstance(exfil, dict) else 0
+    versioning_modifier = versioning.get("versioning_risk_score", 0) if isinstance(versioning, dict) else 0
+    poisoning_modifier = poisoning.get("poisoning_risk_score", 0) if isinstance(poisoning, dict) else 0
+
+    final_score = min(
+        100,
+        base
+        + tampering_modifier
+        + overflow_modifier
+        + compression_modifier
+        + to_code_modifier
+        + exfil_modifier
+        + versioning_modifier
+        + poisoning_modifier,
+    )
+
+    evidence_items = list(evidence.items())
+    confidence = 0.5 + (len(evidence_items) / 12)
+
+    return {
+        "risk_score": final_score,
+        "tampering_modifier": tampering_modifier,
+        "overflow_modifier": overflow_modifier,
+        "compression_modifier": compression_modifier,
+        "to_code_modifier": to_code_modifier,
+        "exfil_modifier": exfil_modifier,
+        "versioning_modifier": versioning_modifier,
+        "poisoning_modifier": poisoning_modifier,
+        "confidence": round(confidence, 2),
+    }
+
+
+
+# === RULES (18 RULES) — START — ===
+
+DEFAULT_RULES = {
+    "memory_state_security": {
+        "id_prefix": "MEM-SEC",
+        "description": "Detection of memory & state patterns in AI agents",
+        "rules": [
+            # BASE (001–010)
+            {
+                "id": "MEM-SEC-001",
+                "name": "Memory persistence: chat history saved to file",
+                "category": Category.MEMORY_PERSISTENCE,
+                "severity": Severity.MEDIUM,
+                "patterns": [
+                    r"chat_memory\.save_context",
+                    r"save_chat_history",
+                    r"write_memory",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "operation": "save",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Pin memory files to known directories; avoid writing to `/tmp` or user-writable paths.",
+            },
+            {
+                "id": "MEM-SEC-002",
+                "name": "State tampering: agent writes to shared memory/state file",
+                "category": Category.STATE_TAMPERING,
+                "severity": Severity.HIGH,
+                "patterns": [
+                    r"agent\.save_state\s*\(\s*data\s*=\s*llm_output",
+                    r"write_memory\s*\(\s*path\s*=\s*f['\"].*memory",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "state_type": "memory" if "memory" in str(node.func) else "state",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Pin state files to known directories; avoid writing to `/tmp` or user-writable paths.",
+            },
+            {
+                "id": "MEM-SEC-003",
+                "name": "Context injection: user/LLM-controlled context injected into agent",
+                "category": Category.CONTEXT_INJECTION,
+                "severity": Severity.HIGH,
+                "patterns": [
+                    r"context\s*=\s*llm\.suggest_context",
+                    r"context\.inject\s*\(\s*prompt\s*=\s*user_input",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "context_source": match.group(0).split("=")[-1].strip() if match else "unknown",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Sanitize context injection points; validate context schema before use.",
+            },
+            {
+                "id": "MEM-SEC-004",
+                "name": "Secret exposure: unmasked secrets in memory/state",
+                "category": Category.SECRET_EXPOSURE,
+                "severity": Severity.MEDIUM,
+                "patterns": [
+                    r"log\.info\s*\(\s*f?.*\$\{.*secret\}",
+                    r"write\s*\(\s*data\s*=\s*response\.content\s*#.*token",
+                    r"dump\s*\(\s*secrets\s*=\s*os\.environ",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "secret_pattern": match.group(0).split("secret")[-1][:40] if match else "unknown",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Mask secrets before writing; avoid writing `.env`, `.pem`, or raw API responses to logs.",
+            },
+            {
+                "id": "MEM-SEC-005",
+                "name": "Framework-specific: LangChain memory patterns detected",
+                "category": Category.FRAMEWORK_PATTERNS,
+                "severity": Severity.LOW,
+                "patterns": [
+                    r"ChatMessageHistory",
+                    r"ConversationBufferMemory",
+                    r"chat_memory",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "framework": "langchain",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Use LangChain-specific best practices (e.g., `ChatMessageHistory.serialize_messages()`).",
+            },
+            {
+                "id": "MEM-SEC-006",
+                "name": "Framework-specific: AutoGen conversation patterns detected",
+                "category": Category.FRAMEWORK_PATTERNS,
+                "severity": Severity.LOW,
+                "patterns": [
+                    r"ConversableAgent",
+                    r"chat_history",
+                    r"save_chat_history",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "framework": "autogen",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Pin AutoGen memory paths; use `save_chat_history()` for persistence.",
+            },
+            {
+                "id": "MEM-SEC-007",
+                "name": "Framework-specific: MCP state patterns detected",
+                "category": Category.FRAMEWORK_PATTERNS,
+                "severity": Severity.LOW,
+                "patterns": [
+                    r"state\.store",
+                    r"context\.store",
+                    r"memory\.persist",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "framework": "mcp",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Explicitly declare MCP state permissions; avoid implicit writes.",
+            },
+            {
+                "id": "MEM-SEC-008",
+                "name": "Memory dump: full conversation history dumped to file",
+                "category": Category.MEMORY_PERSISTENCE,
+                "severity": Severity.HIGH,
+                "patterns": [
+                    r"dump_memory\s*\(\s*path\s*=\s*f['\"].*history",
+                    r"write_text\s*\(\s*data\s*=\s*f['\"].*\$\{.*history\}",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "dump_type": "full" if "full" in str(node.func) else "partial",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Version memory dumps; avoid overwriting in-place.",
+            },
+            {
+                "id": "MEM-SEC-009",
+                "name": "Cross-turn memory: agent references previous turns to determine behavior",
+                "category": Category.CONTEXT_INJECTION,
+                "severity": Severity.MEDIUM,
+                "patterns": [
+                    r"previous_turns\s*=\s*agent\.messages",
+                    r"context\s*=\s*previous_turns\s*\+\s*current_input",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "turns_referenced": match.group(0).split("=")[-1].strip() if match else "all",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Sanitize cross-turn references; validate context before use.",
+            },
+            {
+                "id": "MEM-SEC-010",
+                "name": "Memory serialization: state saved as `.py` or `.yaml` (code-like)",
+                "category": Category.MEMORY_PERSISTENCE,
+                "severity": Severity.HIGH,
+                "patterns": [
+                    r"yaml\.dump\s*\(\s*state\s*=\s*agent\.state",
+                    r"json\.dump\s*\(\s*data\s*=\s*f['\"].*\$\{.*state\}",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "format": "yaml" if "yaml" in str(node.func) else "json",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Use `SafeLoader` for `.yaml`; avoid `.py` unless sandboxed.",
+            },
+            # — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — —
+            # NEW: CONTEXT & STATE ANALYSIS (101–108)
+            # — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — —
+            {
+                "id": "MEM-SEC-101",
+                "name": "Context window overflow: messages truncated before context limit",
+                "category": Category.CONTEXT_OVERFLOW,
+                "severity": Severity.MEDIUM,
+                "patterns": [
+                    r"messages\[:\d+", # e.g., messages[:20]
+                    r"truncate.*before|truncate.*after",
+                    r"limit\s*=\s*\d+",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "overflow_patterns": score_context_overflow(match.group(0)) if match else {},
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Use sliding windows or summarization to prevent overflow.",
+            },
+            {
+                "id": "MEM-SEC-102",
+                "name": "Memory compression: history summarized or compressed",
+                "category": Category.MEMORY_COMPRESSION,
+                "severity": Severity.LOW,
+                "patterns": [
+                    r"summarize.*history|compress.*memory",
+                    r"summarization|summarizer",
+                    r"reduce.*context|condense.*memory",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "compression_patterns": score_memory_compression(match.group(0)) if match else {},
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Review summarization prompts; ensure they don’t leak sensitive context.",
+            },
+            {
+                "id": "MEM-SEC-103",
+                "name": "Memory-to-code: agent evaluates or executes memory contents",
+                "category": Category.CONTEXT_INJECTION,
+                "severity": Severity.HIGH,
+                "patterns": [
+                    r"eval\s*\(\s*memory",
+                    r"exec\s*\(\s*memory",
+                    r"memory\s*=\s*eval",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "to_code_patterns": score_memory_to_code(match.group(0)) if match else {},
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Sandbox memory evaluation; avoid `eval/exec` on untrusted memory.",
+            },
+            {
+                "id": "MEM-SEC-104",
+                "name": "Memory exfiltration: agent logs or sends memory to external services",
+                "category": Category.SECRET_EXPOSURE,
+                "severity": Severity.MEDIUM,
+                "patterns": [
+                    r"log\s*\(\s*memory",
+                    r"send\s*\(\s*memory",
+                    r"publish\s*\(\s*memory",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "exfil_patterns": score_memory_exfiltration(match.group(0)) if match else {},
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Mask memory before exfiltration; use dedicated endpoints for memory.",
+            },
+            {
+                "id": "MEM-SEC-105",
+                "name": "Agent self-memory: agent updates its own memory state",
+                "category": Category.STATE_TAMPERING,
+                "severity": Severity.MEDIUM,
+                "patterns": [
+                    r"agent\.update_memory|agent\.save_memory",
+                    r"self\.memory\s*=\s*|self\.update_memory",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "self_memory": detect_agent_self_memory(match.group(0)) if match else {},
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Add validation hooks for self-memory writes; avoid untrusted updates.",
+            },
+            {
+                "id": "MEM-SEC-106",
+                "name": "Memory versioning: memory includes version tags or snapshots",
+                "category": Category.MEMORY_PERSISTENCE,
+                "severity": Severity.LOW,
+                "patterns": [
+                    r"version\s*=\s*|version_tag",
+                    r"snapshot.*memory|diff.*memory",
+                    r"commit.*memory|history.*memory",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "versioning_patterns": score_memory_versioning(match.group(0)) if match else {},
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Track version drift; avoid reverting to vulnerable memory snapshots.",
+            },
+            {
+                "id": "MEM-SEC-107",
+                "name": "Context poisoning: agent receives injected or poisoned context",
+                "category": Category.CONTEXT_INJECTION,
+                "severity": Severity.HIGH,
+                "patterns": [
+                    r"add_message.*role.*system|inject.*context",
+                    r"context\s*=\s*llm|context\s*=\s*user",
+                    r"system_prompt\s*=\s*|prompt_injection",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "poisoning_patterns": score_context_poisoning(match.group(0)) if match else {},
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Sanitize injection points; validate context schema before use.",
+            },
+            {
+                "id": "MEM-SEC-108",
+                "name": "Cross-session memory: agent reuses memory from previous sessions",
+                "category": Category.MEMORY_PERSISTENCE,
+                "severity": Severity.MEDIUM,
+                "patterns": [
+                    r"session_id\s*=\s*|user_id\s*=\s*",
+                    r"previous_sessions\s*=\s*|load_session",
+                    r" continuity\s*=\s*True",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "cross_session": match.group(0).split("=")[-1].strip() if match else "unknown",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Version cross-session memory; avoid leaking sensitive session data.",
+            },
+        ],
+        "rule_map": {},
+    }
+}
+
+# Initialize rule_map
+DEFAULT_RULES["memory_state_security"]["rule_map"] = {
+    rule["id"]: rule for rule in DEFAULT_RULES["memory_state_security"]["rules"]
+}
+
+
+
+# === AST SCANNER (EXPANDED) — PART 1 — ===
+
+def scan_ast_file(path: Path, context: ScannerContext) -> List[Finding]:
+    """Scan Python files for memory/state security patterns (expanded)."""
+    findings = []
+    try:
+        source = path.read_text(encoding="utf-8")
+        tree = ast.parse(source, filename=str(path))
+
+        call_nodes = [n for n in ast.walk(tree) if isinstance(n, ast.Call)]
+
+        for node in call_nodes:
+            func_name = _get_call_name(node.func)
+            if not func_name:
+                continue
+
+            func_lower = func_name.lower()
+            if any(f in func_lower for f in ["save", "load", "write", "persist", "archive", "cache", "memory"]):
+                source_snippet = _get_line_snippet(source, node.lineno)
+
+                for rule in context.rules:
+                    for pattern in rule["patterns"]:
+                        if re.search(pattern, source_snippet, re.IGNORECASE):
+                            # Compute additional metrics
+                            state_analysis = analyze_state_persistence(source_snippet)
+                            tampering = score_state_tampering(source_snippet, source)
+                            overflow = score_context_overflow(source_snippet)
+                            compression = score_memory_compression(source_snippet)
+                            to_code = score_memory_to_code(source_snippet)
+                            exfil = score_memory_exfiltration(source_snippet)
+                            versioning = score_memory_versioning(source_snippet)
+                            poisoning = score_context_poisoning(source_snippet)
+                            secrets = detect_secrets_in_state(source_snippet)
+                            framework = detect_framework(path, source_snippet)
+
+                            evidence = rule["evidence_extractor"](node, None) | {
+                                "file": str(path),
+                                "code_line": source_snippet.strip(),
+                                "state_analysis": state_analysis,
+                                "tampering": tampering,
+                                "context_overflow": overflow,
+                                "compression": compression,
+                                "to_code": to_code,
+                                "exfiltration": exfil,
+                                "versioning": versioning,
+                                "poisoning": poisoning,
+                                "secrets": secrets,
+                                "frameworks": framework,
+                            }
+
+                            findings.append(
+                                Finding(
+                                    id=rule["id"],
+                                    title=rule["name"],
+                                    severity=rule["severity"],
+                                    category=rule["category"],
+                                    description=f"Found {func_name} usage matching pattern: {pattern}",
+                                    evidence=evidence,
+                                    location=f"{path}:{node.lineno}",
+                                    rule_id=rule["id"],
+                                    remediation_hint=rule.get("remediation_hint"),
+                                    references=[
+                                        "https://langchain-ai.github.io/langchain/",
+                                        "https://microsoft.github.io/autogen/",
+                                    ],
+                                    tags=[
+                                        "persistence" if "save" in func_lower else "memory",
+                                        "tampering" if tampering["is_vulnerable"] else None,
+                                        "secrets" if secrets else None,
+                                    ] + framework,
+                                    context={
+                                        "framework": framework[0] if framework else "generic",
+                                        "state_analysis": state_analysis,
+                                        "tampering": tampering,
+                                        "context_overflow": overflow,
+                                        "compression": compression,
+                                        "to_code": to_code,
+                                        "exfiltration": exfil,
+                                        "versioning": versioning,
+                                        "poisoning": poisoning,
+                                    },
+                                    file_line_range=(node.lineno, node.end_lineno or node.lineno),
+                                )
+                            )
+    except Exception as e:
+        findings.append(
+            Finding(
+                id="MEM-SEC-099",
+                title="AST parse failed",
+                severity=Severity.LOW,
+                category=Category.SECRET_EXPOSURE,
+                description=f"Failed to parse {path}: {e}",
+                evidence={"exception": str(e)},
+                context={"path": str(path)},
+            )
+        )
+    return findings
+
+
+
+def _get_call_name(func_node: ast.AST) -> Optional[str]:
+    if isinstance(func_node, ast.Name):
+        return func_node.id
+    if isinstance(func_node, ast.Attribute):
+        return f"{_get_call_name(func_node.value)}.{func_node.attr}"
+    if isinstance(func_node, ast.Call):
+        return f"{_get_call_name(func_node.func)}()"
+    return None
+
+
+
+def _get_line_snippet(source: str, lineno: int, context_lines: int = 3) -> str:
+    lines = source.splitlines()
+    start = max(0, lineno - 1 - context_lines)
+    end = min(len(lines), lineno + context_lines)
+    return "\n".join(
+        f"{i + 1:>5} | {line}"
+        for i, line in enumerate(lines[start:end], start=start)
+    )
+# === MCP STATE STORAGE PARSER (PART 2) ===
+
+def parse_mcp_state_storage(root: Path) -> List[Dict[str, Any]]:
+    """Parse MCP config for state storage patterns (e.g., state stores, context stores)."""
+    state_stores = []
+    config_files = list(root.rglob("mcp*.yaml")) + list(root.rglob("mcp*.yml")) + list(root.rglob("mcp*.json"))
+    for cfg_path in config_files:
+        try:
+            text = cfg_path.read_text()
+            data = json.loads(text) if cfg_path.suffix == ".json" else _load_yaml(text)
+
+            # Look for state stores at top-level or under 'state' / 'memory' keys
+            if "state" in data:
+                states = data["state"] if isinstance(data["state"], list) else [data["state"]]
+                for state in states:
+                    if isinstance(state, dict):
+                        state_stores.append({
+                            "path": state.get("path", "/"),
+                            "type": state.get("type", "memory"),
+                            "mode": state.get("mode", "read-write"),
+                            "source": str(cfg_path),
+                        })
+            if "memory" in data:
+                memories = data["memory"] if isinstance(data["memory"], list) else [data["memory"]]
+                for mem in memories:
+                    if isinstance(mem, dict):
+                        state_stores.append({
+                            "path": mem.get("path", "/"),
+                            "type": mem.get("type", "chat"),
+                            "mode": mem.get("mode", "read-write"),
+                            "source": str(cfg_path),
+                        })
+        except Exception:
+            continue
+    return state_stores
+
+
+
+def _load_yaml(text: str) -> Dict[str, Any]:
+    import yaml
+    return yaml.safe_load(text) or {}
+
+
+
+# === SECURITY SCORING ENGINE (PART 2) ===
+
+def compute_risk_score(finding: Finding, context: ScannerContext = None) -> Dict[str, Any]:
+    """Compute dynamic risk score (0–100) and confidence level for memory/state findings."""
+    base = {
+        "critical": 90,
+        "high": 70,
+        "medium": 50,
+        "low": 30,
+    }.get(finding.severity.value, 40)
+
+    # Evidence modifiers
+    evidence = finding.evidence
+    tampering = evidence.get("tampering", {})
+    overflow = evidence.get("context_overflow", {})
+    compression = evidence.get("compression", {})
+    to_code = evidence.get("to_code", {})
+    exfil = evidence.get("exfiltration", {})
+    versioning = evidence.get("versioning", {})
+    poisoning = evidence.get("poisoning", {})
+
+    tampering_modifier = tampering.get("tamper_risk_score", 0) if isinstance(tampering, dict) else 0
+    overflow_modifier = overflow.get("overflow_risk_score", 0) if isinstance(overflow, dict) else 0
+    compression_modifier = compression.get("compression_risk_score", 0) if isinstance(compression, dict) else 0
+    to_code_modifier = to_code.get("to_code_risk_score", 0) if isinstance(to_code, dict) else 0
+    exfil_modifier = exfil.get("exfil_risk_score", 0) if isinstance(exfil, dict) else 0
+    versioning_modifier = versioning.get("versioning_risk_score", 0) if isinstance(versioning, dict) else 0
+    poisoning_modifier = poisoning.get("poisoning_risk_score", 0) if isinstance(poisoning, dict) else 0
+
+    final_score = min(
+        100,
+        base
+        + tampering_modifier
+        + overflow_modifier
+        + compression_modifier
+        + to_code_modifier
+        + exfil_modifier
+        + versioning_modifier
+        + poisoning_modifier,
+    )
+
+    # Confidence: based on evidence richness
+    evidence_items = list(evidence.items())
+    confidence = 0.5 + (len(evidence_items) / 12) # up to +0.5
+
+    return {
+        "risk_score": final_score,
+        "tampering_modifier": tampering_modifier,
+        "overflow_modifier": overflow_modifier,
+        "compression_modifier": compression_modifier,
+        "to_code_modifier": to_code_modifier,
+        "exfil_modifier": exfil_modifier,
+        "versioning_modifier": versioning_modifier,
+        "poisoning_modifier": poisoning_modifier,
+        "confidence": round(confidence, 2),
+    }
+
+
+
+# === CLI (PART 2) ===
+
+if _name_ == "_main_":
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description="Scan for memory & state security risks in AI agents (expanded)",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  memory_state_security_expanded.txt . --max-depth 5 --ignore-safe-paths
+  memory_state_security_expanded.txt ./my_agent --min-severity=high --ci
+
+For more info: https://github.com/yourorg/memory-state-scanner
+""",
+    )
+    parser.add_argument("path", type=Path, help="Project root to scan")
+    parser.add_argument("--no-mcp", action="store_true", help="Skip MCP state storage parsing")
+    parser.add_argument("--min-severity", choices=["low", "medium", "high", "critical"], default="low")
+    parser.add_argument("--format", choices=["table", "json"], default="table")
+    parser.add_argument("--ci", action="store_true", help="CI mode: exit non-zero on critical findings")
+    parser.add_argument("--max-context-window", type=int, default=4096, help="Max context window size for overflow analysis")
+    args = parser.parse_args()
+
+    ctx = ScannerContext(
+        source_path=args.path,
+        config={
+            "min_severity": args.min_severity,
+            "max_context_window": args.max_context_window,
+        },
+        rules=DEFAULT_RULES["memory_state_security"]["rules"].copy(),
+    )
+
+    findings = scan_ast_file(args.path, ctx)
+
+    # Optional MCP parsing
+    if not args.no_mcp:
+        ctx.mcp_state_roots = parse_mcp_state_storage(args.path)
+        for store in ctx.mcp_state_roots:
+            if store["type"] in ["chat", "context", "memory"]:
+                severity = Severity.HIGH if store["mode"] == "read-write" else Severity.MEDIUM
+                findings.append(
+                    Finding(
+                        id="MEM-SEC-MCP-001",
+                        title=f"MCP state store '{store['path']}' ({store['type']}, {store['mode']})",
+                        severity=severity,
+                        category=Category.MEMORY_PERSISTENCE,
+                        description=f"State type: {store['type']}; mode: {store['mode']}",
+                        evidence={
+                            "type": store["type"],
+                            "mode": store["mode"],
+                            "path": store["path"],
+                            "source": store["source"],
+                        },
+                        location=str(args.path),
+                    )
+                )
+
+    # Deduplicate
+    seen = set()
+    unique_findings: List[Finding] = []
+    for f in findings:
+        key = (f.id, f.location, hash(tuple(sorted(f.evidence.items()))))
+        if key not in seen:
+            seen.add(key)
+            unique_findings.append(f)
+
+    unique_findings.sort(key=lambda f: f.severity.value, reverse=True)
+
+    if args.format == "json":
+        output = []
+        for f in unique_findings:
+            output.append(
+                {
+                    **vars(f),
+                    "risk_score": compute_risk_score(f, ctx),
+                }
+            )
+        print(json.dumps(output, indent=2, default=str))
+    else:
+        print("\n🧠 Memory & State Security Scan Results (Expanded)")
+        print("=" * 60)
+
+        for f in unique_findings:
+            risk = compute_risk_score(f, ctx)
+            print(f"\n[{f.severity.value.upper()}] {f.id}: {f.title}")
+            print(f" Location: {f.location}")
+            print(f" Evidence: {f.evidence.get('state_type', f.evidence.get('operation', 'N/A'))}")
+            if f.evidence.get("state_analysis"):
+                print(f" State Analysis: {f.evidence['state_analysis']['type']}")
+            if f.evidence.get("tampering"):
+                print(f" Tampering Risk: {f.evidence['tampering']['tamper_risk_score']}/100")
+            if f.evidence.get("context_overflow"):
+                print(f" Context Overflow: {f.evidence['context_overflow']['overflow_risk_score']}/100")
+            if f.evidence.get("compression"):
+                print(f" Compression: {f.evidence['compression']['compression_risk_score']}/100")
+            if f.evidence.get("to_code"):
+                print(f" Memory-to-Code: {f.evidence['to_code']['to_code_risk_score']}/100")
+            if f.evidence.get("poisoning"):
+                print(f" Context Poisoning: {f.evidence['poisoning']['poisoning_risk_score']}/100")
+            if f.remediation_hint:
+                print(f" Remediation: {f.remediation_hint}")
+
+        if args.ci:
+            critical_count = sum(1 for f in unique_findings if f.severity == Severity.CRITICAL)
+            if critical_count > 0:
+                print(f"\n❌ CI fail: {critical_count} critical findings")
+                exit(1)
+            else:
+                print(f"\n✅ CI pass: {len(unique_findings)} findings")
+
+        print("\n✅ Done.")

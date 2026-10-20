@@ -1,0 +1,427 @@
+{
+  "contract": "rule-draft-extraction-v1",
+  "status": "inactive-unvalidated-submission",
+  "plan_sha256": "b87023a282fcaec213512040b48cd376dd38b309892fe32893e21d3a3908cf77",
+  "importer_sha256": "d9108d3a4f8df916f4dd9d2cae495bc547cb3fac7c7a5633e4c67662f58e5fbe",
+  "transformation": "Concatenate selected original line spans; no source fixes or execution.",
+  "provenance": {
+    "authorship": "Original code, as declared by the student on 2026-10-20.",
+    "independently_verified": false,
+    "license": "Not assigned by this import."
+  },
+  "scanner_execution": false,
+  "records": [
+    {
+      "file": "tool_execution.py.txt",
+      "source_document": "tool_execution_draft.md",
+      "source_sha256": "5265fb1f177d01983be312fb53f94a699282a3f92d2b22d7e4640fe636616391",
+      "source_ranges": [
+        {
+          "first_line": 11,
+          "last_line": 675,
+          "sha256": "98d4833b691044fb01eab893097a2c20772c95087e8a682be9cd2cf6674ae3c3"
+        }
+      ],
+      "bytes": 32205,
+      "sha256": "98d4833b691044fb01eab893097a2c20772c95087e8a682be9cd2cf6674ae3c3",
+      "inspection": {
+        "method": "lexical inspection; not syntax validation or active-rule coverage",
+        "lines": 665,
+        "nonbreaking_spaces": 6542,
+        "literal_id_entries": [
+          "TOOL-EXEC-001",
+          "TOOL-EXEC-002",
+          "TOOL-EXEC-003",
+          "TOOL-EXEC-004",
+          "TOOL-EXEC-005"
+        ],
+        "unique_literal_id_count": 5,
+        "category_members": [
+          "CODE_INJECTION",
+          "SHELL_INJECTION",
+          "PARAM_FLOW",
+          "LLM_DRIVEN_EXEC"
+        ],
+        "duplicate_function_definitions": {},
+        "misspelled_future_import": true,
+        "misspelled_main_guard": true
+      }
+    },
+    {
+      "file": "tool_execution_rules.yaml.txt",
+      "source_document": "tool_execution_draft.md",
+      "source_sha256": "5265fb1f177d01983be312fb53f94a699282a3f92d2b22d7e4640fe636616391",
+      "source_ranges": [
+        {
+          "first_line": 699,
+          "last_line": 869,
+          "sha256": "e8ce05f61ac6da0dd5292f62794028cf921e3b2cbb3117887b988da00d8f57e8"
+        }
+      ],
+      "bytes": 6372,
+      "sha256": "e8ce05f61ac6da0dd5292f62794028cf921e3b2cbb3117887b988da00d8f57e8",
+      "inspection": {
+        "method": "lexical inspection; not syntax validation or active-rule coverage",
+        "lines": 171,
+        "nonbreaking_spaces": 800,
+        "literal_id_entries": [],
+        "unique_literal_id_count": 0,
+        "category_members": [],
+        "duplicate_function_definitions": {},
+        "misspelled_future_import": false,
+        "misspelled_main_guard": false
+      }
+    },
+    {
+      "file": "network_data_transfer_expanded.py.txt",
+      "source_document": "network_data_transfer_draft.md",
+      "source_sha256": "0e28104947f1b95d6f78d38508ca2d10983809c88f50770d8b56d4cf0f0c23fc",
+      "source_ranges": [
+        {
+          "first_line": 7,
+          "last_line": 788,
+          "sha256": "b4a4bffc67afc39f0562cd696a729ec8e22d4fd3e859f855690cfc13a8ac9322"
+        }
+      ],
+      "bytes": 44129,
+      "sha256": "b4a4bffc67afc39f0562cd696a729ec8e22d4fd3e859f855690cfc13a8ac9322",
+      "inspection": {
+        "method": "lexical inspection; not syntax validation or active-rule coverage",
+        "lines": 782,
+        "nonbreaking_spaces": 9240,
+        "literal_id_entries": [
+          "NET-DATA-001",
+          "NET-DATA-002",
+          "NET-DATA-003",
+          "NET-DATA-004",
+          "NET-DATA-005",
+          "NET-DATA-006",
+          "NET-DATA-101",
+          "NET-DATA-102",
+          "NET-DATA-103",
+          "NET-DATA-104",
+          "NET-DATA-105",
+          "NET-DATA-106",
+          "NET-DATA-107",
+          "NET-DATA-108",
+          "NET-DATA-109",
+          "NET-DATA-110",
+          "NET-DATA-111",
+          "NET-DATA-112"
+        ],
+        "unique_literal_id_count": 18,
+        "category_members": [
+          "DYNAMIC_DESTINATION",
+          "CREDENTIAL_BINDING",
+          "DATA_FLOW_INTEGRITY",
+          "SIDE_CHANNEL",
+          "STREAMING",
+          "INTEGRITY"
+        ],
+        "duplicate_function_definitions": {},
+        "misspelled_future_import": true,
+        "misspelled_main_guard": true
+      }
+    },
+    {
+      "file": "filesystem_access_final.py.txt",
+      "source_document": "filesystem_access_draft.md",
+      "source_sha256": "d0bc0c8a1d8b529c362183466cd40e7abc7b979422edd5a05b79e0654653e08d",
+      "source_ranges": [
+        {
+          "first_line": 4,
+          "last_line": 822,
+          "sha256": "53c50670da9032896cf5c41ea63283263870cfe244e00f5797db0bc7b4df5e75"
+        }
+      ],
+      "bytes": 40478,
+      "sha256": "53c50670da9032896cf5c41ea63283263870cfe244e00f5797db0bc7b4df5e75",
+      "inspection": {
+        "method": "lexical inspection; not syntax validation or active-rule coverage",
+        "lines": 819,
+        "nonbreaking_spaces": 8016,
+        "literal_id_entries": [
+          "FS-ACCESS-001",
+          "FS-ACCESS-002",
+          "FS-ACCESS-003",
+          "FS-ACCESS-004",
+          "FS-ACCESS-005",
+          "FS-ACCESS-006",
+          "FS-ACCESS-007",
+          "FS-ACCESS-008",
+          "FS-ACCESS-009",
+          "FS-ACCESS-010",
+          "FS-ACCESS-011",
+          "FS-ACCESS-012"
+        ],
+        "unique_literal_id_count": 12,
+        "category_members": [
+          "DYNAMIC_PATH",
+          "MCP_FILESYSTEM_ROOT",
+          "WRITE_DEPTH",
+          "FILETYPE_RISK",
+          "SECRET_HYGIENE",
+          "STATE_PERSISTENCE",
+          "TRAVERSAL",
+          "AGENT_NATIVE"
+        ],
+        "duplicate_function_definitions": {},
+        "misspelled_future_import": true,
+        "misspelled_main_guard": true
+      }
+    },
+    {
+      "file": "memory_state_security_expanded.py.txt",
+      "source_document": "memory_state_security_draft.md",
+      "source_sha256": "668664e1fab16aa5304fa2868633044dcae505c08b3bd56a4c346cf49cf9613e",
+      "source_ranges": [
+        {
+          "first_line": 1,
+          "last_line": 908,
+          "sha256": "36e9893a69a8bb5a98bf5fe8619f957bd9c76aca01a25ef5de814b8635950a61"
+        },
+        {
+          "first_line": 916,
+          "last_line": 1130,
+          "sha256": "4b5369dc7bd056e977370c1d5d69c9ede49ce1a754d4457d032a9bd124b6f1b1"
+        }
+      ],
+      "bytes": 56314,
+      "sha256": "0b985d348e89263231018d18962a90fe3517b6c8506159d5d801b12e95b204a4",
+      "inspection": {
+        "method": "lexical inspection; not syntax validation or active-rule coverage",
+        "lines": 1123,
+        "nonbreaking_spaces": 11308,
+        "literal_id_entries": [
+          "MEM-SEC-001",
+          "MEM-SEC-002",
+          "MEM-SEC-003",
+          "MEM-SEC-004",
+          "MEM-SEC-005",
+          "MEM-SEC-006",
+          "MEM-SEC-007",
+          "MEM-SEC-008",
+          "MEM-SEC-009",
+          "MEM-SEC-010",
+          "MEM-SEC-101",
+          "MEM-SEC-102",
+          "MEM-SEC-103",
+          "MEM-SEC-104",
+          "MEM-SEC-105",
+          "MEM-SEC-106",
+          "MEM-SEC-107",
+          "MEM-SEC-108"
+        ],
+        "unique_literal_id_count": 18,
+        "category_members": [
+          "MEMORY_PERSISTENCE",
+          "STATE_TAMPERING",
+          "CONTEXT_INJECTION",
+          "SECRET_EXPOSURE",
+          "FRAMEWORK_PATTERNS",
+          "CONTEXT_OVERFLOW",
+          "MEMORY_COMPRESSION"
+        ],
+        "duplicate_function_definitions": {
+          "compute_risk_score": 2
+        },
+        "misspelled_future_import": true,
+        "misspelled_main_guard": true
+      }
+    },
+    {
+      "file": "agent_self_modification_expanded.py.txt",
+      "source_document": "agent_self_modification_draft.md",
+      "source_sha256": "0cd10362efd8b3ebe1b6974f0b36bf59ad4a5c554624888388d5848153f76a2d",
+      "source_ranges": [
+        {
+          "first_line": 1,
+          "last_line": 1038,
+          "sha256": "8d493a87dc7725259472998cc98862945bbd9064997f31d3dbacf919ddf6e5e7"
+        },
+        {
+          "first_line": 1044,
+          "last_line": 1207,
+          "sha256": "127dd01c09a4e9a917a9b0587e264fd413321de1ff15d362e6729f55e4c71734"
+        }
+      ],
+      "bytes": 64336,
+      "sha256": "405491bd1bc4a51f61a328bfbf0be30070d8cb3c9e4ddb3fb663059d77895949",
+      "inspection": {
+        "method": "lexical inspection; not syntax validation or active-rule coverage",
+        "lines": 1202,
+        "nonbreaking_spaces": 13820,
+        "literal_id_entries": [
+          "SELF-MOD-001",
+          "SELF-MOD-002",
+          "SELF-MOD-003",
+          "SELF-MOD-004",
+          "SELF-MOD-005",
+          "SELF-MOD-006",
+          "SELF-MOD-007",
+          "SELF-MOD-008",
+          "SELF-MOD-009",
+          "SELF-MOD-010",
+          "SELF-MOD-011",
+          "SELF-MOD-012",
+          "SELF-MOD-013",
+          "SELF-MOD-014",
+          "SELF-MOD-015",
+          "SELF-MOD-101",
+          "SELF-MOD-102",
+          "SELF-MOD-103",
+          "SELF-MOD-104",
+          "SELF-MOD-105",
+          "SELF-MOD-106",
+          "SELF-MOD-107",
+          "SELF-MOD-108",
+          "SELF-MOD-109",
+          "SELF-MOD-110",
+          "SELF-MOD-111",
+          "SELF-MOD-112"
+        ],
+        "unique_literal_id_count": 27,
+        "category_members": [
+          "SELF_PROMPT",
+          "TOOL_REGENERATION",
+          "MEMORY_STRATEGY",
+          "CONTEXT_TUNING",
+          "SELF_EVALUATION",
+          "PERSISTENCE",
+          "INJECTION",
+          "VALIDATION"
+        ],
+        "duplicate_function_definitions": {},
+        "misspelled_future_import": false,
+        "misspelled_main_guard": true
+      }
+    },
+    {
+      "file": "agent_orchestration_expanded.py.txt",
+      "source_document": "Agent_Orchestration_draft.md",
+      "source_sha256": "304209f1b9cb813bfd5b8974ef118b08773eba10695c5ad1a6b10caaa17316f1",
+      "source_ranges": [
+        {
+          "first_line": 2,
+          "last_line": 937,
+          "sha256": "0ebc9421f394514328578e727a559087c39fc8a9170ab37207dd1b69d8e7d2e2"
+        },
+        {
+          "first_line": 941,
+          "last_line": 1125,
+          "sha256": "20fe50c99a586ef3570071bf4c31f484e5c19f04d45ccb773ceaffa56ab04722"
+        }
+      ],
+      "bytes": 59788,
+      "sha256": "aa53c644fe712821c7a4853a517ac2305c91f483587c3a95b26d125b724e9468",
+      "inspection": {
+        "method": "lexical inspection; not syntax validation or active-rule coverage",
+        "lines": 1121,
+        "nonbreaking_spaces": 12308,
+        "literal_id_entries": [
+          "ORG-001",
+          "ORG-002",
+          "ORG-003",
+          "ORG-004",
+          "ORG-005",
+          "ORG-006",
+          "ORG-007",
+          "ORG-008",
+          "ORG-009",
+          "ORG-010",
+          "ORG-011",
+          "ORG-012",
+          "ORG-013",
+          "ORG-014",
+          "ORG-015",
+          "ORG-016",
+          "ORG-017",
+          "ORG-018",
+          "ORG-019",
+          "ORG-020",
+          "ORG-021",
+          "ORG-022"
+        ],
+        "unique_literal_id_count": 22,
+        "category_members": [
+          "HANDOFF_HIJACKING",
+          "DYNAMIC_ROUTING",
+          "SHARED_STATE",
+          "CROSS_AGENT_LEAKAGE",
+          "ORCHESTRATOR_SELF_MOD"
+        ],
+        "duplicate_function_definitions": {},
+        "misspelled_future_import": true,
+        "misspelled_main_guard": true
+      }
+    },
+    {
+      "file": "agent_to_agent_expanded.py.txt",
+      "source_document": "Agent_to_Agent_draft.md",
+      "source_sha256": "bf1acb0430ebdf98b87af0c1cfdb03fe69c801007c23d81be7d98cd7c64320a2",
+      "source_ranges": [
+        {
+          "first_line": 2,
+          "last_line": 695,
+          "sha256": "b20c7d521998c972cfb8b9b5c77a6ffc51c5e0dc877fe30a5c3faddb7e67c12e"
+        },
+        {
+          "first_line": 701,
+          "last_line": 941,
+          "sha256": "3eb3a7d18a3912834483af15c54dfbc26207efdbc69be60efb262f0983bfd19b"
+        },
+        {
+          "first_line": 945,
+          "last_line": 1113,
+          "sha256": "0d6ba09d3feefc12bac248b149f9d867b15bc9797558123e2b3360be1b400edc"
+        }
+      ],
+      "bytes": 56378,
+      "sha256": "faff6062409e5d029e7dcca6f5b03782f80ad32642ea719a57443ec1ace5d5a4",
+      "inspection": {
+        "method": "lexical inspection; not syntax validation or active-rule coverage",
+        "lines": 1104,
+        "nonbreaking_spaces": 11128,
+        "literal_id_entries": [
+          "A2A-001",
+          "A2A-002",
+          "A2A-003",
+          "A2A-004",
+          "A2A-005",
+          "A2A-006",
+          "A2A-007",
+          "A2A-008",
+          "A2A-009",
+          "A2A-010",
+          "A2A-011",
+          "A2A-012",
+          "A2A-013",
+          "A2A-014",
+          "A2A-015",
+          "A2A-016",
+          "A2A-017",
+          "A2A-018",
+          "A2A-101",
+          "A2A-102",
+          "A2A-103",
+          "A2A-104",
+          "A2A-105",
+          "A2A-106",
+          "A2A-107",
+          "A2A-108"
+        ],
+        "unique_literal_id_count": 26,
+        "category_members": [
+          "A2A_CALL",
+          "IMPERSONATION",
+          "TRUST_CHAINS",
+          "CROSS_AGENT_STATE",
+          "AUTHORIZATION"
+        ],
+        "duplicate_function_definitions": {},
+        "misspelled_future_import": true,
+        "misspelled_main_guard": true
+      }
+    }
+  ]
+}

@@ -1,0 +1,1104 @@
+"""
+agent_to_agent_expanded.py — Part 1 of 3
+
+Security scanner for agent-to-agent (A2A) patterns — enhanced edition.
+
+New:
+- Nested A2A patterns (e.g., agent.call(agent2.call(agent3)))
+- Trust chain graphs (agent1 → agent2 → agent3)
+- Impersonation vectors (direct, prompt, signature-based)
+- Cross-agent state & memory flows (bidirectional leaks)
+- Authorization drift detection (role/permission evolution)
+- MCP A2A integration (trust_policies, state_sharing)
+- Framework-specific rules (LangChain, AutoGen, MCP, custom)
+- Dynamic severity (adjust based on prod, dev, orchestrator_type)
+
+Version: 1.1.0
+"""
+
+from _future_ import annotations
+
+_doc_ = """
+Agent-to-Agent (A2A) scanner (expanded edition) for AI agents.
+
+Detects agent-to-agent calls, impersonation, trust chains, cross-agent state/memory,
+and agent-specific patterns like LLM-driven handoffs and self-authorization.
+"""
+
+_version_ = "1.1.0"
+
+import ast
+import re
+import os
+import json
+from pathlib import Path
+from dataclasses import dataclass, field
+from typing import List, Dict, Any, Optional, Tuple, Set
+from enum import Enum
+
+
+
+class Severity(Enum):
+    CRITICAL = "critical"
+    HIGH = "high"
+    MEDIUM = "medium"
+    LOW = "low"
+
+
+
+class Category(Enum):
+    A2A_CALL = "a2a_call"
+    IMPERSONATION = "impersonation"
+    TRUST_CHAINS = "trust_chains"
+    CROSS_AGENT_STATE = "cross_agent_state"
+    AUTHORIZATION = "authorization"
+
+
+
+@dataclass
+class Finding:
+    id: str
+    title: str
+    severity: Severity
+    category: Category
+    description: str
+    evidence: Dict[str, Any]
+    location: Optional[str] = None
+    rule_id: Optional[str] = None
+    remediation_hint: Optional[str] = None
+    references: List[str] = field(default_factory=list)
+    tags: List[str] = field(default_factory=list)
+    context: Dict[str, Any] = field(default_factory=dict)
+
+
+
+@dataclass
+class ScannerContext:
+    source_path: Path
+    config: Dict[str, Any] = field(default_factory=dict)
+    rules: List[Dict[str, Any]] = field(default_factory=list)
+    mcp_a2a_roots: List[Dict[str, Any]] = field(default_factory=list)
+
+
+
+# === A2A PATTERN DETECTORS (ENHANCED) ===
+
+A2A_PATTERNS = {
+    "call": [
+        r"agent\.call\s*\(\s*agent2",
+        r"agent\.route\s*\(\s*task\s*=\s*agent3",
+        r"agent\.forward\s*\(\s*agent\s*=\s*agent2",
+    ],
+    "impersonation": [
+        r"agent\.update\s*\(\s*prompt\s*=\s*f['\"].*I am agent",
+        r"agent\.rewrite_system_prompt\s*\(\s*agent\s*=\s*agent2",
+        r"agent\.impersonate\s*\(\s*agent\s*=\s*agent2",
+    ],
+    "trust": [
+        r"agent1\.authorize\s*\(\s*agent2",
+        r"agent2\.trust\s*\(\s*agent3",
+        r"agent\.trust_chain\s*\(\s*agent\s*=\s*agent2",
+    ],
+    "state": [
+        r"agent1\.memory\s*→\s*agent2\.context",
+        r"agent1\.state\s*→\s*agent2\.input",
+        r"agent\.share_memory\s*\(\s*to\s*=\s*agent2",
+    ],
+    "authz": [
+        r"agent\.sign\s*\(\s*agent2",
+        r"agent\.authorize\s*\(\s*agent2",
+        r"agent\.verify\s*\(\s*agent2",
+    ],
+}
+
+# Common persistence patterns
+PERSISTENCE_PATTERNS = {
+    "file": [
+        r"save.*a2a|persist.*a2a",
+        r"write.*a2a_config",
+    ],
+    "db": [
+        r"db\.save.*a2a",
+        r"redis\.set.*a2a",
+        r"sqlite\.execute.*a2a",
+    ],
+    "cloud": [
+        r"s3\.put.*a2a",
+        r"gcs\.upload.*a2a",
+        r"azure\.blob.*a2a",
+    ],
+}
+
+
+
+def is_a2a_operation(func_name: str) -> bool:
+    """Detect if function is likely an A2A operation."""
+    func_lower = func_name.lower()
+    return any(
+        p in func_lower
+        for p in ["call", "route", "forward", "share", "authorize", "trust", "sign"]
+    )
+
+
+
+def analyze_a2a_persistence(path: str, content: Optional[str] = None) -> Dict[str, Any]:
+    """Analyze A2A persistence: file, db, or cloud."""
+    if content and any(p in content for p in ["db.save", "redis.set", "sqlite.execute"]):
+        return {"type": "db", "confidence": 0.8}
+    if any(path.endswith(ext) for ext in [".json", ".yaml", ".pkl"]):
+        return {"type": "file", "confidence": 0.7}
+    if any(ext in path.lower() for ext in ["/s3/", "/gcs/", "azure/"]):
+        return {"type": "cloud", "confidence": 0.9}
+    return {"type": "unknown", "confidence": 0.5}
+
+
+
+# === IMPERSONATION VECTORS SCORER (NEW) ===
+
+def score_impersonation_vectors(code_snippet: str) -> Dict[str, Any]:
+    """Score how likely code includes impersonation vectors."""
+    imp_vectors = 0
+    if re.search(r"agent\.update\s*\(\s*prompt\s*=\s*f['\"].*I am agent", code_snippet):
+        imp_vectors += 25
+    if re.search(r"agent\.rewrite_system_prompt\s*\(\s*agent\s*=\s*agent2", code_snippet):
+        imp_vectors += 25
+    if re.search(r"agent\.sign\s*\(\s*agent2", code_snippet):
+        imp_vectors += 25
+    if re.search(r"agent\.impersonate\s*\(\s*agent\s*=\s*agent2", code_snippet):
+        imp_vectors += 25
+
+    return {
+        "imp_vectors_score": min(100, imp_vectors),
+        "imp_vectors": [
+            "prompt-injection",
+            "system-prompt-rewrite",
+            "signature-based",
+            "impersonate-agent",
+        ],
+        "is_vulnerable": imp_vectors >= 50,
+    }
+
+
+
+# === TRUST CHAIN SCORER (ENHANCED) ===
+
+def score_trust_chains(code_snippet: str) -> Dict[str, Any]:
+    """Score how likely code includes trust chain patterns."""
+    trust_risks = 0
+    if re.search(r"agent1\.authorize\s*\(\s*agent2", code_snippet):
+        trust_risks += 25
+    if re.search(r"agent2\.trust\s*\(\s*agent3", code_snippet):
+        trust_risks += 25
+    if re.search(r"agent\.trust_chain\s*\(\s*agent\s*=\s*agent2", code_snippet):
+        trust_risks += 25
+    if re.search(r"agent\.verify\s*\(\s*agent2", code_snippet):
+        trust_risks += 25
+
+    return {
+        "trust_risk_score": min(100, trust_risks),
+        "trust_vectors": [
+            "authorize",
+            "trust",
+            "trust_chain",
+            "verify",
+        ],
+        "is_trust_chain": trust_risks >= 50,
+    }
+
+
+
+# === CROSS-AGENT STATE SCORER (ENHANCED) ===
+
+def score_cross_agent_state(code_snippet: str) -> Dict[str, Any]:
+    """Score how likely code includes cross-agent state/memory sharing."""
+    state_risks = 0
+    if re.search(r"agent1\.memory\s*→\s*agent2\.context", code_snippet):
+        state_risks += 25
+    if re.search(r"agent1\.state\s*→\s*agent2\.input", code_snippet):
+        state_risks += 25
+    if re.search(r"agent\.share_memory\s*\(\s*to\s*=\s*agent2", code_snippet):
+        state_risks += 25
+    if re.search(r"agent\.forward.*agent2", code_snippet):
+        state_risks += 25
+
+    return {
+        "state_risk_score": min(100, state_risks),
+        "state_vectors": [
+            "memory-forward",
+            "state-forward",
+            "share_memory",
+            "forward-agent",
+        ],
+        "is_vulnerable": state_risks >= 50,
+    }
+
+
+
+# === FRAMEWORK DETECTION (ENHANCED) ===
+
+FRAMEWORK_PATTERNS = {
+    "langchain": [
+        r"AgentExecutor",
+        r"SequentialChain",
+        r"AgentRunner",
+    ],
+    "autogen": [
+        r"GroupChat",
+        r"ManagerAgent",
+        r"ConversableAgent\.group_chat",
+    ],
+    "mcp": [
+        r"state\.store.*agent",
+        r"memory\.persist.*agent",
+        r"trust\.store.*agent",
+    ],
+}
+
+
+
+def detect_framework(path: Path, source: str) -> List[str]:
+    """Detect which agent frameworks are used in the code."""
+    frameworks = []
+    for fw, patterns in FRAMEWORK_PATTERNS.items():
+        if any(re.search(p, source, re.IGNORECASE) for p in patterns):
+            frameworks.append(fw)
+    return frameworks
+
+
+
+def score_framework_mismatch(code_snippet: str, frameworks: List[str]) -> Dict[str, Any]:
+    """Score how likely framework-specific patterns are mismatched."""
+    mismatch_risks = 0
+    if "langchain" in frameworks and re.search(r"AgentExecutor", code_snippet):
+        mismatch_risks += 20
+    if "autogen" in frameworks and re.search(r"GroupChat", code_snippet):
+        mismatch_risks += 20
+    if "mcp" in frameworks and re.search(r"state\.store.*agent", code_snippet):
+        mismatch_risks += 20
+    if len(frameworks) > 2:
+        mismatch_risks += 20 # multi-framework = higher mismatch risk
+
+    return {
+        "mismatch_risk_score": min(100, mismatch_risks),
+        "mismatch_vectors": frameworks,
+        "is_vulnerable": mismatch_risks >= 40,
+    }
+
+
+
+# === RULES (PART 1: 001–018) — START — ===
+
+DEFAULT_RULES = {
+    "agent_to_agent": {
+        "id_prefix": "A2A",
+        "description": "Detection of agent-to-agent patterns",
+        "rules": [
+            # BASE (001–018)
+            {
+                "id": "A2A-001",
+                "name": "Agent-to-agent call: agent calls another agent (e.g., agent1.call(agent2))",
+                "category": Category.A2A_CALL,
+                "severity": Severity.HIGH,
+                "patterns": [
+                    r"agent\.call\s*\(\s*agent2",
+                    r"agent\.route\s*\(\s*task\s*=\s*agent3",
+                    r"agent\.forward\s*\(\s*agent\s*=\s*agent2",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "call_change": match.group(0)[:60] if match else "unknown",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Validate A2A calls; use agent registries or allowlists.",
+            },
+            {
+                "id": "A2A-002",
+                "name": "Impersonation: agent impersonates another agent (e.g., agent.update(prompt='I am agent1'))",
+                "category": Category.IMPERSONATION,
+                "severity": Severity.HIGH,
+                "patterns": [
+                    r"agent\.update\s*\(\s*prompt\s*=\s*f['\"].*I am agent",
+                    r"agent\.rewrite_system_prompt\s*\(\s*agent\s*=\s*agent2",
+                    r"agent\.impersonate\s*\(\s*agent\s*=\s*agent2",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "impersonation_change": match.group(0)[:60] if match else "unknown",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Validate impersonation sources; use cryptographic signatures for trust.",
+            },
+            {
+                "id": "A2A-003",
+                "name": "Trust chain: agent authorizes another agent (e.g., agent1.authorize(agent2))",
+                "category": Category.TRUST_CHAINS,
+                "severity": Severity.MEDIUM,
+                "patterns": [
+                    r"agent1\.authorize\s*\(\s*agent2",
+                    r"agent2\.trust\s*\(\s*agent3",
+                    r"agent\.trust_chain\s*\(\s*agent\s*=\s*agent2",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "trust_change": match.group(0)[:60] if match else "unknown",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Version trust chains; audit authorization logs regularly.",
+            },
+            {
+                "id": "A2A-004",
+                "name": "Cross-agent state/memory: agent shares memory/state with another agent (e.g., agent1.memory → agent2.context)",
+                "category": Category.CROSS_AGENT_STATE,
+                "severity": Severity.MEDIUM,
+                "patterns": [
+                    r"agent1\.memory\s*→\s*agent2\.context",
+                    r"agent1\.state\s*→\s*agent2\.input",
+                    r"agent\.share_memory\s*\(\s*to\s*=\s*agent2",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "state_change": match.group(0)[:60] if match else "unknown",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Limit cross-agent memory sharing; use encryption or anonymization.",
+            },
+            {
+                "id": "A2A-005",
+                "name": "Authorization: agent signs/authorizes another agent (e.g., agent.sign(agent2, task))",
+                "category": Category.AUTHORIZATION,
+                "severity": Severity.MEDIUM,
+                "patterns": [
+                    r"agent\.sign\s*\(\s*agent2",
+                    r"agent\.authorize\s*\(\s*agent2",
+                    r"agent\.verify\s*\(\s*agent2",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "authz_change": match.group(0)[:60] if match else "unknown",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Use cryptographic signatures for authZ; avoid unsigned agent actions.",
+            },
+            {
+                "id": "A2A-006",
+                "name": "LLM-driven A2A: agent makes A2A decisions based on LLM response (e.g., agent.route(task, llm.decide_agent()))",
+                "category": Category.A2A_CALL,
+                "severity": Severity.HIGH,
+                "patterns": [
+                    r"agent\.route\s*\(\s*task\s*=\s*llm",
+                    r"agent\.select\s*\(\s*agent\s*=\s*llm",
+                    r"agent\.forward\s*\(\s*agent\s*=\s*llm",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "llm_change": match.group(0)[:60] if match else "unknown",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Validate LLM A2A decisions; use human-in-the-loop for critical handoffs.",
+            },
+            {
+                "id": "A2A-007",
+                "name": "Agent framework-specific: LangChain A2A patterns detected (e.g., AgentExecutor)",
+                "category": Category.A2A_CALL,
+                "severity": Severity.LOW,
+                "patterns": [
+                    r"AgentExecutor",
+                    r"SequentialChain",
+                    r"AgentRunner",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "framework": "langchain",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Use LangChain-specific best practices for A2A.",
+            },
+            {
+                "id": "A2A-008",
+                "name": "Agent framework-specific: AutoGen A2A patterns detected (e.g., GroupChat)",
+                "category": Category.A2A_CALL,
+                "severity": Severity.LOW,
+                "patterns": [
+                    r"GroupChat",
+                    r"ManagerAgent",
+                    r"ConversableAgent\.group_chat",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "framework": "autogen",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Pin AutoGen A2A paths; use `save_chat_history()` for persistence.",
+            },
+            {
+                "id": "A2A-009",
+                "name": "Agent framework-specific: MCP A2A patterns detected (e.g., state.store.*agent)",
+                "category": Category.A2A_CALL,
+                "severity": Severity.LOW,
+                "patterns": [
+                    r"state\.store.*agent",
+                    r"memory\.persist.*agent",
+                    r"trust\.store.*agent",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "framework": "mcp",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Explicitly declare MCP A2A permissions; avoid implicit writes.",
+            },
+            {
+                "id": "A2A-010",
+                "name": "Persistence of A2A: A2A changes saved to file/DB for long-term reuse (e.g., agent.save_a2a_config())",
+                "category": Category.TRUST_CHAINS,
+                "severity": Severity.MEDIUM,
+                "patterns": [
+                    r"save_a2a",
+                    r"persist_a2a",
+                    r"write_a2a_config",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "persistence_type": match.group(0)[:60] if match else "unknown",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Version A2A changes; validate persisted changes before reuse.",
+            },
+            {
+                "id": "A2A-011",
+                "name": "Impersonation: agent impersonates another agent based on LLM suggestion (e.g., agent.update(prompt='I am agent1 from llm'))",
+                "category": Category.IMPERSONATION,
+                "severity": Severity.HIGH,
+                "patterns": [
+                    r"agent\.update\s*\(\s*prompt\s*=\s*f['\"].*I am agent1",
+                    r"agent\.rewrite_system_prompt\s*\(\s*agent\s*=\s*agent2",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "impersonation_patterns": score_impersonation_vectors(match.group(0)) if match else {},
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Validate impersonation sources; use cryptographic signatures for trust.",
+            },
+            {
+                "id": "A2A-012",
+                "name": "Trust chain: agent authorizes another agent with LLM-determined trust (e.g., agent1.authorize(agent2, trust=llm.suggest()))",
+                "category": Category.TRUST_CHAINS,
+                "severity": Severity.MEDIUM,
+                "patterns": [
+                    r"agent1\.authorize\s*\(\s*agent2",
+                    r"agent2\.trust\s*\(\s*agent3",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "trust_patterns": score_trust_chains(match.group(0)) if match else {},
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Version trust chains; audit authorization logs regularly.",
+            },
+            {
+                "id": "A2A-013",
+                "name": "Cross-agent state/memory: agent shares memory/state with another agent (e.g., agent1.memory → agent2.context)",
+                "category": Category.CROSS_AGENT_STATE,
+                "severity": Severity.MEDIUM,
+                "patterns": [
+                    r"agent1\.memory\s*→\s*agent2\.context",
+                    r"agent1\.state\s*→\s*agent2\.input",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "state_patterns": score_cross_agent_state(match.group(0)) if match else {},
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Limit cross-agent memory sharing; use encryption or anonymization.",
+            },
+            {
+                "id": "A2A-014",
+                "name": "Authorization: agent signs/authorizes another agent (e.g., agent.sign(agent2, task))",
+                "category": Category.AUTHORIZATION,
+                "severity": Severity.MEDIUM,
+                "patterns": [
+                    r"agent\.sign\s*\(\s*agent2",
+                    r"agent\.authorize\s*\(\s*agent2",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "authz_patterns": match.group(0)[:60] if match else "unknown",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Use cryptographic signatures for authZ; avoid unsigned agent actions.",
+            },
+            {
+                "id": "A2A-015",
+                "name": "Agent-to-agent call: agent calls another agent (e.g., agent1.call(agent2))",
+                "category": Category.A2A_CALL,
+                "severity": Severity.HIGH,
+                "patterns": [
+                    r"agent\.call\s*\(\s*agent2",
+                    r"agent\.route\s*\(\s*task\s*=\s*agent3",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "call_change": match.group(0)[:60] if match else "unknown",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Validate A2A calls; use agent registries or allowlists.",
+            },
+            {
+                "id": "A2A-016",
+                "name": "Impersonation: agent impersonates another agent (e.g., agent.update(prompt='I am agent1'))",
+                "category": Category.IMPERSONATION,
+                "severity": Severity.HIGH,
+                "patterns": [
+                    r"agent\.update\s*\(\s*prompt\s*=\s*f['\"].*I am agent",
+                    r"agent\.rewrite_system_prompt\s*\(\s*agent\s*=\s*agent2",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "impersonation_change": match.group(0)[:60] if match else "unknown",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Validate impersonation sources; use cryptographic signatures for trust.",
+            },
+            {
+                "id": "A2A-017",
+                "name": "Trust chain: agent authorizes another agent (e.g., agent1.authorize(agent2))",
+                "category": Category.TRUST_CHAINS,
+                "severity": Severity.MEDIUM,
+                "patterns": [
+                    r"agent1\.authorize\s*\(\s*agent2",
+                    r"agent2\.trust\s*\(\s*agent3",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "trust_change": match.group(0)[:60] if match else "unknown",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Version trust chains; audit authorization logs regularly.",
+            },
+            {
+                "id": "A2A-018",
+                "name": "Cross-agent state/memory: agent shares memory/state with another agent (e.g., agent1.memory → agent2.context)",
+                "category": Category.CROSS_AGENT_STATE,
+                "severity": Severity.MEDIUM,
+                "patterns": [
+                    r"agent1\.memory\s*→\s*agent2\.context",
+                    r"agent1\.state\s*→\s*agent2\.input",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "state_change": match.group(0)[:60] if match else "unknown",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Limit cross-agent memory sharing; use encryption or anonymization.",
+            },
+        ],
+        "rule_map": {},
+    }
+}
+
+# Initialize rule_map
+DEFAULT_RULES["agent_to_agent"]["rule_map"] = {
+    rule["id"]: rule for rule in DEFAULT_RULES["agent_to_agent"]["rules"]
+}
+
+
+
+# === AST SCANNER (PART 1) — START — ===
+
+def scan_ast_file(path: Path, context: ScannerContext) -> List[Finding]:
+    """Scan Python files for agent-to-agent patterns (expanded)."""
+    findings = []
+    try:
+        source = path.read_text(encoding="utf-8")
+        tree = ast.parse(source, filename=str(path))
+
+        call_nodes = [n for n in ast.walk(tree) if isinstance(n, ast.Call)]
+
+        for node in call_nodes:
+            func_name = _get_call_name(node.func)
+            if not func_name:
+                continue
+
+            func_lower = func_name.lower()
+            if any(f in func_lower for f in ["call", "route", "forward", "share", "authorize", "trust", "sign"]):
+                source_snippet = _get_line_snippet(source, node.lineno)
+
+                for rule in context.rules:
+                    for pattern in rule["patterns"]:
+                        if re.search(pattern, source_snippet, re.IGNORECASE):
+                            # Compute additional metrics
+                            impersonation = score_impersonation_vectors(source_snippet)
+                            trust = score_trust_chains(source_snippet)
+                            state = score_cross_agent_state(source_snippet)
+                            framework = detect_framework(path, source_snippet)
+                            framework_mismatch = score_framework_mismatch(source_snippet, framework)
+
+                            evidence = rule["evidence_extractor"](node, None) | {
+                                "file": str(path),
+                                "code_line": source_snippet.strip(),
+                                "impersonation": impersonation,
+                                "trust": trust,
+                                "state": state,
+                                "framework_mismatch": framework_mismatch,
+                                "frameworks": framework,
+                            }
+
+                            findings.append(
+                                Finding(
+                                    id=rule["id"],
+                                    title=rule["name"],
+                                    severity=rule["severity"],
+                                    category=rule["category"],
+                                    description=f"Found {func_name} usage matching pattern: {pattern}",
+                                    evidence=evidence,
+                                    location=f"{path}:{node.lineno}",
+                                    rule_id=rule["id"],
+                                    remediation_hint=rule.get("remediation_hint"),
+                                    references=[
+                                        "https://langchain-ai.github.io/langchain/",
+                                        "https://microsoft.github.io/autogen/",
+                                    ],
+                                    tags=[
+                                        "a2a" if "call" in func_lower else "routing",
+                                        "impersonation" if impersonation["is_vulnerable"] else None,
+                                        "trust" if trust["is_trust_chain"] else None,
+                                        "state" if state["is_vulnerable"] else None,
+                                    ] + framework,
+                                    context={
+                                        "framework": framework[0] if framework else "generic",
+                                        "impersonation": impersonation,
+                                        "trust": trust,
+                                        "state": state,
+                                        "framework_mismatch": framework_mismatch,
+                                    },
+                                    file_line_range=(node.lineno, node.end_lineno or node.lineno),
+                                )
+                            )
+    except Exception as e:
+        findings.append(
+            Finding(
+                id="A2A-099",
+                title="AST parse failed",
+                severity=Severity.LOW,
+                category=Category.A2A_CALL,
+                description=f"Failed to parse {path}: {e}",
+                evidence={"exception": str(e)},
+                context={"path": str(path)},
+            )
+        )
+    return findings
+
+
+
+def _get_call_name(func_node: ast.AST) -> Optional[str]:
+    if isinstance(func_node, ast.Name):
+        return func_node.id
+    if isinstance(func_node, ast.Attribute):
+        return f"{_get_call_name(func_node.value)}.{func_node.attr}"
+    if isinstance(func_node, ast.Call):
+        return f"{_get_call_name(func_node.func)}()"
+    return None
+
+
+
+def _get_line_snippet(source: str, lineno: int, context_lines: int = 3) -> str:
+    lines = source.splitlines()
+    start = max(0, lineno - 1 - context_lines)
+    end = min(len(lines), lineno + context_lines)
+    return "\n".join(
+        f"{i + 1:>5} | {line}"
+        for i, line in enumerate(lines[start:end], start=start)
+    )
+# === NESTED A2A DETECTOR (NEW) ===
+
+def score_nested_a2a(code_snippet: str) -> Dict[str, Any]:
+    """Score how likely code includes nested A2A patterns."""
+    nested_risks = 0
+    if re.search(r"agent\.call\(agent2\.call\(agent3\)\)", code_snippet):
+        nested_risks += 30
+    if re.search(r"agent\.route\(task\s*=\s*agent2\.response\)", code_snippet):
+        nested_risks += 25
+    if re.search(r"agent\.forward\(data\s*=\s*agent2\.call\(agent3\)\)", code_snippet):
+        nested_risks += 25
+    if re.search(r"agent\.share_memory\(to\s*=\s*agent2\.get_state\(\)\)", code_snippet):
+        nested_risks += 20
+
+    return {
+        "nested_risk_score": min(100, nested_risks),
+        "nested_vectors": [
+            "nested-calls",
+            "cross-agent-calls",
+            "response-forward",
+            "state-get",
+        ],
+        "is_nested": nested_risks >= 60,
+    }
+
+
+
+# === AUTHORIZATION DRIFT DETECTOR (NEW) ===
+
+def score_authz_drift(code_snippet: str) -> Dict[str, Any]:
+    """Score how likely code includes authorization drift patterns."""
+    drift_risks = 0
+    if re.search(r"agent\.role\s*=\s*agent2\.role", code_snippet):
+        drift_risks += 25
+    if re.search(r"agent\.permissions\s*=\s*agent2\.permissions", code_snippet):
+        drift_risks += 25
+    if re.search(r"agent\.update_authorization\s*\(\s*agent\s*=\s*agent2", code_snippet):
+        drift_risks += 25
+    if re.search(r"agent\.reauthorize\s*\(\s*agent\s*=\s*agent2", code_snippet):
+        drift_risks += 25
+
+    return {
+        "drift_risk_score": min(100, drift_risks),
+        "drift_vectors": [
+            "role-drift",
+            "permission-drift",
+            "update_authorization",
+            "reauthorize",
+        ],
+        "is_vulnerable": drift_risks >= 50,
+    }
+
+
+
+# === SECURITY SCORING ENGINE (ENHANCED) ===
+
+def compute_risk_score(finding: Finding, context: ScannerContext = None) -> Dict[str, Any]:
+    """Compute dynamic risk score (0–100) and confidence level for A2A findings."""
+    base = {
+        "critical": 90,
+        "high": 70,
+        "medium": 50,
+        "low": 30,
+    }.get(finding.severity.value, 40)
+
+    evidence = finding.evidence
+    nested = evidence.get("nested", {})
+    impersonation = evidence.get("impersonation", {})
+    trust = evidence.get("trust", {})
+    state = evidence.get("state", {})
+    authz_drift = evidence.get("authz_drift", {})
+    framework_mismatch = evidence.get("framework_mismatch", {})
+
+    nested_modifier = nested.get("nested_risk_score", 0) if isinstance(nested, dict) else 0
+    impersonation_modifier = impersonation.get("imp_vectors_score", 0) if isinstance(impersonation, dict) else 0
+    trust_modifier = trust.get("trust_risk_score", 0) if isinstance(trust, dict) else 0
+    state_modifier = state.get("state_risk_score", 0) if isinstance(state, dict) else 0
+    authz_modifier = authz_drift.get("drift_risk_score", 0) if isinstance(authz_drift, dict) else 0
+    framework_modifier = framework_mismatch.get("mismatch_risk_score", 0) if isinstance(framework_mismatch, dict) else 0
+
+    final_score = min(
+        100,
+        base
+        + nested_modifier
+        + impersonation_modifier
+        + trust_modifier
+        + state_modifier
+        + authz_modifier
+        + framework_modifier,
+    )
+
+    evidence_items = list(evidence.items())
+    confidence = 0.5 + (len(evidence_items) / 10)
+
+    return {
+        "risk_score": final_score,
+        "nested_modifier": nested_modifier,
+        "impersonation_modifier": impersonation_modifier,
+        "trust_modifier": trust_modifier,
+        "state_modifier": state_modifier,
+        "authz_modifier": authz_modifier,
+        "framework_modifier": framework_modifier,
+        "confidence": round(confidence, 2),
+    }
+
+
+
+# === RULES (PART 2: 101–108) — START — ===
+
+# Extend DEFAULT_RULES["agent_to_agent"]["rules"]
+rule_extensions = [
+    {
+        "id": "A2A-101",
+        "name": "Nested A2A: agent calls include nested agent calls (e.g., agent.call(agent2.call(agent3)))",
+        "category": Category.A2A_CALL,
+        "severity": Severity.HIGH,
+        "patterns": [
+            r"agent\.call\(agent2\.call\(agent3\)\)",
+            r"agent\.route\(task\s*=\s*agent2\.response\)",
+            r"agent\.forward\(data\s*=\s*agent2\.call\(agent3\)\)",
+        ],
+        "evidence_extractor": lambda node, match: {
+            "nested_patterns": score_nested_a2a(match.group(0)) if match else {},
+            "line": node.lineno,
+        },
+        "remediation_hint": "Validate nested A2A calls; add timeout and retry logic.",
+    },
+    {
+        "id": "A2A-102",
+        "name": "Impersonation: agent impersonates another agent with LLM-determined identity (e.g., agent.update(prompt='I am agent1 from llm'))",
+        "category": Category.IMPERSONATION,
+        "severity": Severity.HIGH,
+        "patterns": [
+            r"agent\.update\s*\(\s*prompt\s*=\s*f['\"].*I am agent1",
+            r"agent\.rewrite_system_prompt\s*\(\s*agent\s*=\s*agent2",
+        ],
+        "evidence_extractor": lambda node, match: {
+            "impersonation_patterns": score_impersonation_vectors(match.group(0)) if match else {},
+            "line": node.lineno,
+        },
+        "remediation_hint": "Validate impersonation sources; use cryptographic signatures for trust.",
+    },
+    {
+        "id": "A2A-103",
+        "name": "Trust chain: agent authorizes another agent with LLM-determined trust (e.g., agent1.authorize(agent2, trust=llm.suggest()))",
+        "category": Category.TRUST_CHAINS,
+        "severity": Severity.MEDIUM,
+        "patterns": [
+            r"agent1\.authorize\s*\(\s*agent2",
+            r"agent2\.trust\s*\(\s*agent3",
+        ],
+        "evidence_extractor": lambda node, match: {
+            "trust_patterns": score_trust_chains(match.group(0)) if match else {},
+            "line": node.lineno,
+        },
+        "remediation_hint": "Version trust chains; audit authorization logs regularly.",
+    },
+    {
+        "id": "A2A-104",
+        "name": "Cross-agent state/memory: agent shares memory/state with another agent (e.g., agent1.memory → agent2.context)",
+        "category": Category.CROSS_AGENT_STATE,
+        "severity": Severity.MEDIUM,
+        "patterns": [
+            r"agent1\.memory\s*→\s*agent2\.context",
+            r"agent1\.state\s*→\s*agent2\.input",
+        ],
+        "evidence_extractor": lambda node, match: {
+            "state_patterns": score_cross_agent_state(match.group(0)) if match else {},
+            "line": node.lineno,
+        },
+        "remediation_hint": "Limit cross-agent memory sharing; use encryption or anonymization.",
+    },
+    {
+        "id": "A2A-105",
+        "name": "Authorization drift: agent permissions drift across agents (e.g., agent.role = agent2.role)",
+        "category": Category.AUTHORIZATION,
+        "severity": Severity.MEDIUM,
+        "patterns": [
+            r"agent\.role\s*=\s*agent2\.role",
+            r"agent\.permissions\s*=\s*agent2\.permissions",
+        ],
+        "evidence_extractor": lambda node, match: {
+            "authz_drift_patterns": score_authz_drift(match.group(0)) if match else {},
+            "line": node.lineno,
+        },
+        "remediation_hint": "Version authorization drift; audit permission changes regularly.",
+    },
+    {
+        "id": "A2A-106",
+        "name": "Agent-to-agent call: agent calls another agent (e.g., agent1.call(agent2))",
+        "category": Category.A2A_CALL,
+        "severity": Severity.HIGH,
+        "patterns": [
+            r"agent\.call\s*\(\s*agent2",
+            r"agent\.route\s*\(\s*task\s*=\s*agent3",
+        ],
+        "evidence_extractor": lambda node, match: {
+            "call_change": match.group(0)[:60] if match else "unknown",
+            "line": node.lineno,
+        },
+        "remediation_hint": "Validate A2A calls; use agent registries or allowlists.",
+    },
+    {
+        "id": "A2A-107",
+        "name": "Impersonation: agent impersonates another agent (e.g., agent.update(prompt='I am agent1'))",
+        "category": Category.IMPERSONATION,
+        "severity": Severity.HIGH,
+        "patterns": [
+            r"agent\.update\s*\(\s*prompt\s*=\s*f['\"].*I am agent",
+            r"agent\.rewrite_system_prompt\s*\(\s*agent\s*=\s*agent2",
+        ],
+        "evidence_extractor": lambda node, match: {
+            "impersonation_change": match.group(0)[:60] if match else "unknown",
+            "line": node.lineno,
+        },
+        "remediation_hint": "Validate impersonation sources; use cryptographic signatures for trust.",
+    },
+    {
+        "id": "A2A-108",
+        "name": "Trust chain: agent authorizes another agent (e.g., agent1.authorize(agent2))",
+        "category": Category.TRUST_CHAINS,
+        "severity": Severity.MEDIUM,
+        "patterns": [
+            r"agent1\.authorize\s*\(\s*agent2",
+            r"agent2\.trust\s*\(\s*agent3",
+        ],
+        "evidence_extractor": lambda node, match: {
+            "trust_change": match.group(0)[:60] if match else "unknown",
+            "line": node.lineno,
+        },
+        "remediation_hint": "Version trust chains; audit authorization logs regularly.",
+    },
+]
+
+# Extend rules list
+DEFAULT_RULES["agent_to_agent"]["rules"].extend(rule_extensions)
+
+# Update rule_map
+DEFAULT_RULES["agent_to_agent"]["rule_map"].update(
+    {rule["id"]: rule for rule in rule_extensions}
+)
+# === MCP A2A STORAGE PARSER (PART 3) ===
+
+def parse_mcp_a2a_storage(root: Path) -> List[Dict[str, Any]]:
+    """Parse MCP config for A2A storage patterns (e.g., trust stores, state_sharing)."""
+    state_stores = []
+    config_files = list(root.rglob("mcp*.yaml")) + list(root.rglob("mcp*.yml")) + list(root.rglob("mcp*.json"))
+    for cfg_path in config_files:
+        try:
+            text = cfg_path.read_text()
+            data = json.loads(text) if cfg_path.suffix == ".json" else _load_yaml(text)
+
+            # Look for A2A storage at top-level or under 'trust', 'state_sharing' keys
+            if "trust" in data:
+                trusts = data["trust"] if isinstance(data["trust"], list) else [data["trust"]]
+                for trust in trusts:
+                    if isinstance(trust, dict):
+                        state_stores.append({
+                            "path": trust.get("path", "/"),
+                            "type": "trust",
+                            "mode": trust.get("mode", "read-write"),
+                            "source": str(cfg_path),
+                        })
+            if "state_sharing" in data:
+                sharings = data["state_sharing"] if isinstance(data["state_sharing"], list) else [data["state_sharing"]]
+                for sharing in sharings:
+                    if isinstance(sharing, dict):
+                        state_stores.append({
+                            "path": sharing.get("path", "/"),
+                            "type": "state_sharing",
+                            "mode": sharing.get("mode", "read-write"),
+                            "source": str(cfg_path),
+                        })
+        except Exception:
+            continue
+    return state_stores
+
+
+
+def _load_yaml(text: str) -> Dict[str, Any]:
+    import yaml
+    return yaml.safe_load(text) or {}
+
+
+
+# === CLI (PART 3) ===
+
+if _name_ == "_main_":
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description="Scan for agent-to-agent risks (expanded)",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  agent_to_agent_expanded.txt . --trust-threshold 0.7 --max-agents 20
+  agent_to_agent_expanded.txt ./my_agent --min-severity=high --ci
+
+For more info: https://github.com/yourorg/agent-to-agent-scanner
+""",
+    )
+    parser.add_argument("path", type=Path, help="Project root to scan")
+    parser.add_argument("--no-mcp", action="store_true", help="Skip MCP A2A storage parsing")
+    parser.add_argument("--trust-threshold", type=float, default=0.7, help="Min trust score for trust chains")
+    parser.add_argument("--max-agents", type=int, default=20, help="Max agents before flagging call graphs")
+    parser.add_argument("--min-severity", choices=["low", "medium", "high", "critical"], default="low")
+    parser.add_argument("--format", choices=["table", "json"], default="table")
+    parser.add_argument("--ci", action="store_true", help="CI mode: exit non-zero on critical findings")
+    parser.add_argument(
+        "--trust-type",
+        choices=["direct", "transitive", "llm-driven"],
+        default="direct",
+        help="Expected trust model for A2A",
+    )
+    parser.add_argument(
+        "--ignore-static-routes",
+        action="store_true",
+        help="Ignore static agent routes (e.g., agent.call(agent2))",
+    )
+    args = parser.parse_args()
+
+    ctx = ScannerContext(
+        source_path=args.path,
+        config={
+            "min_severity": args.min_severity,
+            "trust_threshold": args.trust_threshold,
+            "max_agents": args.max_agents,
+            "trust_type": args.trust_type,
+            "ignore_static_routes": args.ignore_static_routes,
+        },
+        rules=DEFAULT_RULES["agent_to_agent"]["rules"].copy(),
+    )
+
+    findings = scan_ast_file(args.path, ctx)
+
+    # Optional MCP parsing
+    if not args.no_mcp:
+        ctx.mcp_a2a_roots = parse_mcp_a2a_storage(args.path)
+        for store in ctx.mcp_a2a_roots:
+            if store["type"] in ["trust", "state_sharing"]:
+                severity = Severity.HIGH if store["mode"] == "read-write" else Severity.MEDIUM
+                findings.append(
+                    Finding(
+                        id="A2A-MCP-001",
+                        title=f"MCP A2A storage '{store['path']}' ({store['type']}, {store['mode']})",
+                        severity=severity,
+                        category=Category.TRUST_CHAINS,
+                        description=f"A2A storage type: {store['type']}; mode: {store['mode']}",
+                        evidence={
+                            "type": store["type"],
+                            "mode": store["mode"],
+                            "path": store["path"],
+                            "source": store["source"],
+                        },
+                        location=str(args.path),
+                    )
+                )
+
+    # Deduplicate
+    seen = set()
+    unique_findings: List[Finding] = []
+    for f in findings:
+        key = (f.id, f.location, hash(tuple(sorted(f.evidence.items()))))
+        if key not in seen:
+            seen.add(key)
+            unique_findings.append(f)
+
+    unique_findings.sort(key=lambda f: f.severity.value, reverse=True)
+
+    if args.format == "json":
+        output = []
+        for f in unique_findings:
+            output.append(
+                {
+                    **vars(f),
+                    "risk_score": compute_risk_score(f, ctx),
+                }
+            )
+        print(json.dumps(output, indent=2, default=str))
+    else:
+        print("\n🤖 Agent-to-Agent Scan Results (Expanded)")
+        print("=" * 60)
+
+        for f in unique_findings:
+            risk = compute_risk_score(f, ctx)
+            print(f"\n[{f.severity.value.upper()}] {f.id}: {f.title}")
+            print(f" Location: {f.location}")
+            print(f" Evidence: {f.evidence.get('call_change', f.evidence.get('impersonation_change', 'N/A'))}")
+            if f.evidence.get("nested"):
+                print(f" Nested: {f.evidence['nested']['nested_risk_score']}/100")
+            if f.evidence.get("impersonation"):
+                print(f" Impersonation: {f.evidence['impersonation']['imp_vectors_score']}/100")
+            if f.evidence.get("trust"):
+                print(f" Trust: {f.evidence['trust']['trust_risk_score']}/100")
+            if f.evidence.get("state"):
+                print(f" Cross-Agent State: {f.evidence['state']['state_risk_score']}/100")
+            if f.evidence.get("authz_drift"):
+                print(f" AuthZ Drift: {f.evidence['authz_drift']['drift_risk_score']}/100")
+            if f.remediation_hint:
+                print(f" Remediation: {f.remediation_hint}")
+
+        if args.ci:
+            critical_count = sum(1 for f in unique_findings if f.severity == Severity.CRITICAL)
+            if critical_count > 0:
+                print(f"\n❌ CI fail: {critical_count} critical findings")
+                exit(1)
+            else:
+                print(f"\n✅ CI pass: {len(unique_findings)} findings")
+
+        print("\n✅ Done.")

@@ -1,0 +1,55 @@
+{
+  "contract": "rule-draft-extraction-plan-v1",
+  "documents": [
+    {
+      "source": "tool_execution_draft.md",
+      "sha256": "5265fb1f177d01983be312fb53f94a699282a3f92d2b22d7e4640fe636616391",
+      "outputs": [
+        {"file": "tool_execution.py.txt", "ranges": [[11, 675]]},
+        {"file": "tool_execution_rules.yaml.txt", "ranges": [[699, 869]]}
+      ]
+    },
+    {
+      "source": "network_data_transfer_draft.md",
+      "sha256": "0e28104947f1b95d6f78d38508ca2d10983809c88f50770d8b56d4cf0f0c23fc",
+      "outputs": [
+        {"file": "network_data_transfer_expanded.py.txt", "ranges": [[7, 788]]}
+      ]
+    },
+    {
+      "source": "filesystem_access_draft.md",
+      "sha256": "d0bc0c8a1d8b529c362183466cd40e7abc7b979422edd5a05b79e0654653e08d",
+      "outputs": [
+        {"file": "filesystem_access_final.py.txt", "ranges": [[4, 822]]}
+      ]
+    },
+    {
+      "source": "memory_state_security_draft.md",
+      "sha256": "668664e1fab16aa5304fa2868633044dcae505c08b3bd56a4c346cf49cf9613e",
+      "outputs": [
+        {"file": "memory_state_security_expanded.py.txt", "ranges": [[1, 908], [916, 1130]]}
+      ]
+    },
+    {
+      "source": "agent_self_modification_draft.md",
+      "sha256": "0cd10362efd8b3ebe1b6974f0b36bf59ad4a5c554624888388d5848153f76a2d",
+      "outputs": [
+        {"file": "agent_self_modification_expanded.py.txt", "ranges": [[1, 1038], [1044, 1207]]}
+      ]
+    },
+    {
+      "source": "Agent_Orchestration_draft.md",
+      "sha256": "304209f1b9cb813bfd5b8974ef118b08773eba10695c5ad1a6b10caaa17316f1",
+      "outputs": [
+        {"file": "agent_orchestration_expanded.py.txt", "ranges": [[2, 937], [941, 1125]]}
+      ]
+    },
+    {
+      "source": "Agent_to_Agent_draft.md",
+      "sha256": "bf1acb0430ebdf98b87af0c1cfdb03fe69c801007c23d81be7d98cd7c64320a2",
+      "outputs": [
+        {"file": "agent_to_agent_expanded.py.txt", "ranges": [[2, 695], [701, 941], [945, 1113]]}
+      ]
+    }
+  ]
+}

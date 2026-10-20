@@ -1,0 +1,6879 @@
+{
+  "$defs": {
+    "AgentArtifact": {
+      "additionalProperties": false,
+      "description": "One source occurrence; recognizing or parsing it is not security coverage.",
+      "properties": {
+        "contract": {
+          "const": "agent-artifact-v1",
+          "default": "agent-artifact-v1",
+          "title": "Contract",
+          "type": "string"
+        },
+        "format_id": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Format Id"
+        },
+        "kind": {
+          "enum": [
+            "python-source",
+            "mcp-config",
+            "agent-config",
+            "prompt",
+            "skill",
+            "memory-config",
+            "iac",
+            "other"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "limitations": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Limitations",
+          "type": "array"
+        },
+        "parse_state": {
+          "enum": [
+            "not-run",
+            "parsed",
+            "malformed",
+            "unsupported",
+            "failed"
+          ],
+          "title": "Parse State",
+          "type": "string"
+        },
+        "reason": {
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        },
+        "source": {
+          "$ref": "#/$defs/InventoryEntry"
+        },
+        "target_snapshot_id": {
+          "minLength": 1,
+          "title": "Target Snapshot Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "target_snapshot_id",
+        "source",
+        "kind",
+        "format_id",
+        "parse_state",
+        "reason"
+      ],
+      "title": "AgentArtifact",
+      "type": "object"
+    },
+    "AgentAssessment": {
+      "additionalProperties": false,
+      "description": "Accounting for one artifact/property/producer, not a vulnerability verdict.",
+      "properties": {
+        "artifact": {
+          "$ref": "#/$defs/AgentArtifact"
+        },
+        "contract": {
+          "const": "agent-assessment-v1",
+          "default": "agent-assessment-v1",
+          "title": "Contract",
+          "type": "string"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/EvidenceReference"
+          },
+          "title": "Evidence",
+          "type": "array"
+        },
+        "execution_id": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Execution Id"
+        },
+        "finding_count": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Finding Count"
+        },
+        "limitations": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Limitations",
+          "type": "array"
+        },
+        "native_exit_code": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Native Exit Code"
+        },
+        "producer": {
+          "$ref": "#/$defs/Producer"
+        },
+        "property_id": {
+          "minLength": 1,
+          "title": "Property Id",
+          "type": "string"
+        },
+        "reason": {
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        },
+        "run_id": {
+          "minLength": 1,
+          "title": "Run Id",
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "not-run",
+            "complete",
+            "partial",
+            "failed",
+            "unsupported",
+            "skipped",
+            "unknown"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "support": {
+          "enum": [
+            "supported",
+            "partial",
+            "unsupported",
+            "unknown"
+          ],
+          "title": "Support",
+          "type": "string"
+        }
+      },
+      "required": [
+        "run_id",
+        "artifact",
+        "property_id",
+        "producer",
+        "support",
+        "state",
+        "reason"
+      ],
+      "title": "AgentAssessment",
+      "type": "object"
+    },
+    "AgentInputRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "contract": {
+          "const": "agent-input-request-v1",
+          "default": "agent-input-request-v1",
+          "title": "Contract",
+          "type": "string"
+        },
+        "inventory": {
+          "items": {
+            "$ref": "#/$defs/InventoryEntry"
+          },
+          "maxItems": 64,
+          "title": "Inventory",
+          "type": "array"
+        },
+        "selected": {
+          "additionalProperties": {
+            "enum": [
+              "python-source",
+              "mcp-config",
+              "agent-config",
+              "prompt",
+              "skill",
+              "memory-config",
+              "iac",
+              "other"
+            ],
+            "type": "string"
+          },
+          "title": "Selected",
+          "type": "object"
+        },
+        "target_snapshot_id": {
+          "minLength": 1,
+          "title": "Target Snapshot Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "target_snapshot_id",
+        "inventory",
+        "selected"
+      ],
+      "title": "AgentInputRequest",
+      "type": "object"
+    },
+    "AgentRunDetails": {
+      "additionalProperties": false,
+      "properties": {
+        "admitted": {
+          "title": "Admitted",
+          "type": "boolean"
+        },
+        "assessments": {
+          "items": {
+            "$ref": "#/$defs/AgentAssessment"
+          },
+          "title": "Assessments",
+          "type": "array"
+        },
+        "blockers": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Blockers",
+          "type": "array"
+        },
+        "case_id": {
+          "minLength": 1,
+          "title": "Case Id",
+          "type": "string"
+        },
+        "contract": {
+          "const": "agent-run-details-v1",
+          "default": "agent-run-details-v1",
+          "title": "Contract",
+          "type": "string"
+        },
+        "execution_id": {
+          "minLength": 1,
+          "title": "Execution Id",
+          "type": "string"
+        },
+        "input_unchanged": {
+          "title": "Input Unchanged",
+          "type": "boolean"
+        },
+        "limitations": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Limitations",
+          "type": "array"
+        },
+        "native_result_count": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Native Result Count"
+        },
+        "native_scanned_files": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Native Scanned Files"
+        },
+        "native_suppressed_count": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Native Suppressed Count"
+        },
+        "native_tier_suppressed_count": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Native Tier Suppressed Count"
+        },
+        "per_file_completion": {
+          "const": "not-observable",
+          "default": "not-observable",
+          "title": "Per File Completion",
+          "type": "string"
+        },
+        "policy_version": {
+          "const": "agent-input-policy-v1",
+          "default": "agent-input-policy-v1",
+          "title": "Policy Version",
+          "type": "string"
+        },
+        "run_id": {
+          "minLength": 1,
+          "title": "Run Id",
+          "type": "string"
+        },
+        "scanner_duration_ns": {
+          "minimum": 0,
+          "title": "Scanner Duration Ns",
+          "type": "integer"
+        },
+        "scanner_launched": {
+          "title": "Scanner Launched",
+          "type": "boolean"
+        },
+        "target_snapshot_id": {
+          "minLength": 1,
+          "title": "Target Snapshot Id",
+          "type": "string"
+        },
+        "total_duration_ns": {
+          "minimum": 0,
+          "title": "Total Duration Ns",
+          "type": "integer"
+        },
+        "validation_duration_ns": {
+          "minimum": 0,
+          "title": "Validation Duration Ns",
+          "type": "integer"
+        },
+        "validation_state": {
+          "enum": [
+            "complete",
+            "failed",
+            "not-run"
+          ],
+          "title": "Validation State",
+          "type": "string"
+        }
+      },
+      "required": [
+        "run_id",
+        "execution_id",
+        "target_snapshot_id",
+        "case_id",
+        "admitted",
+        "blockers",
+        "validation_state",
+        "scanner_launched",
+        "input_unchanged",
+        "validation_duration_ns",
+        "scanner_duration_ns",
+        "total_duration_ns",
+        "native_result_count",
+        "native_scanned_files",
+        "native_suppressed_count",
+        "native_tier_suppressed_count",
+        "assessments",
+        "limitations"
+      ],
+      "title": "AgentRunDetails",
+      "type": "object"
+    },
+    "AgentSource": {
+      "additionalProperties": false,
+      "properties": {
+        "agent_details": {
+          "$ref": "#/$defs/AgentRunDetails"
+        },
+        "coverage": {
+          "items": {
+            "$ref": "#/$defs/CoverageRecord"
+          },
+          "title": "Coverage",
+          "type": "array"
+        },
+        "failures": {
+          "items": {
+            "$ref": "#/$defs/FailureRecord"
+          },
+          "title": "Failures",
+          "type": "array"
+        },
+        "kind": {
+          "const": "agent-static",
+          "default": "agent-static",
+          "title": "Kind",
+          "type": "string"
+        },
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "revision": {
+          "title": "Revision",
+          "type": "string"
+        },
+        "run_id": {
+          "title": "Run Id",
+          "type": "string"
+        },
+        "source_manifest_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Manifest Sha256",
+          "type": "string"
+        },
+        "source_semantic_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Source Semantic Sha256"
+        },
+        "state": {
+          "title": "State",
+          "type": "string"
+        },
+        "summary": {
+          "$ref": "#/$defs/Summary"
+        },
+        "target_content_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Target Content Sha256"
+        }
+      },
+      "required": [
+        "run_id",
+        "state",
+        "label",
+        "revision",
+        "target_content_sha256",
+        "source_manifest_sha256",
+        "source_semantic_sha256",
+        "summary",
+        "coverage",
+        "failures",
+        "agent_details"
+      ],
+      "title": "AgentSource",
+      "type": "object"
+    },
+    "AgentToAgentFileResult": {
+      "additionalProperties": false,
+      "properties": {
+        "byte_length": {
+          "minimum": 0,
+          "title": "Byte Length",
+          "type": "integer"
+        },
+        "findings": {
+          "anyOf": [
+            {
+              "items": {},
+              "maxItems": 0,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Findings"
+        },
+        "inventory": {
+          "items": {
+            "$ref": "#/$defs/AgentToAgentObservation"
+          },
+          "title": "Inventory",
+          "type": "array"
+        },
+        "limitations_observed": {
+          "items": {
+            "$ref": "#/$defs/AgentToAgentObservation"
+          },
+          "title": "Limitations Observed",
+          "type": "array"
+        },
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "reason": {
+          "title": "Reason",
+          "type": "string"
+        },
+        "source_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Sha256",
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "analyzed",
+            "malformed",
+            "unsupported",
+            "failed"
+          ],
+          "title": "State",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "source_sha256",
+        "byte_length",
+        "state",
+        "reason",
+        "findings",
+        "inventory",
+        "limitations_observed"
+      ],
+      "title": "AgentToAgentFileResult",
+      "type": "object"
+    },
+    "AgentToAgentObservation": {
+      "additionalProperties": false,
+      "properties": {
+        "argument_shapes": {
+          "items": {
+            "$ref": "#/$defs/agentsec_evidence__custom_rules__agent_to_agent__ArgumentShape"
+          },
+          "title": "Argument Shapes",
+          "type": "array"
+        },
+        "detail": {
+          "title": "Detail",
+          "type": "string"
+        },
+        "kind": {
+          "title": "Kind",
+          "type": "string"
+        },
+        "location": {
+          "$ref": "#/$defs/SourceRange"
+        },
+        "record_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "rule_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rule Id"
+        }
+      },
+      "required": [
+        "record_id",
+        "kind",
+        "location",
+        "detail"
+      ],
+      "title": "AgentToAgentObservation",
+      "type": "object"
+    },
+    "AgentToAgentReport": {
+      "additionalProperties": false,
+      "properties": {
+        "capability": {
+          "const": "inventory-only-no-security-verdict",
+          "default": "inventory-only-no-security-verdict",
+          "title": "Capability",
+          "type": "string"
+        },
+        "catalog_sha256": {
+          "default": "8ab3a7d0fdff3a02a945b34bff73c257d4f8017c68755b3dc57202827db56480",
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Catalog Sha256",
+          "type": "string"
+        },
+        "contract": {
+          "const": "agent-to-agent-development-v1",
+          "default": "agent-to-agent-development-v1",
+          "title": "Contract",
+          "type": "string"
+        },
+        "execution_state": {
+          "enum": [
+            "complete",
+            "partial",
+            "empty"
+          ],
+          "title": "Execution State",
+          "type": "string"
+        },
+        "files": {
+          "items": {
+            "$ref": "#/$defs/AgentToAgentFileResult"
+          },
+          "title": "Files",
+          "type": "array"
+        },
+        "input_inventory": {
+          "items": {
+            "$ref": "#/$defs/InventoryEntry"
+          },
+          "title": "Input Inventory",
+          "type": "array"
+        },
+        "legacy_markers": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Legacy Markers",
+          "type": "object"
+        },
+        "limitations": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Limitations",
+          "type": "array"
+        },
+        "not_selected": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Not Selected",
+          "type": "array"
+        },
+        "policy": {
+          "const": "research-only-no-suppressions-applied",
+          "default": "research-only-no-suppressions-applied",
+          "title": "Policy",
+          "type": "string"
+        },
+        "producer": {
+          "const": "student-agent-to-agent-repaired",
+          "default": "student-agent-to-agent-repaired",
+          "title": "Producer",
+          "type": "string"
+        },
+        "request_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Request Sha256",
+          "type": "string"
+        },
+        "rules": {
+          "items": {
+            "$ref": "#/$defs/AgentToAgentRule"
+          },
+          "title": "Rules",
+          "type": "array"
+        },
+        "target_snapshot_id": {
+          "title": "Target Snapshot Id",
+          "type": "string"
+        },
+        "version": {
+          "const": "1.0.0",
+          "default": "1.0.0",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "request_sha256",
+        "target_snapshot_id",
+        "rules",
+        "legacy_markers",
+        "execution_state",
+        "input_inventory",
+        "not_selected",
+        "files",
+        "limitations"
+      ],
+      "title": "AgentToAgentReport",
+      "type": "object"
+    },
+    "AgentToAgentRule": {
+      "additionalProperties": false,
+      "properties": {
+        "boundary": {
+          "title": "Boundary",
+          "type": "string"
+        },
+        "related_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Related Ids",
+          "type": "array"
+        },
+        "rule_id": {
+          "title": "Rule Id",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "inventory-only",
+            "deferred"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "rule_id",
+        "status",
+        "title",
+        "boundary"
+      ],
+      "title": "AgentToAgentRule",
+      "type": "object"
+    },
+    "ArtifactCandidate": {
+      "additionalProperties": false,
+      "properties": {
+        "analysis_state": {
+          "const": "not-run",
+          "default": "not-run",
+          "title": "Analysis State",
+          "type": "string"
+        },
+        "artifact_id": {
+          "minLength": 1,
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "evidence_origin": {
+          "const": "path-metadata",
+          "default": "path-metadata",
+          "title": "Evidence Origin",
+          "type": "string"
+        },
+        "finding_count": {
+          "default": null,
+          "title": "Finding Count",
+          "type": "null"
+        },
+        "parse_state": {
+          "const": "not-run",
+          "default": "not-run",
+          "title": "Parse State",
+          "type": "string"
+        },
+        "recognizer_ids": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Recognizer Ids",
+          "type": "array"
+        },
+        "source": {
+          "$ref": "#/$defs/InventoryEntry"
+        }
+      },
+      "required": [
+        "artifact_id",
+        "source",
+        "recognizer_ids"
+      ],
+      "title": "ArtifactCandidate",
+      "type": "object"
+    },
+    "ArtifactInventory": {
+      "additionalProperties": false,
+      "properties": {
+        "catalog_sha256": {
+          "default": "be964c286b0053efb4ba09aee0024fa993ae1ee9140ecd70a8b4a184b31783d7",
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Catalog Sha256",
+          "type": "string"
+        },
+        "catalog_version": {
+          "const": "artifact-path-candidates-v1",
+          "default": "artifact-path-candidates-v1",
+          "title": "Catalog Version",
+          "type": "string"
+        },
+        "content_reverification": {
+          "const": "not-performed",
+          "default": "not-performed",
+          "title": "Content Reverification",
+          "type": "string"
+        },
+        "contract_version": {
+          "const": "artifact-inventory-v1",
+          "default": "artifact-inventory-v1",
+          "title": "Contract Version",
+          "type": "string"
+        },
+        "families": {
+          "items": {
+            "$ref": "#/$defs/FamilyInventory"
+          },
+          "title": "Families",
+          "type": "array"
+        },
+        "recognizers": {
+          "default": [
+            {
+              "candidate_format": "python-source",
+              "checked_on": "2026-10-02",
+              "family": "python-source",
+              "framework_hint": null,
+              "limitation": "No syntax, tool binding, framework or data-flow analysis.",
+              "pattern": ".py",
+              "recognizer_id": "python-source-suffix",
+              "reference": "https://docs.python.org/3.13/tutorial/modules.html",
+              "reference_kind": "official-documentation",
+              "selector": "suffix",
+              "version": "1"
+            },
+            {
+              "candidate_format": "langgraph-config-json",
+              "checked_on": "2026-10-02",
+              "family": "agent-config",
+              "framework_hint": "LangGraph filename convention only",
+              "limitation": "No schema validation or evidence that a deployment uses this file.",
+              "pattern": "langgraph.json",
+              "recognizer_id": "langgraph-config-name",
+              "reference": "https://docs.langchain.com/langsmith/cli",
+              "reference_kind": "official-documentation",
+              "selector": "basename",
+              "version": "1"
+            },
+            {
+              "candidate_format": "claude-desktop-config-json",
+              "checked_on": "2026-10-02",
+              "family": "mcp-config",
+              "framework_hint": null,
+              "limitation": "Client filename only; no mcpServers validation or protocol-wide convention.",
+              "pattern": "claude_desktop_config.json",
+              "recognizer_id": "claude-desktop-config-name",
+              "reference": "https://modelcontextprotocol.io/docs/2026-07-28/develop/connect-local-servers",
+              "reference_kind": "official-documentation",
+              "selector": "basename",
+              "version": "1"
+            },
+            {
+              "candidate_format": "project-mcp-json-candidate",
+              "checked_on": "2026-10-02",
+              "family": "mcp-config",
+              "framework_hint": null,
+              "limitation": "Authored fixture convention, not a universal MCP configuration filename.",
+              "pattern": "mcp.json",
+              "recognizer_id": "project-mcp-config-name",
+              "reference": "docs/agent-artifact-contracts.md",
+              "reference_kind": "project-convention",
+              "selector": "basename",
+              "version": "1"
+            },
+            {
+              "candidate_format": "agents-md",
+              "checked_on": "2026-10-02",
+              "family": "instructions",
+              "framework_hint": null,
+              "limitation": "No instruction interpretation, precedence resolution or safety judgment.",
+              "pattern": "AGENTS.md",
+              "recognizer_id": "agents-instructions-name",
+              "reference": "https://agents.md/",
+              "reference_kind": "official-documentation",
+              "selector": "basename",
+              "version": "1"
+            },
+            {
+              "candidate_format": "agent-skill-md",
+              "checked_on": "2026-10-02",
+              "family": "skill",
+              "framework_hint": null,
+              "limitation": "No frontmatter validation, permission inference or script execution.",
+              "pattern": "SKILL.md",
+              "recognizer_id": "skill-manifest-name",
+              "reference": "https://agentskills.io/specification",
+              "reference_kind": "official-documentation",
+              "selector": "basename",
+              "version": "1"
+            },
+            {
+              "candidate_format": "uv-lock",
+              "checked_on": "2026-10-02",
+              "family": "dependencies",
+              "framework_hint": null,
+              "limitation": "No package parsing or vulnerability matching; other lock formats unrecognized.",
+              "pattern": "uv.lock",
+              "recognizer_id": "uv-lock-name",
+              "reference": "https://docs.astral.sh/uv/concepts/projects/layout/",
+              "reference_kind": "official-documentation",
+              "selector": "basename",
+              "version": "1"
+            },
+            {
+              "candidate_format": "terraform-hcl",
+              "checked_on": "2026-10-02",
+              "family": "iac",
+              "framework_hint": null,
+              "limitation": "No HCL parsing, module resolution or effective infrastructure assessment.",
+              "pattern": ".tf",
+              "recognizer_id": "terraform-hcl-suffix",
+              "reference": "https://developer.hashicorp.com/terraform/language/files",
+              "reference_kind": "official-documentation",
+              "selector": "suffix",
+              "version": "1"
+            },
+            {
+              "candidate_format": "terraform-json",
+              "checked_on": "2026-10-02",
+              "family": "iac",
+              "framework_hint": null,
+              "limitation": "No JSON parsing, module resolution or effective infrastructure assessment.",
+              "pattern": ".tf.json",
+              "recognizer_id": "terraform-json-suffix",
+              "reference": "https://developer.hashicorp.com/terraform/language/files",
+              "reference_kind": "official-documentation",
+              "selector": "suffix",
+              "version": "1"
+            }
+          ],
+          "items": {
+            "$ref": "#/$defs/PathRecognizer"
+          },
+          "title": "Recognizers",
+          "type": "array"
+        },
+        "records": {
+          "items": {
+            "$ref": "#/$defs/ArtifactCandidate"
+          },
+          "maxItems": 10000,
+          "title": "Records",
+          "type": "array"
+        },
+        "repository_completeness": {
+          "const": "not-verified",
+          "default": "not-verified",
+          "title": "Repository Completeness",
+          "type": "string"
+        },
+        "scan_authorization": {
+          "const": "not-granted",
+          "default": "not-granted",
+          "title": "Scan Authorization",
+          "type": "string"
+        },
+        "scope": {
+          "const": "all-provided-snapshot-files",
+          "default": "all-provided-snapshot-files",
+          "title": "Scope",
+          "type": "string"
+        },
+        "snapshot": {
+          "$ref": "#/$defs/TargetSnapshot"
+        }
+      },
+      "required": [
+        "snapshot",
+        "records",
+        "families"
+      ],
+      "title": "ArtifactInventory",
+      "type": "object"
+    },
+    "Assessment": {
+      "additionalProperties": false,
+      "properties": {
+        "exposure_statement": {
+          "const": "static-observable-condition",
+          "title": "Exposure Statement",
+          "type": "string"
+        },
+        "verification_state": {
+          "enum": [
+            "unreviewed",
+            "confirmed",
+            "rejected",
+            "uncertain",
+            "disputed",
+            "disclosure-pending"
+          ],
+          "title": "Verification State",
+          "type": "string"
+        }
+      },
+      "required": [
+        "verification_state",
+        "exposure_statement"
+      ],
+      "title": "Assessment",
+      "type": "object"
+    },
+    "Confidence": {
+      "additionalProperties": false,
+      "properties": {
+        "native_label": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Native Label"
+        },
+        "normalized": {
+          "anyOf": [
+            {
+              "enum": [
+                "low",
+                "medium",
+                "high",
+                "unknown"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Normalized"
+        }
+      },
+      "title": "Confidence",
+      "type": "object"
+    },
+    "CoverageRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "adapter_support": {
+          "enum": [
+            "supported",
+            "partial",
+            "unsupported",
+            "unknown"
+          ],
+          "title": "Adapter Support",
+          "type": "string"
+        },
+        "applicability": {
+          "enum": [
+            "applicable",
+            "not-applicable",
+            "unknown"
+          ],
+          "title": "Applicability",
+          "type": "string"
+        },
+        "coverage_id": {
+          "minLength": 1,
+          "title": "Coverage Id",
+          "type": "string"
+        },
+        "execution": {
+          "enum": [
+            "not-run",
+            "success",
+            "partial",
+            "failed",
+            "timed-out",
+            "cancelled"
+          ],
+          "title": "Execution",
+          "type": "string"
+        },
+        "execution_id": {
+          "minLength": 1,
+          "title": "Execution Id",
+          "type": "string"
+        },
+        "limitations": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Limitations",
+          "type": "array"
+        },
+        "observation": {
+          "enum": [
+            "observed-risk",
+            "observed-control",
+            "no-observation",
+            "unknown"
+          ],
+          "title": "Observation",
+          "type": "string"
+        },
+        "producer": {
+          "$ref": "#/$defs/Producer"
+        },
+        "property_id": {
+          "minLength": 1,
+          "title": "Property Id",
+          "type": "string"
+        },
+        "run_id": {
+          "minLength": 1,
+          "title": "Run Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "0.1.0",
+          "default": "0.1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "target_snapshot_id": {
+          "minLength": 1,
+          "title": "Target Snapshot Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "coverage_id",
+        "run_id",
+        "execution_id",
+        "target_snapshot_id",
+        "property_id",
+        "producer",
+        "applicability",
+        "adapter_support",
+        "execution",
+        "observation"
+      ],
+      "title": "CoverageRecord",
+      "type": "object"
+    },
+    "CustomSource": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "custom-repair",
+          "default": "custom-repair",
+          "title": "Kind",
+          "type": "string"
+        },
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "revision": {
+          "title": "Revision",
+          "type": "string"
+        },
+        "run_id": {
+          "title": "Run Id",
+          "type": "string"
+        },
+        "source_manifest_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Manifest Sha256",
+          "type": "string"
+        },
+        "source_semantic_sha256": {
+          "default": null,
+          "title": "Source Semantic Sha256",
+          "type": "null"
+        },
+        "state": {
+          "title": "State",
+          "type": "string"
+        },
+        "summary": {
+          "$ref": "#/$defs/CustomSummary"
+        },
+        "target_content_sha256": {
+          "default": null,
+          "title": "Target Content Sha256",
+          "type": "null"
+        }
+      },
+      "required": [
+        "run_id",
+        "state",
+        "label",
+        "revision",
+        "source_manifest_sha256",
+        "summary"
+      ],
+      "title": "CustomSource",
+      "type": "object"
+    },
+    "CustomSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "contract": {
+          "const": "custom-repair-summary-v1",
+          "default": "custom-repair-summary-v1",
+          "title": "Contract",
+          "type": "string"
+        },
+        "evidence_role": {
+          "const": "authored-development-not-held-out",
+          "default": "authored-development-not-held-out",
+          "title": "Evidence Role",
+          "type": "string"
+        },
+        "family": {
+          "title": "Family",
+          "type": "string"
+        },
+        "image_id": {
+          "default": "sha256:3bfa1ba1294f1c4683ebbbbff98921e67b8230299fe35e0f5e82deefc6a73080",
+          "pattern": "^sha256:3bfa1ba1294f1c4683ebbbbff98921e67b8230299fe35e0f5e82deefc6a73080$",
+          "title": "Image Id",
+          "type": "string"
+        },
+        "implementation_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Implementation Sha256",
+          "type": "string"
+        },
+        "limitations": {
+          "default": [
+            "Different repair families use different authored inputs; not a same-repository scan.",
+            "Conditions, inventory, deferred IDs and incomplete analysis are separate evidence units.",
+            "Overlapping findings retain every native identity; no automatic issue merging.",
+            "Research-only policy: local ignores and suppression comments are not applied.",
+            "No accuracy, independent labels, complete coverage or runtime exploitability established.",
+            "Tool-execution reports can contain source expressions; internal/unredacted evidence.",
+            "SARIF exports conditions only; inventory/catalog/limitations remain in report JSON.",
+            "SARIF omits source snippets and columns; original UTF-8 byte ranges stay in properties."
+          ],
+          "items": {
+            "type": "string"
+          },
+          "title": "Limitations",
+          "type": "array"
+        },
+        "registry_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Registry Sha256",
+          "type": "string"
+        },
+        "treatments": {
+          "items": {
+            "$ref": "#/$defs/CustomTreatment"
+          },
+          "maxItems": 4,
+          "minItems": 4,
+          "title": "Treatments",
+          "type": "array"
+        },
+        "vulnerability_total": {
+          "default": null,
+          "title": "Vulnerability Total",
+          "type": "null"
+        }
+      },
+      "required": [
+        "family",
+        "registry_sha256",
+        "implementation_sha256",
+        "treatments"
+      ],
+      "title": "CustomSummary",
+      "type": "object"
+    },
+    "CustomTreatment": {
+      "additionalProperties": false,
+      "properties": {
+        "analysis_completeness": {
+          "const": "not-established",
+          "default": "not-established",
+          "title": "Analysis Completeness",
+          "type": "string"
+        },
+        "duration_ns": {
+          "minimum": 0,
+          "title": "Duration Ns",
+          "type": "integer"
+        },
+        "exit_code": {
+          "title": "Exit Code",
+          "type": "integer"
+        },
+        "invocation_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Invocation Sha256",
+          "type": "string"
+        },
+        "key": {
+          "$ref": "#/$defs/TreatmentKey"
+        },
+        "native": {
+          "$ref": "#/$defs/NativeReport"
+        },
+        "native_json": {
+          "maxLength": 16777216,
+          "title": "Native Json",
+          "type": "string"
+        },
+        "request": {
+          "$ref": "#/$defs/AgentInputRequest"
+        },
+        "request_json": {
+          "maxLength": 262144,
+          "title": "Request Json",
+          "type": "string"
+        },
+        "review_grouping": {
+          "const": "not-performed",
+          "default": "not-performed",
+          "title": "Review Grouping",
+          "type": "string"
+        },
+        "stdout_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Stdout Sha256",
+          "type": "string"
+        },
+        "suppression_application": {
+          "const": "not-applied",
+          "default": "not-applied",
+          "title": "Suppression Application",
+          "type": "string"
+        },
+        "unique_vulnerabilities": {
+          "default": null,
+          "title": "Unique Vulnerabilities",
+          "type": "null"
+        }
+      },
+      "required": [
+        "key",
+        "request",
+        "native",
+        "request_json",
+        "native_json",
+        "stdout_sha256",
+        "invocation_sha256",
+        "duration_ns",
+        "exit_code"
+      ],
+      "title": "CustomTreatment",
+      "type": "object"
+    },
+    "DependencySource": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "dependency",
+          "default": "dependency",
+          "title": "Kind",
+          "type": "string"
+        },
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "revision": {
+          "title": "Revision",
+          "type": "string"
+        },
+        "run_id": {
+          "title": "Run Id",
+          "type": "string"
+        },
+        "source_manifest_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Manifest Sha256",
+          "type": "string"
+        },
+        "source_semantic_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Source Semantic Sha256"
+        },
+        "state": {
+          "title": "State",
+          "type": "string"
+        },
+        "summary": {
+          "$ref": "#/$defs/DependencySummary"
+        },
+        "target_content_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Target Content Sha256"
+        }
+      },
+      "required": [
+        "run_id",
+        "state",
+        "label",
+        "revision",
+        "target_content_sha256",
+        "source_manifest_sha256",
+        "source_semantic_sha256",
+        "summary"
+      ],
+      "title": "DependencySource",
+      "type": "object"
+    },
+    "DependencyStageSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "eligible_package_advisory_matches": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Eligible Package Advisory Matches"
+        },
+        "eligible_reported_packages": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Eligible Reported Packages"
+        },
+        "identified_unique_packages": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Identified Unique Packages"
+        },
+        "observations": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Observations"
+        },
+        "per_package_matching_completion": {
+          "const": "not-observable",
+          "default": "not-observable",
+          "title": "Per Package Matching Completion",
+          "type": "string"
+        },
+        "relationships": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Relationships"
+        },
+        "reported_match_occurrences": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Reported Match Occurrences"
+        },
+        "reported_package_advisory_matches": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Reported Package Advisory Matches"
+        },
+        "stage": {
+          "title": "Stage",
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "complete",
+            "partial",
+            "failed",
+            "unsupported",
+            "missing"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "unsupported_observations": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Unsupported Observations"
+        }
+      },
+      "required": [
+        "stage",
+        "state",
+        "observations",
+        "identified_unique_packages",
+        "eligible_reported_packages",
+        "reported_package_advisory_matches",
+        "reported_match_occurrences",
+        "eligible_package_advisory_matches",
+        "unsupported_observations",
+        "relationships"
+      ],
+      "title": "DependencyStageSummary",
+      "type": "object"
+    },
+    "DependencySummary": {
+      "additionalProperties": false,
+      "properties": {
+        "ambiguous_projections": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Ambiguous Projections"
+        },
+        "comparisons": {
+          "items": {
+            "$ref": "#/$defs/StageComparison"
+          },
+          "title": "Comparisons",
+          "type": "array"
+        },
+        "contract": {
+          "const": "dependency-summary-v1",
+          "default": "dependency-summary-v1",
+          "title": "Contract",
+          "type": "string"
+        },
+        "database_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Database Sha256"
+        },
+        "eligible_unique_packages": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Eligible Unique Packages"
+        },
+        "limitations": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Limitations",
+          "type": "array"
+        },
+        "run_id": {
+          "title": "Run Id",
+          "type": "string"
+        },
+        "scope_available": {
+          "title": "Scope Available",
+          "type": "boolean"
+        },
+        "separate_local_packages": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Separate Local Packages"
+        },
+        "stages": {
+          "items": {
+            "$ref": "#/$defs/DependencyStageSummary"
+          },
+          "title": "Stages",
+          "type": "array"
+        },
+        "state": {
+          "enum": [
+            "complete",
+            "partial",
+            "failed"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "timing_ns": {
+          "additionalProperties": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "title": "Timing Ns",
+          "type": "object"
+        },
+        "unsupported_scope_records": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Unsupported Scope Records"
+        }
+      },
+      "required": [
+        "run_id",
+        "state",
+        "scope_available",
+        "eligible_unique_packages",
+        "separate_local_packages",
+        "unsupported_scope_records",
+        "ambiguous_projections",
+        "database_sha256",
+        "stages",
+        "comparisons",
+        "timing_ns",
+        "limitations"
+      ],
+      "title": "DependencySummary",
+      "type": "object"
+    },
+    "EvidenceReference": {
+      "additionalProperties": false,
+      "properties": {
+        "blob_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Blob Sha256",
+          "type": "string"
+        },
+        "byte_end": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Byte End"
+        },
+        "byte_start": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Byte Start"
+        },
+        "json_pointer": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Json Pointer"
+        },
+        "origin": {
+          "enum": [
+            "native-observed",
+            "mechanically-derived",
+            "researcher-adjudicated"
+          ],
+          "title": "Origin",
+          "type": "string"
+        }
+      },
+      "required": [
+        "origin",
+        "blob_sha256"
+      ],
+      "title": "EvidenceReference",
+      "type": "object"
+    },
+    "ExecutionOutcome": {
+      "enum": [
+        "success",
+        "partial",
+        "failed",
+        "timed-out",
+        "cancelled",
+        "unsupported",
+        "unsafe-to-run"
+      ],
+      "title": "ExecutionOutcome",
+      "type": "string"
+    },
+    "ExtendedSource": {
+      "discriminator": {
+        "mapping": {
+          "agent-static": "#/$defs/AgentSource",
+          "custom-repair": "#/$defs/CustomSource",
+          "dependency": "#/$defs/DependencySource",
+          "public-source-pilot": "#/$defs/PublicPilotSource",
+          "semgrep-research": "#/$defs/ResearchSource",
+          "static": "#/$defs/StaticSource"
+        },
+        "propertyName": "kind"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/StaticSource"
+        },
+        {
+          "$ref": "#/$defs/DependencySource"
+        },
+        {
+          "$ref": "#/$defs/AgentSource"
+        },
+        {
+          "$ref": "#/$defs/ResearchSource"
+        },
+        {
+          "$ref": "#/$defs/PublicPilotSource"
+        },
+        {
+          "$ref": "#/$defs/CustomSource"
+        }
+      ]
+    },
+    "FailureRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "affected_scope": {
+          "minLength": 1,
+          "title": "Affected Scope",
+          "type": "string"
+        },
+        "category": {
+          "enum": [
+            "configuration",
+            "missing-tool",
+            "incompatible-version",
+            "unsafe-target",
+            "timeout",
+            "resource-limit",
+            "nonzero-exit",
+            "malformed-output",
+            "unsupported-schema",
+            "parser-defect",
+            "network",
+            "authentication",
+            "quota",
+            "vendor",
+            "internal"
+          ],
+          "title": "Category",
+          "type": "string"
+        },
+        "evidence_blob_sha256": {
+          "items": {
+            "pattern": "^[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "title": "Evidence Blob Sha256",
+          "type": "array"
+        },
+        "execution_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Execution Id"
+        },
+        "failure_id": {
+          "minLength": 1,
+          "title": "Failure Id",
+          "type": "string"
+        },
+        "final_disposition": {
+          "minLength": 1,
+          "title": "Final Disposition",
+          "type": "string"
+        },
+        "native_exit_code": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Native Exit Code"
+        },
+        "native_signal": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Native Signal"
+        },
+        "partial_evidence_usable": {
+          "title": "Partial Evidence Usable",
+          "type": "boolean"
+        },
+        "retry_of": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Retry Of"
+        },
+        "retryability": {
+          "enum": [
+            "yes",
+            "no",
+            "unknown"
+          ],
+          "title": "Retryability",
+          "type": "string"
+        },
+        "run_id": {
+          "minLength": 1,
+          "title": "Run Id",
+          "type": "string"
+        },
+        "sanitized_message": {
+          "minLength": 1,
+          "title": "Sanitized Message",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "0.1.0",
+          "default": "0.1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "stage": {
+          "enum": [
+            "intake",
+            "planning",
+            "launch",
+            "execution",
+            "capture",
+            "parse",
+            "normalize",
+            "validate",
+            "export",
+            "analyze",
+            "release"
+          ],
+          "title": "Stage",
+          "type": "string"
+        }
+      },
+      "required": [
+        "failure_id",
+        "run_id",
+        "stage",
+        "category",
+        "retryability",
+        "affected_scope",
+        "sanitized_message",
+        "partial_evidence_usable",
+        "final_disposition"
+      ],
+      "title": "FailureRecord",
+      "type": "object"
+    },
+    "FamilyInventory": {
+      "additionalProperties": false,
+      "properties": {
+        "candidate_file_count": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Candidate File Count"
+        },
+        "family": {
+          "enum": [
+            "python-source",
+            "mcp-config",
+            "agent-config",
+            "instructions",
+            "skill",
+            "memory-context",
+            "identity-permissions",
+            "dependencies",
+            "iac"
+          ],
+          "title": "Family",
+          "type": "string"
+        },
+        "interpretation": {
+          "enum": [
+            "candidates-observed",
+            "no-candidate-recognized",
+            "unknown"
+          ],
+          "title": "Interpretation",
+          "type": "string"
+        },
+        "recognition_support": {
+          "enum": [
+            "filename-candidates",
+            "no-recognizer"
+          ],
+          "title": "Recognition Support",
+          "type": "string"
+        }
+      },
+      "required": [
+        "family",
+        "recognition_support",
+        "candidate_file_count",
+        "interpretation"
+      ],
+      "title": "FamilyInventory",
+      "type": "object"
+    },
+    "FileResult": {
+      "additionalProperties": false,
+      "properties": {
+        "byte_length": {
+          "minimum": 0,
+          "title": "Byte Length",
+          "type": "integer"
+        },
+        "findings": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/ToolFinding"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Findings"
+        },
+        "inventory": {
+          "items": {
+            "$ref": "#/$defs/Observation"
+          },
+          "title": "Inventory",
+          "type": "array"
+        },
+        "limitations_observed": {
+          "items": {
+            "$ref": "#/$defs/Observation"
+          },
+          "title": "Limitations Observed",
+          "type": "array"
+        },
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "reason": {
+          "title": "Reason",
+          "type": "string"
+        },
+        "source_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Sha256",
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "analyzed",
+            "malformed",
+            "unsupported",
+            "failed"
+          ],
+          "title": "State",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "source_sha256",
+        "byte_length",
+        "state",
+        "reason",
+        "findings",
+        "inventory",
+        "limitations_observed"
+      ],
+      "title": "FileResult",
+      "type": "object"
+    },
+    "FilesystemFileResult": {
+      "additionalProperties": false,
+      "properties": {
+        "byte_length": {
+          "minimum": 0,
+          "title": "Byte Length",
+          "type": "integer"
+        },
+        "findings": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/FilesystemFinding"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Findings"
+        },
+        "inventory": {
+          "items": {
+            "$ref": "#/$defs/FilesystemObservation"
+          },
+          "title": "Inventory",
+          "type": "array"
+        },
+        "limitations_observed": {
+          "items": {
+            "$ref": "#/$defs/FilesystemObservation"
+          },
+          "title": "Limitations Observed",
+          "type": "array"
+        },
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "reason": {
+          "title": "Reason",
+          "type": "string"
+        },
+        "source_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Sha256",
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "analyzed",
+            "malformed",
+            "unsupported",
+            "failed"
+          ],
+          "title": "State",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "source_sha256",
+        "byte_length",
+        "state",
+        "reason",
+        "findings",
+        "inventory",
+        "limitations_observed"
+      ],
+      "title": "FilesystemFileResult",
+      "type": "object"
+    },
+    "FilesystemFinding": {
+      "additionalProperties": false,
+      "properties": {
+        "callee": {
+          "title": "Callee",
+          "type": "string"
+        },
+        "evidence_kinds": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Evidence Kinds",
+          "type": "array"
+        },
+        "location": {
+          "$ref": "#/$defs/SourceRange"
+        },
+        "priority": {
+          "enum": [
+            "low",
+            "medium"
+          ],
+          "title": "Priority",
+          "type": "string"
+        },
+        "record_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "rule_id": {
+          "title": "Rule Id",
+          "type": "string"
+        },
+        "verification": {
+          "const": "unreviewed-static-condition",
+          "default": "unreviewed-static-condition",
+          "title": "Verification",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_id",
+        "rule_id",
+        "priority",
+        "location",
+        "callee",
+        "evidence_kinds"
+      ],
+      "title": "FilesystemFinding",
+      "type": "object"
+    },
+    "FilesystemObservation": {
+      "additionalProperties": false,
+      "properties": {
+        "detail": {
+          "title": "Detail",
+          "type": "string"
+        },
+        "kind": {
+          "title": "Kind",
+          "type": "string"
+        },
+        "location": {
+          "$ref": "#/$defs/SourceRange"
+        },
+        "measurements": {
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "title": "Measurements",
+          "type": "object"
+        },
+        "rule_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rule Id"
+        }
+      },
+      "required": [
+        "kind",
+        "location",
+        "detail"
+      ],
+      "title": "FilesystemObservation",
+      "type": "object"
+    },
+    "FilesystemReport": {
+      "additionalProperties": false,
+      "properties": {
+        "catalog_sha256": {
+          "default": "65c838ccd48660877b7ed5ad69be733bb2d4f8928f107b8647d34e81ef001d23",
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Catalog Sha256",
+          "type": "string"
+        },
+        "contract": {
+          "const": "filesystem-development-v1",
+          "default": "filesystem-development-v1",
+          "title": "Contract",
+          "type": "string"
+        },
+        "execution_state": {
+          "enum": [
+            "complete",
+            "partial",
+            "empty"
+          ],
+          "title": "Execution State",
+          "type": "string"
+        },
+        "files": {
+          "items": {
+            "$ref": "#/$defs/FilesystemFileResult"
+          },
+          "title": "Files",
+          "type": "array"
+        },
+        "input_inventory": {
+          "items": {
+            "$ref": "#/$defs/InventoryEntry"
+          },
+          "title": "Input Inventory",
+          "type": "array"
+        },
+        "legacy_markers": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Legacy Markers",
+          "type": "object"
+        },
+        "limitations": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Limitations",
+          "type": "array"
+        },
+        "not_selected": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Not Selected",
+          "type": "array"
+        },
+        "policy": {
+          "const": "research-only-no-suppressions-applied",
+          "default": "research-only-no-suppressions-applied",
+          "title": "Policy",
+          "type": "string"
+        },
+        "producer": {
+          "const": "student-filesystem-repaired",
+          "default": "student-filesystem-repaired",
+          "title": "Producer",
+          "type": "string"
+        },
+        "request_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Request Sha256",
+          "type": "string"
+        },
+        "rules": {
+          "items": {
+            "$ref": "#/$defs/FilesystemRule"
+          },
+          "title": "Rules",
+          "type": "array"
+        },
+        "target_snapshot_id": {
+          "title": "Target Snapshot Id",
+          "type": "string"
+        },
+        "version": {
+          "const": "1.0.0",
+          "default": "1.0.0",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "request_sha256",
+        "target_snapshot_id",
+        "rules",
+        "legacy_markers",
+        "execution_state",
+        "input_inventory",
+        "not_selected",
+        "files",
+        "limitations"
+      ],
+      "title": "FilesystemReport",
+      "type": "object"
+    },
+    "FilesystemRule": {
+      "additionalProperties": false,
+      "properties": {
+        "boundary": {
+          "title": "Boundary",
+          "type": "string"
+        },
+        "priority": {
+          "anyOf": [
+            {
+              "enum": [
+                "low",
+                "medium"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Priority"
+        },
+        "rule_id": {
+          "title": "Rule Id",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "active-condition",
+            "inventory-only",
+            "deferred"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "rule_id",
+        "status",
+        "title",
+        "boundary",
+        "priority"
+      ],
+      "title": "FilesystemRule",
+      "type": "object"
+    },
+    "Finding": {
+      "additionalProperties": false,
+      "properties": {
+        "assessment": {
+          "$ref": "#/$defs/Assessment"
+        },
+        "confidence": {
+          "$ref": "#/$defs/Confidence"
+        },
+        "domain": {
+          "const": "static",
+          "default": "static",
+          "title": "Domain",
+          "type": "string"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/EvidenceReference"
+          },
+          "minItems": 1,
+          "title": "Evidence",
+          "type": "array"
+        },
+        "execution_id": {
+          "minLength": 1,
+          "title": "Execution Id",
+          "type": "string"
+        },
+        "fingerprints": {
+          "$ref": "#/$defs/Fingerprints"
+        },
+        "limitations": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Limitations",
+          "type": "array"
+        },
+        "locations": {
+          "items": {
+            "$ref": "#/$defs/Location"
+          },
+          "title": "Locations",
+          "type": "array"
+        },
+        "message": {
+          "$ref": "#/$defs/FindingMessage"
+        },
+        "native_extension": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Native Extension",
+          "type": "object"
+        },
+        "producer": {
+          "$ref": "#/$defs/Producer"
+        },
+        "record_id": {
+          "minLength": 1,
+          "title": "Record Id",
+          "type": "string"
+        },
+        "rule": {
+          "$ref": "#/$defs/Rule"
+        },
+        "run_id": {
+          "minLength": 1,
+          "title": "Run Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "0.1.0",
+          "default": "0.1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "severity": {
+          "$ref": "#/$defs/Severity"
+        },
+        "target_snapshot_id": {
+          "minLength": 1,
+          "title": "Target Snapshot Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_id",
+        "run_id",
+        "execution_id",
+        "target_snapshot_id",
+        "producer",
+        "rule",
+        "message",
+        "severity",
+        "confidence",
+        "locations",
+        "evidence",
+        "assessment",
+        "fingerprints"
+      ],
+      "title": "Finding",
+      "type": "object"
+    },
+    "FindingAnchor": {
+      "additionalProperties": false,
+      "properties": {
+        "end_column": {
+          "minimum": 1,
+          "title": "End Column",
+          "type": "integer"
+        },
+        "end_line": {
+          "minimum": 1,
+          "title": "End Line",
+          "type": "integer"
+        },
+        "path": {
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "rule_id": {
+          "maxLength": 256,
+          "pattern": "^[A-Za-z0-9_.-]+$",
+          "title": "Rule Id",
+          "type": "string"
+        },
+        "start_column": {
+          "minimum": 1,
+          "title": "Start Column",
+          "type": "integer"
+        },
+        "start_line": {
+          "minimum": 1,
+          "title": "Start Line",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "rule_id",
+        "path",
+        "start_line",
+        "start_column",
+        "end_line",
+        "end_column"
+      ],
+      "title": "FindingAnchor",
+      "type": "object"
+    },
+    "FindingMessage": {
+      "additionalProperties": false,
+      "properties": {
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "remediation": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Remediation"
+        },
+        "title": {
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "title"
+      ],
+      "title": "FindingMessage",
+      "type": "object"
+    },
+    "Fingerprints": {
+      "additionalProperties": false,
+      "properties": {
+        "candidate_equivalence_v1": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Candidate Equivalence V1",
+          "type": "string"
+        },
+        "native": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Native"
+        },
+        "record_v1": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Record V1",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_v1",
+        "candidate_equivalence_v1"
+      ],
+      "title": "Fingerprints",
+      "type": "object"
+    },
+    "Fraction": {
+      "additionalProperties": false,
+      "properties": {
+        "denominator": {
+          "minimum": 0,
+          "title": "Denominator",
+          "type": "integer"
+        },
+        "numerator": {
+          "minimum": 0,
+          "title": "Numerator",
+          "type": "integer"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Value"
+        }
+      },
+      "required": [
+        "numerator",
+        "denominator",
+        "value"
+      ],
+      "title": "Fraction",
+      "type": "object"
+    },
+    "InputSelection": {
+      "additionalProperties": false,
+      "properties": {
+        "disposition": {
+          "enum": [
+            "selected",
+            "excluded"
+          ],
+          "title": "Disposition",
+          "type": "string"
+        },
+        "path": {
+          "maxLength": 4096,
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "reason": {
+          "maxLength": 1000,
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        },
+        "source_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "source_sha256",
+        "disposition",
+        "reason"
+      ],
+      "title": "InputSelection",
+      "type": "object"
+    },
+    "InventoryEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "byte_length": {
+          "minimum": 0,
+          "title": "Byte Length",
+          "type": "integer"
+        },
+        "media_type": {
+          "minLength": 1,
+          "title": "Media Type",
+          "type": "string"
+        },
+        "path": {
+          "maxLength": 4096,
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "0.1.0",
+          "default": "0.1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "sha256",
+        "byte_length",
+        "media_type"
+      ],
+      "title": "InventoryEntry",
+      "type": "object"
+    },
+    "JsonValue": {},
+    "Location": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_path": {
+          "maxLength": 4096,
+          "minLength": 1,
+          "title": "Artifact Path",
+          "type": "string"
+        },
+        "end_column": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "End Column"
+        },
+        "end_line": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "End Line"
+        },
+        "start_column": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Start Column"
+        },
+        "start_line": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Start Line"
+        }
+      },
+      "required": [
+        "artifact_path"
+      ],
+      "title": "Location",
+      "type": "object"
+    },
+    "MemoryFileResult": {
+      "additionalProperties": false,
+      "properties": {
+        "byte_length": {
+          "minimum": 0,
+          "title": "Byte Length",
+          "type": "integer"
+        },
+        "findings": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/MemoryFinding"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Findings"
+        },
+        "inventory": {
+          "items": {
+            "$ref": "#/$defs/MemoryObservation"
+          },
+          "title": "Inventory",
+          "type": "array"
+        },
+        "limitations_observed": {
+          "items": {
+            "$ref": "#/$defs/MemoryObservation"
+          },
+          "title": "Limitations Observed",
+          "type": "array"
+        },
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "reason": {
+          "title": "Reason",
+          "type": "string"
+        },
+        "source_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Sha256",
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "analyzed",
+            "malformed",
+            "unsupported",
+            "failed"
+          ],
+          "title": "State",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "source_sha256",
+        "byte_length",
+        "state",
+        "reason",
+        "findings",
+        "inventory",
+        "limitations_observed"
+      ],
+      "title": "MemoryFileResult",
+      "type": "object"
+    },
+    "MemoryFinding": {
+      "additionalProperties": false,
+      "properties": {
+        "callee": {
+          "title": "Callee",
+          "type": "string"
+        },
+        "evidence_kinds": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Evidence Kinds",
+          "type": "array"
+        },
+        "location": {
+          "$ref": "#/$defs/SourceRange"
+        },
+        "priority": {
+          "enum": [
+            "low",
+            "medium"
+          ],
+          "title": "Priority",
+          "type": "string"
+        },
+        "record_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "rule_id": {
+          "title": "Rule Id",
+          "type": "string"
+        },
+        "verification": {
+          "const": "unreviewed-static-condition",
+          "default": "unreviewed-static-condition",
+          "title": "Verification",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_id",
+        "rule_id",
+        "priority",
+        "location",
+        "callee",
+        "evidence_kinds"
+      ],
+      "title": "MemoryFinding",
+      "type": "object"
+    },
+    "MemoryObservation": {
+      "additionalProperties": false,
+      "properties": {
+        "detail": {
+          "title": "Detail",
+          "type": "string"
+        },
+        "kind": {
+          "title": "Kind",
+          "type": "string"
+        },
+        "location": {
+          "$ref": "#/$defs/SourceRange"
+        },
+        "rule_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rule Id"
+        }
+      },
+      "required": [
+        "kind",
+        "location",
+        "detail"
+      ],
+      "title": "MemoryObservation",
+      "type": "object"
+    },
+    "MemoryReport": {
+      "additionalProperties": false,
+      "properties": {
+        "catalog_sha256": {
+          "default": "1f62c8e957d9d9fd0f5d067bd138c86f26a32b455fd124122722830cb347a96b",
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Catalog Sha256",
+          "type": "string"
+        },
+        "contract": {
+          "const": "memory-development-v1",
+          "default": "memory-development-v1",
+          "title": "Contract",
+          "type": "string"
+        },
+        "execution_state": {
+          "enum": [
+            "complete",
+            "partial",
+            "empty"
+          ],
+          "title": "Execution State",
+          "type": "string"
+        },
+        "files": {
+          "items": {
+            "$ref": "#/$defs/MemoryFileResult"
+          },
+          "title": "Files",
+          "type": "array"
+        },
+        "input_inventory": {
+          "items": {
+            "$ref": "#/$defs/InventoryEntry"
+          },
+          "title": "Input Inventory",
+          "type": "array"
+        },
+        "legacy_markers": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Legacy Markers",
+          "type": "object"
+        },
+        "limitations": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Limitations",
+          "type": "array"
+        },
+        "not_selected": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Not Selected",
+          "type": "array"
+        },
+        "policy": {
+          "const": "research-only-no-suppressions-applied",
+          "default": "research-only-no-suppressions-applied",
+          "title": "Policy",
+          "type": "string"
+        },
+        "producer": {
+          "const": "student-memory-repaired",
+          "default": "student-memory-repaired",
+          "title": "Producer",
+          "type": "string"
+        },
+        "request_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Request Sha256",
+          "type": "string"
+        },
+        "rules": {
+          "items": {
+            "$ref": "#/$defs/MemoryRule"
+          },
+          "title": "Rules",
+          "type": "array"
+        },
+        "target_snapshot_id": {
+          "title": "Target Snapshot Id",
+          "type": "string"
+        },
+        "version": {
+          "const": "1.0.0",
+          "default": "1.0.0",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "request_sha256",
+        "target_snapshot_id",
+        "rules",
+        "legacy_markers",
+        "execution_state",
+        "input_inventory",
+        "not_selected",
+        "files",
+        "limitations"
+      ],
+      "title": "MemoryReport",
+      "type": "object"
+    },
+    "MemoryRule": {
+      "additionalProperties": false,
+      "properties": {
+        "boundary": {
+          "title": "Boundary",
+          "type": "string"
+        },
+        "priority": {
+          "anyOf": [
+            {
+              "enum": [
+                "low",
+                "medium"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Priority"
+        },
+        "rule_id": {
+          "title": "Rule Id",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "active-condition",
+            "inventory-only",
+            "deferred"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "rule_id",
+        "status",
+        "title",
+        "boundary"
+      ],
+      "title": "MemoryRule",
+      "type": "object"
+    },
+    "NativeReport": {
+      "discriminator": {
+        "mapping": {
+          "agent-to-agent-development-v1": "#/$defs/AgentToAgentReport",
+          "filesystem-development-v1": "#/$defs/FilesystemReport",
+          "memory-development-v1": "#/$defs/MemoryReport",
+          "network-data-development-v1": "#/$defs/NetworkReport",
+          "orchestration-development-v1": "#/$defs/OrchestrationReport",
+          "self-modification-development-v1": "#/$defs/SelfModificationReport",
+          "tool-execution-development-v1": "#/$defs/ToolExecutionReport"
+        },
+        "propertyName": "contract"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/ToolExecutionReport"
+        },
+        {
+          "$ref": "#/$defs/NetworkReport"
+        },
+        {
+          "$ref": "#/$defs/FilesystemReport"
+        },
+        {
+          "$ref": "#/$defs/MemoryReport"
+        },
+        {
+          "$ref": "#/$defs/SelfModificationReport"
+        },
+        {
+          "$ref": "#/$defs/OrchestrationReport"
+        },
+        {
+          "$ref": "#/$defs/AgentToAgentReport"
+        }
+      ]
+    },
+    "NetworkFileResult": {
+      "additionalProperties": false,
+      "properties": {
+        "byte_length": {
+          "minimum": 0,
+          "title": "Byte Length",
+          "type": "integer"
+        },
+        "findings": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/NetworkFinding"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Findings"
+        },
+        "inventory": {
+          "items": {
+            "$ref": "#/$defs/NetworkObservation"
+          },
+          "title": "Inventory",
+          "type": "array"
+        },
+        "limitations_observed": {
+          "items": {
+            "$ref": "#/$defs/NetworkObservation"
+          },
+          "title": "Limitations Observed",
+          "type": "array"
+        },
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "reason": {
+          "title": "Reason",
+          "type": "string"
+        },
+        "source_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Sha256",
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "analyzed",
+            "malformed",
+            "unsupported",
+            "failed"
+          ],
+          "title": "State",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "source_sha256",
+        "byte_length",
+        "state",
+        "reason",
+        "findings",
+        "inventory",
+        "limitations_observed"
+      ],
+      "title": "NetworkFileResult",
+      "type": "object"
+    },
+    "NetworkFinding": {
+      "additionalProperties": false,
+      "properties": {
+        "callee": {
+          "title": "Callee",
+          "type": "string"
+        },
+        "evidence_kinds": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Evidence Kinds",
+          "type": "array"
+        },
+        "location": {
+          "$ref": "#/$defs/SourceRange"
+        },
+        "priority": {
+          "enum": [
+            "low",
+            "medium"
+          ],
+          "title": "Priority",
+          "type": "string"
+        },
+        "record_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "rule_id": {
+          "title": "Rule Id",
+          "type": "string"
+        },
+        "verification": {
+          "const": "unreviewed-static-condition",
+          "default": "unreviewed-static-condition",
+          "title": "Verification",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_id",
+        "rule_id",
+        "priority",
+        "location",
+        "callee",
+        "evidence_kinds"
+      ],
+      "title": "NetworkFinding",
+      "type": "object"
+    },
+    "NetworkObservation": {
+      "additionalProperties": false,
+      "properties": {
+        "detail": {
+          "title": "Detail",
+          "type": "string"
+        },
+        "kind": {
+          "title": "Kind",
+          "type": "string"
+        },
+        "location": {
+          "$ref": "#/$defs/SourceRange"
+        },
+        "rule_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rule Id"
+        }
+      },
+      "required": [
+        "kind",
+        "location",
+        "detail"
+      ],
+      "title": "NetworkObservation",
+      "type": "object"
+    },
+    "NetworkReport": {
+      "additionalProperties": false,
+      "properties": {
+        "catalog_sha256": {
+          "default": "50a58f60771c28925c3185f993297160f66b3c1242cc4c614693bcc70b88edfd",
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Catalog Sha256",
+          "type": "string"
+        },
+        "contract": {
+          "const": "network-data-development-v1",
+          "default": "network-data-development-v1",
+          "title": "Contract",
+          "type": "string"
+        },
+        "execution_state": {
+          "enum": [
+            "complete",
+            "partial",
+            "empty"
+          ],
+          "title": "Execution State",
+          "type": "string"
+        },
+        "files": {
+          "items": {
+            "$ref": "#/$defs/NetworkFileResult"
+          },
+          "title": "Files",
+          "type": "array"
+        },
+        "input_inventory": {
+          "items": {
+            "$ref": "#/$defs/InventoryEntry"
+          },
+          "title": "Input Inventory",
+          "type": "array"
+        },
+        "limitations": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Limitations",
+          "type": "array"
+        },
+        "not_selected": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Not Selected",
+          "type": "array"
+        },
+        "policy": {
+          "const": "research-only-no-suppressions-applied",
+          "default": "research-only-no-suppressions-applied",
+          "title": "Policy",
+          "type": "string"
+        },
+        "producer": {
+          "const": "student-network-data-repaired",
+          "default": "student-network-data-repaired",
+          "title": "Producer",
+          "type": "string"
+        },
+        "request_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Request Sha256",
+          "type": "string"
+        },
+        "rules": {
+          "items": {
+            "$ref": "#/$defs/NetworkRule"
+          },
+          "title": "Rules",
+          "type": "array"
+        },
+        "target_snapshot_id": {
+          "title": "Target Snapshot Id",
+          "type": "string"
+        },
+        "version": {
+          "const": "1.0.0",
+          "default": "1.0.0",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "request_sha256",
+        "target_snapshot_id",
+        "rules",
+        "execution_state",
+        "input_inventory",
+        "not_selected",
+        "files",
+        "limitations"
+      ],
+      "title": "NetworkReport",
+      "type": "object"
+    },
+    "NetworkRule": {
+      "additionalProperties": false,
+      "properties": {
+        "boundary": {
+          "title": "Boundary",
+          "type": "string"
+        },
+        "priority": {
+          "anyOf": [
+            {
+              "enum": [
+                "low",
+                "medium"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Priority"
+        },
+        "remediation": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Remediation"
+        },
+        "rule_id": {
+          "title": "Rule Id",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "active-condition",
+            "inventory-only",
+            "deferred"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "rule_id",
+        "status",
+        "title",
+        "boundary",
+        "priority",
+        "remediation"
+      ],
+      "title": "NetworkRule",
+      "type": "object"
+    },
+    "Observation": {
+      "additionalProperties": false,
+      "properties": {
+        "detail": {
+          "title": "Detail",
+          "type": "string"
+        },
+        "kind": {
+          "title": "Kind",
+          "type": "string"
+        },
+        "location": {
+          "$ref": "#/$defs/SourceRange"
+        }
+      },
+      "required": [
+        "kind",
+        "location",
+        "detail"
+      ],
+      "title": "Observation",
+      "type": "object"
+    },
+    "OrchestrationFileResult": {
+      "additionalProperties": false,
+      "properties": {
+        "byte_length": {
+          "minimum": 0,
+          "title": "Byte Length",
+          "type": "integer"
+        },
+        "findings": {
+          "anyOf": [
+            {
+              "items": {},
+              "maxItems": 0,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Findings"
+        },
+        "inventory": {
+          "items": {
+            "$ref": "#/$defs/OrchestrationObservation"
+          },
+          "title": "Inventory",
+          "type": "array"
+        },
+        "limitations_observed": {
+          "items": {
+            "$ref": "#/$defs/OrchestrationObservation"
+          },
+          "title": "Limitations Observed",
+          "type": "array"
+        },
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "reason": {
+          "title": "Reason",
+          "type": "string"
+        },
+        "source_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Sha256",
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "analyzed",
+            "malformed",
+            "unsupported",
+            "failed"
+          ],
+          "title": "State",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "source_sha256",
+        "byte_length",
+        "state",
+        "reason",
+        "findings",
+        "inventory",
+        "limitations_observed"
+      ],
+      "title": "OrchestrationFileResult",
+      "type": "object"
+    },
+    "OrchestrationObservation": {
+      "additionalProperties": false,
+      "properties": {
+        "argument_shapes": {
+          "items": {
+            "$ref": "#/$defs/agentsec_evidence__custom_rules__orchestration__ArgumentShape"
+          },
+          "title": "Argument Shapes",
+          "type": "array"
+        },
+        "detail": {
+          "title": "Detail",
+          "type": "string"
+        },
+        "kind": {
+          "title": "Kind",
+          "type": "string"
+        },
+        "location": {
+          "$ref": "#/$defs/SourceRange"
+        },
+        "record_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "rule_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rule Id"
+        }
+      },
+      "required": [
+        "record_id",
+        "kind",
+        "location",
+        "detail"
+      ],
+      "title": "OrchestrationObservation",
+      "type": "object"
+    },
+    "OrchestrationReport": {
+      "additionalProperties": false,
+      "properties": {
+        "capability": {
+          "const": "inventory-only-no-security-verdict",
+          "default": "inventory-only-no-security-verdict",
+          "title": "Capability",
+          "type": "string"
+        },
+        "catalog_sha256": {
+          "default": "d1049945afc2fb14c7f139c4428dc4e5381f326ac0217797318c96e843a0bd51",
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Catalog Sha256",
+          "type": "string"
+        },
+        "contract": {
+          "const": "orchestration-development-v1",
+          "default": "orchestration-development-v1",
+          "title": "Contract",
+          "type": "string"
+        },
+        "execution_state": {
+          "enum": [
+            "complete",
+            "partial",
+            "empty"
+          ],
+          "title": "Execution State",
+          "type": "string"
+        },
+        "files": {
+          "items": {
+            "$ref": "#/$defs/OrchestrationFileResult"
+          },
+          "title": "Files",
+          "type": "array"
+        },
+        "input_inventory": {
+          "items": {
+            "$ref": "#/$defs/InventoryEntry"
+          },
+          "title": "Input Inventory",
+          "type": "array"
+        },
+        "legacy_markers": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Legacy Markers",
+          "type": "object"
+        },
+        "limitations": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Limitations",
+          "type": "array"
+        },
+        "not_selected": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Not Selected",
+          "type": "array"
+        },
+        "policy": {
+          "const": "research-only-no-suppressions-applied",
+          "default": "research-only-no-suppressions-applied",
+          "title": "Policy",
+          "type": "string"
+        },
+        "producer": {
+          "const": "student-orchestration-repaired",
+          "default": "student-orchestration-repaired",
+          "title": "Producer",
+          "type": "string"
+        },
+        "request_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Request Sha256",
+          "type": "string"
+        },
+        "rules": {
+          "items": {
+            "$ref": "#/$defs/OrchestrationRule"
+          },
+          "title": "Rules",
+          "type": "array"
+        },
+        "target_snapshot_id": {
+          "title": "Target Snapshot Id",
+          "type": "string"
+        },
+        "version": {
+          "const": "1.0.0",
+          "default": "1.0.0",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "request_sha256",
+        "target_snapshot_id",
+        "rules",
+        "legacy_markers",
+        "execution_state",
+        "input_inventory",
+        "not_selected",
+        "files",
+        "limitations"
+      ],
+      "title": "OrchestrationReport",
+      "type": "object"
+    },
+    "OrchestrationRule": {
+      "additionalProperties": false,
+      "properties": {
+        "boundary": {
+          "title": "Boundary",
+          "type": "string"
+        },
+        "related_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Related Ids",
+          "type": "array"
+        },
+        "rule_id": {
+          "title": "Rule Id",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "inventory-only",
+            "deferred"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "rule_id",
+        "status",
+        "title",
+        "boundary"
+      ],
+      "title": "OrchestrationRule",
+      "type": "object"
+    },
+    "PathRecognizer": {
+      "additionalProperties": false,
+      "properties": {
+        "candidate_format": {
+          "minLength": 1,
+          "title": "Candidate Format",
+          "type": "string"
+        },
+        "checked_on": {
+          "const": "2026-10-02",
+          "default": "2026-10-02",
+          "title": "Checked On",
+          "type": "string"
+        },
+        "family": {
+          "enum": [
+            "python-source",
+            "mcp-config",
+            "agent-config",
+            "instructions",
+            "skill",
+            "memory-context",
+            "identity-permissions",
+            "dependencies",
+            "iac"
+          ],
+          "title": "Family",
+          "type": "string"
+        },
+        "framework_hint": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Framework Hint"
+        },
+        "limitation": {
+          "minLength": 1,
+          "title": "Limitation",
+          "type": "string"
+        },
+        "pattern": {
+          "minLength": 1,
+          "title": "Pattern",
+          "type": "string"
+        },
+        "recognizer_id": {
+          "minLength": 1,
+          "title": "Recognizer Id",
+          "type": "string"
+        },
+        "reference": {
+          "minLength": 1,
+          "title": "Reference",
+          "type": "string"
+        },
+        "reference_kind": {
+          "enum": [
+            "official-documentation",
+            "project-convention"
+          ],
+          "title": "Reference Kind",
+          "type": "string"
+        },
+        "selector": {
+          "enum": [
+            "basename",
+            "suffix"
+          ],
+          "title": "Selector",
+          "type": "string"
+        },
+        "version": {
+          "const": "1",
+          "default": "1",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "recognizer_id",
+        "family",
+        "selector",
+        "pattern",
+        "candidate_format",
+        "reference",
+        "reference_kind",
+        "limitation"
+      ],
+      "title": "PathRecognizer",
+      "type": "object"
+    },
+    "PilotDirectorySkip": {
+      "additionalProperties": false,
+      "properties": {
+        "interpretation": {
+          "const": "Ancestor skip evidence, not individual native file observations",
+          "title": "Interpretation",
+          "type": "string"
+        },
+        "native_pointer": {
+          "pattern": "^/paths/skipped/[0-9]+$",
+          "title": "Native Pointer",
+          "type": "string"
+        },
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "reason": {
+          "enum": [
+            "semgrepignore_patterns_match",
+            "gitignore_patterns_match"
+          ],
+          "title": "Reason",
+          "type": "string"
+        },
+        "selected_descendants": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Selected Descendants",
+          "type": "array"
+        }
+      },
+      "required": [
+        "native_pointer",
+        "path",
+        "reason",
+        "selected_descendants",
+        "interpretation"
+      ],
+      "title": "PilotDirectorySkip",
+      "type": "object"
+    },
+    "PilotFileReference": {
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "title": "PilotFileReference",
+      "type": "object"
+    },
+    "PilotPlanRecord": {
+      "additionalProperties": false,
+      "description": "Read-model plan metadata, not permission to execute a new repository or profile.",
+      "properties": {
+        "approval": {
+          "title": "Approval",
+          "type": "string"
+        },
+        "content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Content Sha256",
+          "type": "string"
+        },
+        "contract": {
+          "const": "same-repository-pilot-plan-v1",
+          "title": "Contract",
+          "type": "string"
+        },
+        "database_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Database Sha256",
+          "type": "string"
+        },
+        "dockerfile": {
+          "const": "present-unsupported-not-run",
+          "title": "Dockerfile",
+          "type": "string"
+        },
+        "expected_files": {
+          "minimum": 0,
+          "title": "Expected Files",
+          "type": "integer"
+        },
+        "implicit_git_filtering": {
+          "const": false,
+          "title": "Implicit Git Filtering",
+          "type": "boolean"
+        },
+        "oracle": {
+          "const": "no-complete-public-vulnerability-oracle",
+          "title": "Oracle",
+          "type": "string"
+        },
+        "order": {
+          "items": {
+            "$ref": "#/$defs/PilotStage"
+          },
+          "title": "Order",
+          "type": "array"
+        },
+        "pins": {
+          "additionalProperties": {
+            "pattern": "^[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "title": "Pins",
+          "type": "object"
+        },
+        "python_paths": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 64,
+          "minItems": 1,
+          "title": "Python Paths",
+          "type": "array"
+        },
+        "repetitions": {
+          "const": 3,
+          "title": "Repetitions",
+          "type": "integer"
+        },
+        "repository": {
+          "title": "Repository",
+          "type": "string"
+        },
+        "revision": {
+          "pattern": "^[0-9a-f]{40}$",
+          "title": "Revision",
+          "type": "string"
+        },
+        "split": {
+          "const": "formative-pilot-not-held-out",
+          "title": "Split",
+          "type": "string"
+        },
+        "target_execution": {
+          "const": false,
+          "title": "Target Execution",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "contract",
+        "approval",
+        "repository",
+        "revision",
+        "content_sha256",
+        "database_sha256",
+        "expected_files",
+        "python_paths",
+        "repetitions",
+        "order",
+        "pins",
+        "split",
+        "target_execution",
+        "oracle",
+        "implicit_git_filtering",
+        "dockerfile"
+      ],
+      "title": "PilotPlanRecord",
+      "type": "object"
+    },
+    "PilotRepetitionSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "agent_execution_id": {
+          "title": "Agent Execution Id",
+          "type": "string"
+        },
+        "agent_findings": {
+          "items": {
+            "$ref": "#/$defs/Finding"
+          },
+          "title": "Agent Findings",
+          "type": "array"
+        },
+        "agent_native_scanned_files": {
+          "minimum": 0,
+          "title": "Agent Native Scanned Files",
+          "type": "integer"
+        },
+        "agent_per_file_completion": {
+          "const": "not-observable",
+          "default": "not-observable",
+          "title": "Agent Per File Completion",
+          "type": "string"
+        },
+        "agent_run_id": {
+          "title": "Agent Run Id",
+          "type": "string"
+        },
+        "dependency": {
+          "$ref": "#/$defs/DependencySummary"
+        },
+        "directory_skips": {
+          "additionalProperties": {
+            "items": {
+              "$ref": "#/$defs/PilotDirectorySkip"
+            },
+            "type": "array"
+          },
+          "propertyNames": {
+            "enum": [
+              "research",
+              "repository-policy"
+            ]
+          },
+          "title": "Directory Skips",
+          "type": "object"
+        },
+        "repetition": {
+          "maximum": 3,
+          "minimum": 1,
+          "title": "Repetition",
+          "type": "integer"
+        },
+        "semgrep": {
+          "$ref": "#/$defs/SemgrepDualView"
+        }
+      },
+      "required": [
+        "repetition",
+        "semgrep",
+        "directory_skips",
+        "agent_run_id",
+        "agent_execution_id",
+        "agent_native_scanned_files",
+        "agent_findings",
+        "dependency"
+      ],
+      "title": "PilotRepetitionSummary",
+      "type": "object"
+    },
+    "PilotRow": {
+      "additionalProperties": false,
+      "properties": {
+        "duration_ns": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Duration Ns"
+        },
+        "evidence": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Evidence",
+          "type": "array"
+        },
+        "exit_code": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Exit Code"
+        },
+        "finding_records": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Finding Records"
+        },
+        "package_identities": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Package Identities"
+        },
+        "reasons": {
+          "default": [
+            "not-attempted"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "title": "Reasons",
+          "type": "array"
+        },
+        "repetition": {
+          "maximum": 3,
+          "minimum": 1,
+          "title": "Repetition",
+          "type": "integer"
+        },
+        "semantic_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Semantic Sha256"
+        },
+        "stage": {
+          "$ref": "#/$defs/PilotStage"
+        },
+        "state": {
+          "default": "not-run",
+          "enum": [
+            "not-run",
+            "refused",
+            "failed",
+            "partial",
+            "complete"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "unit": {
+          "enum": [
+            "native-rule-reports",
+            "package-advisory-occurrences",
+            "package-identities"
+          ],
+          "title": "Unit",
+          "type": "string"
+        }
+      },
+      "required": [
+        "repetition",
+        "stage",
+        "unit"
+      ],
+      "title": "PilotRow",
+      "type": "object"
+    },
+    "PilotSarifBinding": {
+      "additionalProperties": false,
+      "properties": {
+        "repetition": {
+          "maximum": 3,
+          "minimum": 1,
+          "title": "Repetition",
+          "type": "integer"
+        },
+        "result_count": {
+          "minimum": 0,
+          "title": "Result Count",
+          "type": "integer"
+        },
+        "run_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Run Sha256",
+          "type": "string"
+        },
+        "stage": {
+          "$ref": "#/$defs/PilotStage"
+        }
+      },
+      "required": [
+        "repetition",
+        "stage",
+        "result_count",
+        "run_sha256"
+      ],
+      "title": "PilotSarifBinding",
+      "type": "object"
+    },
+    "PilotStage": {
+      "enum": [
+        "semgrep-research",
+        "semgrep-policy",
+        "agent-audit",
+        "osv-direct",
+        "syft",
+        "osv-sbom"
+      ],
+      "type": "string"
+    },
+    "PolicyFindingView": {
+      "additionalProperties": false,
+      "properties": {
+        "policy_index": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Policy Index"
+        },
+        "research_index": {
+          "minimum": 0,
+          "title": "Research Index",
+          "type": "integer"
+        },
+        "state": {
+          "enum": [
+            "reported",
+            "native-suppression-marked",
+            "file-excluded",
+            "not-observed",
+            "unknown"
+          ],
+          "title": "State",
+          "type": "string"
+        }
+      },
+      "required": [
+        "research_index",
+        "policy_index",
+        "state"
+      ],
+      "title": "PolicyFindingView",
+      "type": "object"
+    },
+    "PolicyInclude": {
+      "additionalProperties": false,
+      "properties": {
+        "line": {
+          "minimum": 1,
+          "title": "Line",
+          "type": "integer"
+        },
+        "owner": {
+          "minLength": 1,
+          "title": "Owner",
+          "type": "string"
+        },
+        "target": {
+          "minLength": 1,
+          "title": "Target",
+          "type": "string"
+        }
+      },
+      "required": [
+        "owner",
+        "line",
+        "target"
+      ],
+      "title": "PolicyInclude",
+      "type": "object"
+    },
+    "PolicyIssue": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "enum": [
+            "policy-budget",
+            "policy-encoding",
+            "unsupported-directive",
+            "unsafe-include",
+            "missing-include",
+            "nested-include",
+            "python-policy-input"
+          ],
+          "title": "Code",
+          "type": "string"
+        },
+        "line": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Line"
+        },
+        "path": {
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "code"
+      ],
+      "title": "PolicyIssue",
+      "type": "object"
+    },
+    "Producer": {
+      "additionalProperties": false,
+      "properties": {
+        "adapter_id": {
+          "minLength": 1,
+          "title": "Adapter Id",
+          "type": "string"
+        },
+        "adapter_version": {
+          "minLength": 1,
+          "title": "Adapter Version",
+          "type": "string"
+        },
+        "tool_id": {
+          "minLength": 1,
+          "title": "Tool Id",
+          "type": "string"
+        },
+        "tool_version": {
+          "minLength": 1,
+          "title": "Tool Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "tool_id",
+        "tool_version",
+        "adapter_id",
+        "adapter_version"
+      ],
+      "title": "Producer",
+      "type": "object"
+    },
+    "PublicPilotSource": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "public-source-pilot",
+          "default": "public-source-pilot",
+          "title": "Kind",
+          "type": "string"
+        },
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "revision": {
+          "title": "Revision",
+          "type": "string"
+        },
+        "run_id": {
+          "title": "Run Id",
+          "type": "string"
+        },
+        "source_manifest_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Manifest Sha256",
+          "type": "string"
+        },
+        "source_semantic_sha256": {
+          "default": null,
+          "title": "Source Semantic Sha256",
+          "type": "null"
+        },
+        "state": {
+          "const": "partial",
+          "default": "partial",
+          "title": "State",
+          "type": "string"
+        },
+        "summary": {
+          "$ref": "#/$defs/PublicPilotSummary"
+        },
+        "target_content_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Target Content Sha256"
+        }
+      },
+      "required": [
+        "run_id",
+        "label",
+        "revision",
+        "target_content_sha256",
+        "source_manifest_sha256",
+        "summary"
+      ],
+      "title": "PublicPilotSource",
+      "type": "object"
+    },
+    "PublicPilotSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "analysis_completeness": {
+          "const": "not-established",
+          "default": "not-established",
+          "title": "Analysis Completeness",
+          "type": "string"
+        },
+        "attempt_wall_ns": {
+          "minimum": 0,
+          "title": "Attempt Wall Ns",
+          "type": "integer"
+        },
+        "contract": {
+          "const": "public-source-pilot-summary-v1",
+          "default": "public-source-pilot-summary-v1",
+          "title": "Contract",
+          "type": "string"
+        },
+        "evidence_role": {
+          "const": "formative-pilot-not-held-out",
+          "default": "formative-pilot-not-held-out",
+          "title": "Evidence Role",
+          "type": "string"
+        },
+        "input_plans": {
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "$ref": "#/$defs/ToolInputPlan"
+            },
+            {
+              "$ref": "#/$defs/ToolInputPlan"
+            }
+          ],
+          "title": "Input Plans",
+          "type": "array"
+        },
+        "inventory": {
+          "$ref": "#/$defs/ArtifactInventory"
+        },
+        "limitations": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Limitations",
+          "type": "array"
+        },
+        "manual_preparation_and_adjudication_time_ns": {
+          "default": null,
+          "title": "Manual Preparation And Adjudication Time Ns",
+          "type": "null"
+        },
+        "manual_recovery_actions_during_attempt": {
+          "minimum": 0,
+          "title": "Manual Recovery Actions During Attempt",
+          "type": "integer"
+        },
+        "plan": {
+          "$ref": "#/$defs/PilotPlanRecord"
+        },
+        "references": {
+          "items": {
+            "$ref": "#/$defs/PilotFileReference"
+          },
+          "minItems": 1,
+          "title": "References",
+          "type": "array"
+        },
+        "repeatability": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "title": "Repeatability",
+          "type": "object"
+        },
+        "repetition_wall_ns": {
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "minimum": 0,
+              "type": "integer"
+            }
+          ],
+          "title": "Repetition Wall Ns",
+          "type": "array"
+        },
+        "repetitions": {
+          "items": {
+            "$ref": "#/$defs/PilotRepetitionSummary"
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "title": "Repetitions",
+          "type": "array"
+        },
+        "retained_coverage": {
+          "items": {
+            "additionalProperties": {
+              "$ref": "#/$defs/JsonValue"
+            },
+            "type": "object"
+          },
+          "maxItems": 10,
+          "minItems": 10,
+          "title": "Retained Coverage",
+          "type": "array"
+        },
+        "rows": {
+          "items": {
+            "$ref": "#/$defs/PilotRow"
+          },
+          "maxItems": 18,
+          "minItems": 18,
+          "title": "Rows",
+          "type": "array"
+        },
+        "sarif_bindings": {
+          "items": {
+            "$ref": "#/$defs/PilotSarifBinding"
+          },
+          "maxItems": 15,
+          "minItems": 15,
+          "title": "Sarif Bindings",
+          "type": "array"
+        },
+        "vulnerability_total": {
+          "default": null,
+          "title": "Vulnerability Total",
+          "type": "null"
+        }
+      },
+      "required": [
+        "plan",
+        "inventory",
+        "input_plans",
+        "rows",
+        "repetitions",
+        "repeatability",
+        "repetition_wall_ns",
+        "attempt_wall_ns",
+        "manual_recovery_actions_during_attempt",
+        "retained_coverage",
+        "references",
+        "sarif_bindings",
+        "limitations"
+      ],
+      "title": "PublicPilotSummary",
+      "type": "object"
+    },
+    "ResearchCaseSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "analysis_completeness": {
+          "const": "not-established",
+          "default": "not-established",
+          "title": "Analysis Completeness",
+          "type": "string"
+        },
+        "case_id": {
+          "maxLength": 100,
+          "pattern": "^[a-z0-9-]+$",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "contract": {
+          "const": "semgrep-research-summary-v1",
+          "default": "semgrep-research-summary-v1",
+          "title": "Contract",
+          "type": "string"
+        },
+        "dual_views": {
+          "items": {
+            "$ref": "#/$defs/SemgrepDualView"
+          },
+          "maxItems": 2,
+          "title": "Dual Views",
+          "type": "array"
+        },
+        "evidence_role": {
+          "const": "controlled-development-not-held-out",
+          "default": "controlled-development-not-held-out",
+          "title": "Evidence Role",
+          "type": "string"
+        },
+        "limitations": {
+          "default": [
+            "This is replayed controlled development evidence, not a public-source scan.",
+            "Views and repetitions are separate observations, not additive vulnerabilities.",
+            "Native suppression does not establish reviewer approval or remediation.",
+            "Recorded commands and hashes are not external execution attestation."
+          ],
+          "items": {
+            "type": "string"
+          },
+          "title": "Limitations",
+          "type": "array"
+        },
+        "passes": {
+          "items": {
+            "$ref": "#/$defs/ResearchPassSummary"
+          },
+          "maxItems": 4,
+          "title": "Passes",
+          "type": "array"
+        },
+        "policy": {
+          "$ref": "#/$defs/SemgrepPolicyAssessment"
+        },
+        "scope": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SemgrepResearchScope"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "selected_file_count": {
+          "minimum": 0,
+          "title": "Selected File Count",
+          "type": "integer"
+        },
+        "state": {
+          "enum": [
+            "policy-refused",
+            "syntax-refused",
+            "observed"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "syntax_state": {
+          "enum": [
+            "not-run",
+            "rejected",
+            "parsed"
+          ],
+          "title": "Syntax State",
+          "type": "string"
+        },
+        "unrun_finding_count": {
+          "default": null,
+          "title": "Unrun Finding Count",
+          "type": "null"
+        },
+        "vulnerability_total": {
+          "default": null,
+          "title": "Vulnerability Total",
+          "type": "null"
+        }
+      },
+      "required": [
+        "case_id",
+        "state",
+        "selected_file_count",
+        "policy",
+        "scope",
+        "syntax_state",
+        "passes",
+        "dual_views"
+      ],
+      "title": "ResearchCaseSummary",
+      "type": "object"
+    },
+    "ResearchExecutionAssessment": {
+      "additionalProperties": false,
+      "properties": {
+        "analysis_state": {
+          "enum": [
+            "not-established",
+            "incomplete",
+            "failed"
+          ],
+          "title": "Analysis State",
+          "type": "string"
+        },
+        "cleanup_succeeded": {
+          "title": "Cleanup Succeeded",
+          "type": "boolean"
+        },
+        "contract": {
+          "const": "semgrep-execution-assessment-v1",
+          "default": "semgrep-execution-assessment-v1",
+          "title": "Contract",
+          "type": "string"
+        },
+        "process_state": {
+          "enum": [
+            "completed",
+            "nonzero",
+            "timed-out",
+            "output-limited",
+            "exit-unavailable"
+          ],
+          "title": "Process State",
+          "type": "string"
+        },
+        "reasons": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Reasons",
+          "type": "array"
+        },
+        "report_state": {
+          "enum": [
+            "reconciled",
+            "missing-or-invalid"
+          ],
+          "title": "Report State",
+          "type": "string"
+        },
+        "vulnerability_total": {
+          "default": null,
+          "title": "Vulnerability Total",
+          "type": "null"
+        }
+      },
+      "required": [
+        "process_state",
+        "cleanup_succeeded",
+        "report_state",
+        "analysis_state",
+        "reasons"
+      ],
+      "title": "ResearchExecutionAssessment",
+      "type": "object"
+    },
+    "ResearchFileObservation": {
+      "additionalProperties": false,
+      "properties": {
+        "native_reason": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Native Reason"
+        },
+        "path": {
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "reported",
+            "reported-with-native-issue",
+            "native-skipped",
+            "unreported"
+          ],
+          "title": "State",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "state"
+      ],
+      "title": "ResearchFileObservation",
+      "type": "object"
+    },
+    "ResearchFinding": {
+      "additionalProperties": false,
+      "properties": {
+        "anchor": {
+          "$ref": "#/$defs/FindingAnchor"
+        },
+        "json_pointer": {
+          "anyOf": [
+            {
+              "pattern": "^/results/(0|[1-9][0-9]*)$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Json Pointer"
+        },
+        "message": {
+          "minLength": 1,
+          "title": "Message",
+          "type": "string"
+        },
+        "native_suppressions": {
+          "default": [],
+          "items": {
+            "additionalProperties": {
+              "$ref": "#/$defs/JsonValue"
+            },
+            "type": "object"
+          },
+          "title": "Native Suppressions",
+          "type": "array"
+        },
+        "review_state": {
+          "const": "unreviewed",
+          "default": "unreviewed",
+          "title": "Review State",
+          "type": "string"
+        },
+        "sarif_pointer": {
+          "pattern": "^/runs/0/results/(0|[1-9][0-9]*)$",
+          "title": "Sarif Pointer",
+          "type": "string"
+        }
+      },
+      "required": [
+        "anchor",
+        "message",
+        "json_pointer",
+        "sarif_pointer"
+      ],
+      "title": "ResearchFinding",
+      "type": "object"
+    },
+    "ResearchInput": {
+      "additionalProperties": false,
+      "properties": {
+        "byte_length": {
+          "minimum": 0,
+          "title": "Byte Length",
+          "type": "integer"
+        },
+        "media_type": {
+          "minLength": 1,
+          "title": "Media Type",
+          "type": "string"
+        },
+        "path": {
+          "maxLength": 4096,
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "0.1.0",
+          "default": "0.1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "sha256",
+        "byte_length",
+        "media_type"
+      ],
+      "title": "ResearchInput",
+      "type": "object"
+    },
+    "ResearchPassSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "duration_ns": {
+          "minimum": 0,
+          "title": "Duration Ns",
+          "type": "integer"
+        },
+        "evidence": {
+          "$ref": "#/$defs/SemgrepPassEvidence"
+        },
+        "execution": {
+          "$ref": "#/$defs/ResearchExecutionAssessment"
+        },
+        "exit_code": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Exit Code"
+        },
+        "key": {
+          "pattern": "^(research|repository-policy)-[12]$",
+          "title": "Key",
+          "type": "string"
+        },
+        "native_finding_records": {
+          "minimum": 0,
+          "title": "Native Finding Records",
+          "type": "integer"
+        },
+        "native_json_path": {
+          "title": "Native Json Path",
+          "type": "string"
+        },
+        "native_sarif_path": {
+          "title": "Native Sarif Path",
+          "type": "string"
+        },
+        "repetition": {
+          "maximum": 2,
+          "minimum": 1,
+          "title": "Repetition",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "key",
+        "repetition",
+        "evidence",
+        "execution",
+        "exit_code",
+        "duration_ns",
+        "native_finding_records",
+        "native_json_path",
+        "native_sarif_path"
+      ],
+      "title": "ResearchPassSummary",
+      "type": "object"
+    },
+    "ResearchSource": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "semgrep-research",
+          "default": "semgrep-research",
+          "title": "Kind",
+          "type": "string"
+        },
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "revision": {
+          "title": "Revision",
+          "type": "string"
+        },
+        "run_id": {
+          "title": "Run Id",
+          "type": "string"
+        },
+        "source_manifest_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Manifest Sha256",
+          "type": "string"
+        },
+        "source_semantic_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Source Semantic Sha256"
+        },
+        "state": {
+          "title": "State",
+          "type": "string"
+        },
+        "summary": {
+          "$ref": "#/$defs/ResearchCaseSummary"
+        },
+        "target_content_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Target Content Sha256"
+        }
+      },
+      "required": [
+        "run_id",
+        "state",
+        "label",
+        "revision",
+        "target_content_sha256",
+        "source_manifest_sha256",
+        "source_semantic_sha256",
+        "summary"
+      ],
+      "title": "ResearchSource",
+      "type": "object"
+    },
+    "Rule": {
+      "additionalProperties": false,
+      "properties": {
+        "help_uri": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Help Uri"
+        },
+        "mappings": {
+          "items": {
+            "$ref": "#/$defs/TaxonomyMapping"
+          },
+          "title": "Mappings",
+          "type": "array"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        },
+        "native_id": {
+          "minLength": 1,
+          "title": "Native Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "native_id"
+      ],
+      "title": "Rule",
+      "type": "object"
+    },
+    "RuleSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "evidence_kind": {
+          "title": "Evidence Kind",
+          "type": "string"
+        },
+        "remediation": {
+          "title": "Remediation",
+          "type": "string"
+        },
+        "rule_id": {
+          "title": "Rule Id",
+          "type": "string"
+        },
+        "severity": {
+          "enum": [
+            "low",
+            "medium",
+            "high",
+            "critical"
+          ],
+          "title": "Severity",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "rule_id",
+        "title",
+        "severity",
+        "evidence_kind",
+        "remediation"
+      ],
+      "title": "RuleSpec",
+      "type": "object"
+    },
+    "SelfModificationFileResult": {
+      "additionalProperties": false,
+      "properties": {
+        "byte_length": {
+          "minimum": 0,
+          "title": "Byte Length",
+          "type": "integer"
+        },
+        "findings": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/SelfModificationFinding"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Findings"
+        },
+        "inventory": {
+          "items": {
+            "$ref": "#/$defs/SelfModificationObservation"
+          },
+          "title": "Inventory",
+          "type": "array"
+        },
+        "limitations_observed": {
+          "items": {
+            "$ref": "#/$defs/SelfModificationObservation"
+          },
+          "title": "Limitations Observed",
+          "type": "array"
+        },
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "reason": {
+          "title": "Reason",
+          "type": "string"
+        },
+        "source_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Sha256",
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "analyzed",
+            "malformed",
+            "unsupported",
+            "failed"
+          ],
+          "title": "State",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "source_sha256",
+        "byte_length",
+        "state",
+        "reason",
+        "findings",
+        "inventory",
+        "limitations_observed"
+      ],
+      "title": "SelfModificationFileResult",
+      "type": "object"
+    },
+    "SelfModificationFinding": {
+      "additionalProperties": false,
+      "properties": {
+        "callee": {
+          "title": "Callee",
+          "type": "string"
+        },
+        "evidence_kinds": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Evidence Kinds",
+          "type": "array"
+        },
+        "location": {
+          "$ref": "#/$defs/SourceRange"
+        },
+        "priority": {
+          "enum": [
+            "low",
+            "medium"
+          ],
+          "title": "Priority",
+          "type": "string"
+        },
+        "record_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "rule_id": {
+          "title": "Rule Id",
+          "type": "string"
+        },
+        "verification": {
+          "const": "unreviewed-static-condition",
+          "default": "unreviewed-static-condition",
+          "title": "Verification",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_id",
+        "rule_id",
+        "priority",
+        "location",
+        "callee",
+        "evidence_kinds"
+      ],
+      "title": "SelfModificationFinding",
+      "type": "object"
+    },
+    "SelfModificationObservation": {
+      "additionalProperties": false,
+      "properties": {
+        "detail": {
+          "title": "Detail",
+          "type": "string"
+        },
+        "kind": {
+          "title": "Kind",
+          "type": "string"
+        },
+        "location": {
+          "$ref": "#/$defs/SourceRange"
+        },
+        "rule_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rule Id"
+        }
+      },
+      "required": [
+        "kind",
+        "location",
+        "detail"
+      ],
+      "title": "SelfModificationObservation",
+      "type": "object"
+    },
+    "SelfModificationReport": {
+      "additionalProperties": false,
+      "properties": {
+        "catalog_sha256": {
+          "default": "e944ab6df852aa571d752a6aa2f5fdd877ce91135f8f451c0fffa8d40e448ca4",
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Catalog Sha256",
+          "type": "string"
+        },
+        "contract": {
+          "const": "self-modification-development-v1",
+          "default": "self-modification-development-v1",
+          "title": "Contract",
+          "type": "string"
+        },
+        "execution_state": {
+          "enum": [
+            "complete",
+            "partial",
+            "empty"
+          ],
+          "title": "Execution State",
+          "type": "string"
+        },
+        "files": {
+          "items": {
+            "$ref": "#/$defs/SelfModificationFileResult"
+          },
+          "title": "Files",
+          "type": "array"
+        },
+        "input_inventory": {
+          "items": {
+            "$ref": "#/$defs/InventoryEntry"
+          },
+          "title": "Input Inventory",
+          "type": "array"
+        },
+        "legacy_markers": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Legacy Markers",
+          "type": "object"
+        },
+        "limitations": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Limitations",
+          "type": "array"
+        },
+        "not_selected": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Not Selected",
+          "type": "array"
+        },
+        "policy": {
+          "const": "research-only-no-suppressions-applied",
+          "default": "research-only-no-suppressions-applied",
+          "title": "Policy",
+          "type": "string"
+        },
+        "producer": {
+          "const": "student-self-modification-repaired",
+          "default": "student-self-modification-repaired",
+          "title": "Producer",
+          "type": "string"
+        },
+        "request_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Request Sha256",
+          "type": "string"
+        },
+        "rules": {
+          "items": {
+            "$ref": "#/$defs/SelfModificationRule"
+          },
+          "title": "Rules",
+          "type": "array"
+        },
+        "target_snapshot_id": {
+          "title": "Target Snapshot Id",
+          "type": "string"
+        },
+        "version": {
+          "const": "1.0.0",
+          "default": "1.0.0",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "request_sha256",
+        "target_snapshot_id",
+        "rules",
+        "legacy_markers",
+        "execution_state",
+        "input_inventory",
+        "not_selected",
+        "files",
+        "limitations"
+      ],
+      "title": "SelfModificationReport",
+      "type": "object"
+    },
+    "SelfModificationRule": {
+      "additionalProperties": false,
+      "properties": {
+        "boundary": {
+          "title": "Boundary",
+          "type": "string"
+        },
+        "priority": {
+          "anyOf": [
+            {
+              "enum": [
+                "low",
+                "medium"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Priority"
+        },
+        "related_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Related Ids",
+          "type": "array"
+        },
+        "rule_id": {
+          "title": "Rule Id",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "active-condition",
+            "inventory-only",
+            "deferred"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "rule_id",
+        "status",
+        "title",
+        "boundary"
+      ],
+      "title": "SelfModificationRule",
+      "type": "object"
+    },
+    "SemgrepDualView": {
+      "additionalProperties": false,
+      "properties": {
+        "analysis_completeness": {
+          "const": "not-established",
+          "default": "not-established",
+          "title": "Analysis Completeness",
+          "type": "string"
+        },
+        "contract": {
+          "const": "semgrep-dual-view-v1",
+          "default": "semgrep-dual-view-v1",
+          "title": "Contract",
+          "type": "string"
+        },
+        "findings": {
+          "items": {
+            "$ref": "#/$defs/PolicyFindingView"
+          },
+          "title": "Findings",
+          "type": "array"
+        },
+        "policy_state": {
+          "enum": [
+            "not-run",
+            "observed"
+          ],
+          "title": "Policy State",
+          "type": "string"
+        },
+        "repository_policy": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SemgrepPassEvidence"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "research": {
+          "$ref": "#/$defs/SemgrepPassEvidence"
+        },
+        "vulnerability_total": {
+          "default": null,
+          "title": "Vulnerability Total",
+          "type": "null"
+        }
+      },
+      "required": [
+        "research",
+        "repository_policy",
+        "findings",
+        "policy_state"
+      ],
+      "title": "SemgrepDualView",
+      "type": "object"
+    },
+    "SemgrepPassEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "analysis_completeness": {
+          "const": "not-established",
+          "default": "not-established",
+          "title": "Analysis Completeness",
+          "type": "string"
+        },
+        "contract": {
+          "const": "semgrep-pass-evidence-v1",
+          "default": "semgrep-pass-evidence-v1",
+          "title": "Contract",
+          "type": "string"
+        },
+        "execution_id": {
+          "minLength": 1,
+          "title": "Execution Id",
+          "type": "string"
+        },
+        "files": {
+          "items": {
+            "$ref": "#/$defs/ResearchFileObservation"
+          },
+          "maxItems": 64,
+          "minItems": 1,
+          "title": "Files",
+          "type": "array"
+        },
+        "findings": {
+          "items": {
+            "$ref": "#/$defs/ResearchFinding"
+          },
+          "maxItems": 10000,
+          "title": "Findings",
+          "type": "array"
+        },
+        "native_declared_rule_ids": {
+          "items": {
+            "maxLength": 256,
+            "pattern": "^[A-Za-z0-9_.-]+$",
+            "type": "string"
+          },
+          "title": "Native Declared Rule Ids",
+          "type": "array"
+        },
+        "native_errors": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Native Errors",
+          "type": "array"
+        },
+        "native_execution_successful": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Native Execution Successful"
+        },
+        "native_json_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Native Json Sha256",
+          "type": "string"
+        },
+        "native_notifications": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Native Notifications",
+          "type": "array"
+        },
+        "native_sarif_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Native Sarif Sha256",
+          "type": "string"
+        },
+        "native_skip_details_available": {
+          "title": "Native Skip Details Available",
+          "type": "boolean"
+        },
+        "native_skipped_rules": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Native Skipped Rules",
+          "type": "array"
+        },
+        "profile_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Profile Sha256",
+          "type": "string"
+        },
+        "role": {
+          "enum": [
+            "research",
+            "repository-policy"
+          ],
+          "title": "Role",
+          "type": "string"
+        },
+        "scope_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Scope Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "profile_sha256",
+        "scope_sha256",
+        "execution_id",
+        "role",
+        "native_json_sha256",
+        "native_sarif_sha256",
+        "files",
+        "findings",
+        "native_skip_details_available",
+        "native_declared_rule_ids"
+      ],
+      "title": "SemgrepPassEvidence",
+      "type": "object"
+    },
+    "SemgrepPolicyAssessment": {
+      "additionalProperties": false,
+      "properties": {
+        "blockers": {
+          "items": {
+            "$ref": "#/$defs/PolicyIssue"
+          },
+          "title": "Blockers",
+          "type": "array"
+        },
+        "contract": {
+          "const": "semgrep-policy-assessment-v1",
+          "default": "semgrep-policy-assessment-v1",
+          "title": "Contract",
+          "type": "string"
+        },
+        "execution_authorization": {
+          "const": "not-granted",
+          "default": "not-granted",
+          "title": "Execution Authorization",
+          "type": "string"
+        },
+        "files": {
+          "items": {
+            "$ref": "#/$defs/ResearchInput"
+          },
+          "title": "Files",
+          "type": "array"
+        },
+        "implicit_gitignore": {
+          "const": "disabled",
+          "default": "disabled",
+          "title": "Implicit Gitignore",
+          "type": "string"
+        },
+        "includes": {
+          "items": {
+            "$ref": "#/$defs/PolicyInclude"
+          },
+          "title": "Includes",
+          "type": "array"
+        },
+        "label": {
+          "const": "Semgrep ignore files and inline suppressions; Git ignore filtering disabled",
+          "default": "Semgrep ignore files and inline suppressions; Git ignore filtering disabled",
+          "title": "Label",
+          "type": "string"
+        },
+        "pattern_evaluation": {
+          "const": "delegated-to-pinned-semgrep",
+          "default": "delegated-to-pinned-semgrep",
+          "title": "Pattern Evaluation",
+          "type": "string"
+        },
+        "root_defaults": {
+          "enum": [
+            "pinned-native-defaults",
+            "root-file-overrides-defaults"
+          ],
+          "title": "Root Defaults",
+          "type": "string"
+        },
+        "semgrepignore_paths": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Semgrepignore Paths",
+          "type": "array"
+        }
+      },
+      "required": [
+        "root_defaults",
+        "semgrepignore_paths",
+        "files",
+        "includes",
+        "blockers"
+      ],
+      "title": "SemgrepPolicyAssessment",
+      "type": "object"
+    },
+    "SemgrepResearchScope": {
+      "additionalProperties": false,
+      "properties": {
+        "contract": {
+          "const": "semgrep-research-scope-v1",
+          "default": "semgrep-research-scope-v1",
+          "title": "Contract",
+          "type": "string"
+        },
+        "execution_authorization": {
+          "const": "not-granted",
+          "default": "not-granted",
+          "title": "Execution Authorization",
+          "type": "string"
+        },
+        "policy_context": {
+          "const": "full-parent-required",
+          "default": "full-parent-required",
+          "title": "Policy Context",
+          "type": "string"
+        },
+        "policy_files": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ResearchInput"
+          },
+          "maxItems": 64,
+          "title": "Policy Files",
+          "type": "array"
+        },
+        "profile_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Profile Sha256",
+          "type": "string"
+        },
+        "selected_files": {
+          "items": {
+            "$ref": "#/$defs/ResearchInput"
+          },
+          "maxItems": 64,
+          "minItems": 1,
+          "title": "Selected Files",
+          "type": "array"
+        },
+        "selection_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Selection Sha256",
+          "type": "string"
+        },
+        "target_snapshot_id": {
+          "minLength": 1,
+          "title": "Target Snapshot Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "target_snapshot_id",
+        "selection_sha256",
+        "profile_sha256",
+        "selected_files"
+      ],
+      "title": "SemgrepResearchScope",
+      "type": "object"
+    },
+    "Severity": {
+      "additionalProperties": false,
+      "properties": {
+        "mapping_id": {
+          "minLength": 1,
+          "title": "Mapping Id",
+          "type": "string"
+        },
+        "native_label": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Native Label"
+        },
+        "native_score": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Native Score"
+        },
+        "normalized": {
+          "enum": [
+            "informational",
+            "low",
+            "medium",
+            "high",
+            "critical",
+            "unknown"
+          ],
+          "title": "Normalized",
+          "type": "string"
+        }
+      },
+      "required": [
+        "normalized",
+        "mapping_id"
+      ],
+      "title": "Severity",
+      "type": "object"
+    },
+    "SourceRange": {
+      "additionalProperties": false,
+      "properties": {
+        "end_line": {
+          "minimum": 1,
+          "title": "End Line",
+          "type": "integer"
+        },
+        "end_utf8_byte_column": {
+          "minimum": 0,
+          "title": "End Utf8 Byte Column",
+          "type": "integer"
+        },
+        "start_line": {
+          "minimum": 1,
+          "title": "Start Line",
+          "type": "integer"
+        },
+        "start_utf8_byte_column": {
+          "minimum": 0,
+          "title": "Start Utf8 Byte Column",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "start_line",
+        "end_line",
+        "start_utf8_byte_column",
+        "end_utf8_byte_column"
+      ],
+      "title": "SourceRange",
+      "type": "object"
+    },
+    "StageComparison": {
+      "additionalProperties": false,
+      "properties": {
+        "added": {
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "type": "array"
+          },
+          "title": "Added",
+          "type": "array"
+        },
+        "comparable": {
+          "title": "Comparable",
+          "type": "boolean"
+        },
+        "contract": {
+          "const": "dependency-comparison-v1",
+          "default": "dependency-comparison-v1",
+          "title": "Contract",
+          "type": "string"
+        },
+        "left": {
+          "title": "Left",
+          "type": "string"
+        },
+        "left_out_of_scope": {
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "type": "array"
+          },
+          "title": "Left Out Of Scope",
+          "type": "array"
+        },
+        "limitations": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Limitations",
+          "type": "array"
+        },
+        "missing": {
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "type": "array"
+          },
+          "title": "Missing",
+          "type": "array"
+        },
+        "missing_identifiers": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Missing Identifiers",
+          "type": "array"
+        },
+        "package_projection_retention": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Fraction"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "right": {
+          "title": "Right",
+          "type": "string"
+        },
+        "right_out_of_scope": {
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "type": "array"
+          },
+          "title": "Right Out Of Scope",
+          "type": "array"
+        },
+        "source_qualifier_losses": {
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "type": "array"
+          },
+          "title": "Source Qualifier Losses",
+          "type": "array"
+        }
+      },
+      "required": [
+        "left",
+        "right",
+        "comparable",
+        "package_projection_retention",
+        "missing",
+        "added",
+        "left_out_of_scope",
+        "right_out_of_scope",
+        "source_qualifier_losses",
+        "missing_identifiers",
+        "limitations"
+      ],
+      "title": "StageComparison",
+      "type": "object"
+    },
+    "StaticSource": {
+      "additionalProperties": false,
+      "properties": {
+        "coverage": {
+          "items": {
+            "$ref": "#/$defs/CoverageRecord"
+          },
+          "title": "Coverage",
+          "type": "array"
+        },
+        "failures": {
+          "items": {
+            "$ref": "#/$defs/FailureRecord"
+          },
+          "title": "Failures",
+          "type": "array"
+        },
+        "kind": {
+          "const": "static",
+          "default": "static",
+          "title": "Kind",
+          "type": "string"
+        },
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "revision": {
+          "title": "Revision",
+          "type": "string"
+        },
+        "run_id": {
+          "title": "Run Id",
+          "type": "string"
+        },
+        "source_manifest_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Source Manifest Sha256",
+          "type": "string"
+        },
+        "source_semantic_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Source Semantic Sha256"
+        },
+        "state": {
+          "title": "State",
+          "type": "string"
+        },
+        "summary": {
+          "$ref": "#/$defs/Summary"
+        },
+        "target_content_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Target Content Sha256"
+        }
+      },
+      "required": [
+        "run_id",
+        "state",
+        "label",
+        "revision",
+        "target_content_sha256",
+        "source_manifest_sha256",
+        "source_semantic_sha256",
+        "summary",
+        "coverage",
+        "failures"
+      ],
+      "title": "StaticSource",
+      "type": "object"
+    },
+    "Summary": {
+      "additionalProperties": false,
+      "properties": {
+        "duration_ns": {
+          "minimum": 0,
+          "title": "Duration Ns",
+          "type": "integer"
+        },
+        "execution_outcome": {
+          "$ref": "#/$defs/ExecutionOutcome"
+        },
+        "generated_at": {
+          "format": "date-time",
+          "title": "Generated At",
+          "type": "string"
+        },
+        "native_error_count": {
+          "minimum": 0,
+          "title": "Native Error Count",
+          "type": "integer"
+        },
+        "native_result_count": {
+          "minimum": 0,
+          "title": "Native Result Count",
+          "type": "integer"
+        },
+        "normalized_coverage_count": {
+          "minimum": 0,
+          "title": "Normalized Coverage Count",
+          "type": "integer"
+        },
+        "normalized_failure_count": {
+          "minimum": 0,
+          "title": "Normalized Failure Count",
+          "type": "integer"
+        },
+        "normalized_finding_count": {
+          "minimum": 0,
+          "title": "Normalized Finding Count",
+          "type": "integer"
+        },
+        "provenance_resolution_rate": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Provenance Resolution Rate",
+          "type": "number"
+        },
+        "run_id": {
+          "minLength": 1,
+          "title": "Run Id",
+          "type": "string"
+        },
+        "sarif_representability_rate": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Sarif Representability Rate",
+          "type": "number"
+        },
+        "sarif_valid": {
+          "title": "Sarif Valid",
+          "type": "boolean"
+        },
+        "schema_version": {
+          "const": "0.1.0",
+          "default": "0.1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "statement": {
+          "default": "This run evaluates evidence handling and interoperability; it does not claim improved producer detection.",
+          "minLength": 1,
+          "title": "Statement",
+          "type": "string"
+        }
+      },
+      "required": [
+        "run_id",
+        "generated_at",
+        "execution_outcome",
+        "native_result_count",
+        "native_error_count",
+        "normalized_finding_count",
+        "normalized_coverage_count",
+        "normalized_failure_count",
+        "provenance_resolution_rate",
+        "sarif_representability_rate",
+        "sarif_valid",
+        "duration_ns"
+      ],
+      "title": "Summary",
+      "type": "object"
+    },
+    "TargetSnapshot": {
+      "additionalProperties": false,
+      "properties": {
+        "content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Content Sha256",
+          "type": "string"
+        },
+        "file_count": {
+          "minimum": 0,
+          "title": "File Count",
+          "type": "integer"
+        },
+        "inventory_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Inventory Sha256",
+          "type": "string"
+        },
+        "license_status": {
+          "enum": [
+            "project-authored-private",
+            "identified",
+            "unknown"
+          ],
+          "title": "License Status",
+          "type": "string"
+        },
+        "retrieved_at": {
+          "format": "date-time",
+          "title": "Retrieved At",
+          "type": "string"
+        },
+        "revision": {
+          "minLength": 1,
+          "title": "Revision",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "0.1.0",
+          "default": "0.1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "snapshot_id": {
+          "minLength": 1,
+          "title": "Snapshot Id",
+          "type": "string"
+        },
+        "source_kind": {
+          "enum": [
+            "project-fixture",
+            "local",
+            "git"
+          ],
+          "title": "Source Kind",
+          "type": "string"
+        },
+        "source_label": {
+          "minLength": 1,
+          "title": "Source Label",
+          "type": "string"
+        },
+        "target_id": {
+          "minLength": 1,
+          "title": "Target Id",
+          "type": "string"
+        },
+        "total_bytes": {
+          "minimum": 0,
+          "title": "Total Bytes",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "target_id",
+        "snapshot_id",
+        "source_kind",
+        "source_label",
+        "revision",
+        "retrieved_at",
+        "license_status",
+        "content_sha256",
+        "inventory_sha256",
+        "file_count",
+        "total_bytes"
+      ],
+      "title": "TargetSnapshot",
+      "type": "object"
+    },
+    "TaxonomyMapping": {
+      "additionalProperties": false,
+      "properties": {
+        "origin": {
+          "enum": [
+            "native-observed",
+            "mechanically-derived",
+            "researcher-adjudicated"
+          ],
+          "title": "Origin",
+          "type": "string"
+        },
+        "taxonomy": {
+          "minLength": 1,
+          "title": "Taxonomy",
+          "type": "string"
+        },
+        "value": {
+          "minLength": 1,
+          "title": "Value",
+          "type": "string"
+        }
+      },
+      "required": [
+        "taxonomy",
+        "value",
+        "origin"
+      ],
+      "title": "TaxonomyMapping",
+      "type": "object"
+    },
+    "ToolExecutionReport": {
+      "additionalProperties": false,
+      "properties": {
+        "catalog_sha256": {
+          "default": "f999afbe8c592deeb704e9b880fdb5122c9fe3178ea3b288ad7af9eee3caab2b",
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Catalog Sha256",
+          "type": "string"
+        },
+        "contract": {
+          "const": "tool-execution-development-v1",
+          "default": "tool-execution-development-v1",
+          "title": "Contract",
+          "type": "string"
+        },
+        "execution_state": {
+          "enum": [
+            "complete",
+            "partial",
+            "empty"
+          ],
+          "title": "Execution State",
+          "type": "string"
+        },
+        "files": {
+          "items": {
+            "$ref": "#/$defs/FileResult"
+          },
+          "title": "Files",
+          "type": "array"
+        },
+        "input_inventory": {
+          "items": {
+            "$ref": "#/$defs/InventoryEntry"
+          },
+          "title": "Input Inventory",
+          "type": "array"
+        },
+        "limitations": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Limitations",
+          "type": "array"
+        },
+        "not_selected": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Not Selected",
+          "type": "array"
+        },
+        "policy": {
+          "const": "research-only-no-suppressions-applied",
+          "default": "research-only-no-suppressions-applied",
+          "title": "Policy",
+          "type": "string"
+        },
+        "producer": {
+          "const": "student-tool-execution",
+          "default": "student-tool-execution",
+          "title": "Producer",
+          "type": "string"
+        },
+        "request_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Request Sha256",
+          "type": "string"
+        },
+        "rules": {
+          "items": {
+            "$ref": "#/$defs/RuleSpec"
+          },
+          "title": "Rules",
+          "type": "array"
+        },
+        "target_snapshot_id": {
+          "title": "Target Snapshot Id",
+          "type": "string"
+        },
+        "version": {
+          "const": "1.0.0",
+          "default": "1.0.0",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "request_sha256",
+        "target_snapshot_id",
+        "rules",
+        "execution_state",
+        "input_inventory",
+        "not_selected",
+        "files",
+        "limitations"
+      ],
+      "title": "ToolExecutionReport",
+      "type": "object"
+    },
+    "ToolFinding": {
+      "additionalProperties": false,
+      "properties": {
+        "argument": {
+          "title": "Argument",
+          "type": "string"
+        },
+        "argument_truncated": {
+          "title": "Argument Truncated",
+          "type": "boolean"
+        },
+        "callee": {
+          "title": "Callee",
+          "type": "string"
+        },
+        "location": {
+          "$ref": "#/$defs/SourceRange"
+        },
+        "parameter": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Parameter"
+        },
+        "record_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "rule": {
+          "$ref": "#/$defs/RuleSpec"
+        },
+        "tool_function": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Tool Function"
+        },
+        "verification": {
+          "const": "unreviewed-static-condition",
+          "default": "unreviewed-static-condition",
+          "title": "Verification",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_id",
+        "rule",
+        "location",
+        "callee",
+        "argument",
+        "argument_truncated",
+        "tool_function",
+        "parameter"
+      ],
+      "title": "ToolFinding",
+      "type": "object"
+    },
+    "ToolInputPlan": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_inventory_semantic_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Artifact Inventory Semantic Sha256",
+          "type": "string"
+        },
+        "contract": {
+          "const": "tool-input-plan-v1",
+          "default": "tool-input-plan-v1",
+          "title": "Contract",
+          "type": "string"
+        },
+        "execution_authorization": {
+          "const": "not-granted",
+          "default": "not-granted",
+          "title": "Execution Authorization",
+          "type": "string"
+        },
+        "git_verification_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Git Verification Sha256",
+          "type": "string"
+        },
+        "parser_validation": {
+          "const": "not-run",
+          "default": "not-run",
+          "title": "Parser Validation",
+          "type": "string"
+        },
+        "policy_and_suppression_review": {
+          "const": "not-performed",
+          "default": "not-performed",
+          "title": "Policy And Suppression Review",
+          "type": "string"
+        },
+        "profile_id": {
+          "minLength": 1,
+          "title": "Profile Id",
+          "type": "string"
+        },
+        "profile_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Profile Sha256",
+          "type": "string"
+        },
+        "selections": {
+          "items": {
+            "$ref": "#/$defs/InputSelection"
+          },
+          "maxItems": 10000,
+          "title": "Selections",
+          "type": "array"
+        },
+        "target_snapshot_id": {
+          "minLength": 1,
+          "title": "Target Snapshot Id",
+          "type": "string"
+        },
+        "tool_id": {
+          "minLength": 1,
+          "title": "Tool Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "target_snapshot_id",
+        "artifact_inventory_semantic_sha256",
+        "git_verification_sha256",
+        "tool_id",
+        "profile_id",
+        "profile_sha256",
+        "selections"
+      ],
+      "title": "ToolInputPlan",
+      "type": "object"
+    },
+    "TreatmentKey": {
+      "enum": [
+        "all-repeat-1",
+        "all-repeat-2",
+        "valid-only",
+        "corrected-controls"
+      ],
+      "type": "string"
+    },
+    "agentsec_evidence__custom_rules__agent_to_agent__ArgumentShape": {
+      "additionalProperties": false,
+      "properties": {
+        "immediate_call": {
+          "title": "Immediate Call",
+          "type": "boolean"
+        },
+        "ordinal": {
+          "minimum": 0,
+          "title": "Ordinal",
+          "type": "integer"
+        },
+        "shape": {
+          "enum": [
+            "literal-syntax",
+            "nonliteral-syntax",
+            "expanded"
+          ],
+          "title": "Shape",
+          "type": "string"
+        },
+        "slot": {
+          "enum": [
+            "positional",
+            "agent",
+            "task",
+            "prompt",
+            "data",
+            "context",
+            "memory",
+            "state",
+            "response",
+            "to",
+            "trust",
+            "role",
+            "permissions",
+            "other-keyword",
+            "keyword-expansion"
+          ],
+          "title": "Slot",
+          "type": "string"
+        }
+      },
+      "required": [
+        "slot",
+        "ordinal",
+        "shape",
+        "immediate_call"
+      ],
+      "title": "ArgumentShape",
+      "type": "object"
+    },
+    "agentsec_evidence__custom_rules__orchestration__ArgumentShape": {
+      "additionalProperties": false,
+      "properties": {
+        "immediate_call": {
+          "title": "Immediate Call",
+          "type": "boolean"
+        },
+        "ordinal": {
+          "minimum": 0,
+          "title": "Ordinal",
+          "type": "integer"
+        },
+        "shape": {
+          "enum": [
+            "literal-syntax",
+            "nonliteral-syntax",
+            "expanded"
+          ],
+          "title": "Shape",
+          "type": "string"
+        },
+        "slot": {
+          "enum": [
+            "positional",
+            "agent",
+            "task",
+            "prompt",
+            "data",
+            "context",
+            "memory",
+            "state",
+            "response",
+            "other-keyword",
+            "keyword-expansion"
+          ],
+          "title": "Slot",
+          "type": "string"
+        }
+      },
+      "required": [
+        "slot",
+        "ordinal",
+        "shape",
+        "immediate_call"
+      ],
+      "title": "ArgumentShape",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "contract": {
+      "const": "common-report-v5",
+      "default": "common-report-v5",
+      "title": "Contract",
+      "type": "string"
+    },
+    "counting_policy": {
+      "default": "Keep sources, treatments, repeats and comparison paths separate. Inventory, deferred IDs and overlaps are not independent vulnerabilities; no summed vulnerability total.",
+      "title": "Counting Policy",
+      "type": "string"
+    },
+    "exporter": {
+      "const": "agentsec-evidence-common-report/2",
+      "default": "agentsec-evidence-common-report/2",
+      "title": "Exporter",
+      "type": "string"
+    },
+    "generated_at": {
+      "format": "date-time",
+      "title": "Generated At",
+      "type": "string"
+    },
+    "limitations": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Limitations",
+      "type": "array"
+    },
+    "provenance": {
+      "additionalProperties": {
+        "$ref": "#/$defs/JsonValue"
+      },
+      "title": "Provenance",
+      "type": "object"
+    },
+    "sarif_runs": {
+      "minimum": 0,
+      "title": "Sarif Runs",
+      "type": "integer"
+    },
+    "sensitivity": {
+      "const": "internal",
+      "default": "internal",
+      "title": "Sensitivity",
+      "type": "string"
+    },
+    "sources": {
+      "items": {
+        "$ref": "#/$defs/ExtendedSource"
+      },
+      "maxItems": 32,
+      "minItems": 1,
+      "title": "Sources",
+      "type": "array"
+    }
+  },
+  "required": [
+    "generated_at",
+    "sources",
+    "sarif_runs"
+  ],
+  "title": "CustomCommonReport",
+  "type": "object"
+}

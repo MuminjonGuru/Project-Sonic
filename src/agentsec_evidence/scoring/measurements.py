@@ -490,6 +490,8 @@ def source_rows(
     ctx: Context, root: Path, *, expectation: dict[str, Any] | None = None
 ) -> list[MeasurementRow]:
     source, document = load_report_source(ctx.project, root)
+    if source.kind == "custom-repair":
+        raise ValueError("Custom repair evidence is not admitted to benchmark scoring")
     sarif_runs = cast(list[dict[str, Any]], document["runs"])
     rows: list[MeasurementRow] = []
     refs: tuple[Reference, ...]

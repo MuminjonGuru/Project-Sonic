@@ -10,8 +10,9 @@ from pydantic import JsonValue
 
 from agentsec_evidence.agents.validation import load_agent_json
 from agentsec_evidence.core.identity import sha256_bytes
+from agentsec_evidence.reporting.custom_models import CustomCommonReport
 from agentsec_evidence.reporting.models import CommonReport
-from agentsec_evidence.reporting.service import validate_common_report
+from agentsec_evidence.reporting.service import parse_common_report, validate_common_report
 from agentsec_evidence.research.retained import bounded_file, plain_path
 from agentsec_evidence.reviews.models import ReviewSidecar
 from agentsec_evidence.reviews.service import bind_review, validate_review
@@ -89,9 +90,11 @@ def read_presentation_inputs(
         files += _snapshot(review_root, "review")
     validate_common_report(project, report_root)
     raw = {f.path.name: f.data for f in files}
-    report = CommonReport.model_validate(
-        load_agent_json(raw["report.json"], max_bytes=REPORT_LIMITS["report.json"])
-    )
+    report = parse_common_report(raw["report.json"])
+    if isinstance(report, CustomCommonReport):
+        raise ValueError(
+            "Custom-family HTML/review presentation is not yet supported; use report JSON/SARIF"
+        )
     sarif = load_agent_json(raw["results.sarif"], max_bytes=REPORT_LIMITS["results.sarif"])
     review, checked = None, None
     if review_root is not None:

@@ -2,6 +2,114 @@
 
 ## Boundary
 
+20 October common-reporting follow-up: student continuation authorizes the additive offline
+`custom-repair` / `common-report-v5` adapter over the seven sealed finite repair bundles.
+See `docs/custom-rule-reporting.md`. Preserve exact request/native text and parsed projections,
+condition IDs, inventory/deferred statuses, partial/null states and all four separate treatments.
+No scans, family-rule changes, issue merging or suppression application. Different family
+fixtures are not a same-repository benchmark; totals are not unique vulnerabilities. Custom
+SARIF exports conditions only, native uncalibrated priority and line-only locations; JSON is
+internal/unredacted. Older contracts/schema/HTML remain intact; v5 HTML and benchmark scoring
+explicitly refuse until separately supported. Combined-input execution, policy/overlap tests,
+presentation and public admission remain next gates. No commit/push authorized.
+
+20 October agent-to-agent follow-up: family seven is a development-only inventory-first repair.
+See `docs/agent-to-agent-repair.md`: all three parts define 26 formal IDs, ten inventory entries
+and sixteen deferred/duplicate concepts. No active security-condition rules in this family.
+Call, trust, signing, identity-update and property-copy syntax do not prove impersonation,
+leakage, authorization drift or effective grants. Generic A2A naming is not Agent2Agent protocol
+support. Preserve all six previous repairs, payloads, profiles and evidence. Seven repaired
+families are not seven fully integrated vulnerability scanners. Combined evidence/reporting,
+overlap accounting, policy/suppression tests and public admission are the next separate gates.
+No ordinary CLI/report activation or publication is authorized by this repair.
+
+20 October orchestration follow-up: family six is an inventory-first development repair.
+See `docs/orchestration-repair.md`: all 22 formal IDs retained, nine inventory entries and
+thirteen deferred/duplicate concepts, with no active security-condition rules. Normal handoffs,
+routing, state operations and nested syntax do not prove hijacking, leakage or model control.
+The new contract declares inventory-only capability and prohibits nonempty findings arrays.
+Exit zero means completed inventory, not secure orchestration. Preserve the prior five repairs,
+originals, profiles and evidence. Agent-to-agent is next; reporting/public admission remain
+separate gates and no publication is authorized.
+
+20 October self-modification follow-up: the next sequential repair is development-only.
+See `docs/self-modification-repair.md`: both parts define 27 formal IDs despite the 22 heading.
+Three syntax conditions, ten inventory entries and fourteen deferred/duplicate entries preserve
+every ID without duplicate-concept alerts. Response/memory eval conditions overlap prior families;
+do not count them as independent vulnerabilities. Prompt assignments are not injection proof.
+No runtime agent identity, model provenance, termination, token overflow, authorization or MCP
+state schema is established. Prior repairs/payloads/profiles remain unchanged; no push authorized.
+Agent orchestration is next, followed by agent-to-agent and separately gated reporting integration.
+
+20 October memory/state follow-up: the student requested the next family under the established
+defensible-evidence policy. See `docs/memory-state-repair.md`: 18 formal IDs across both supplied
+parts, four direct syntax conditions, eleven inventory entries and three deferred entries.
+Normal summarization, truncation, versioning and session identifiers are not vulnerabilities.
+Names, serialization and system-role shapes do not prove poisoning, exfiltration, shared-state
+tampering or isolation failure. No arbitrary scores or guessed MCP state schema. This separate
+development worker does not activate ordinary profiles/reporting or change prior family code.
+Originals remain intact. Agent self-modification is the next repair; no publication authorized.
+
+20 October filesystem follow-up: the student approved the same defensible-evidence policy.
+See `docs/filesystem-repair.md`: the supplied bytes define 12 formal IDs despite a 24-rule
+heading, plus two non-emitting legacy markers. Preserve five static conditions, five inventory
+entries and two deferred MCP entries without inventing absent definitions. No entropy/depth/trust
+scores, actual containment, effective permissions or runtime exploitability are established.
+The module/worker are development-only; ordinary profiles, reports and public pilots stay unchanged.
+Originals and immutable payloads remain intact. Memory/state is the next family repair.
+
+20 October network follow-up: the student approved preserving all 18 network IDs with explicit
+status. See `docs/network-data-repair.md`: 10 static conditions, three inventory-only IDs and
+five deferred IDs. No runtime exploitability, broad protocol protection or real-world accuracy
+is established. The bounded development worker remains outside ordinary profiles/reporting;
+MCP stays with the existing analyzer. Shared AST helpers preserve tool-execution output.
+Original drafts/payloads, historical profiles and public-pilot evidence remain unchanged.
+Filesystem access is the next repair, not automatic activation of the remaining families.
+
+20 October custom-rule repair: the student approved repairing the tool-execution draft first,
+retaining its five IDs but narrowing claims, treating registrations as inventory and leaving
+MCP to the existing analyzer. See `docs/tool-execution-repair.md`. The versioned package module
+and isolated JSON worker are development-only; no historical profile, baseline, public pilot,
+common-report adapter or HTML finding is changed. Preserve all original payloads and the other
+six drafts. Controlled syntax expectations are AI-authored, not independent research labels.
+No target execution, arbitrary plugins, public-target expansion or commit/push is authorized.
+
+From 16 October 2026, active final-development planning is in `../Project_Phase_04/`.
+Earlier phase admissions and evidence remain authoritative at their documented scope.
+Offline HTML replaces the proposed web application, not the CLI or evidence contracts.
+
+18 October override: all development changes and testing/experimental collection must finish by
+25 October; the next 21 days are for paper/charts from retained results. Prioritize validated
+security conditions and bounded supported intake over clean-delivery polish and publication.
+The student approved the four separate [request-URL contrasts](docs/agent-url-contrast.md).
+Use unchanged pinned Agent Audit rules and the existing isolated pipeline. Preserve the original
+thirteen-case registry and historical benchmark admissions. This adds no public-target admission,
+new detector, target execution, independent labels or authority to push code.
+
+The next additive increment provides `target prepare-git` / `target verify-git`; see
+`docs/repository-intake.md`. It accepts externally pinned cached archive/raw-commit/tree evidence,
+not an unrestricted directory or URL. Preserve the old fixed-pilot models. Reuse Git verification,
+snapshots and filename inventory, retaining failures and unsupported inputs. Preparation/replay
+never grants scanner permission, proves origin or converts candidates into security coverage.
+New targets, acquisition and execution treatments remain separate gates. Keep changes local.
+
+18 October Qdrant admission: the student explicitly approved the bounded treatment in
+`test_cases/pilot/qdrant-mcp/ADMISSION.md`; see `docs/qdrant-pilot.md`. Source intake (34 files)
+and isolated validation (19 Python files plus actual MCP JSON) passed before security scanning.
+The separately versioned Qdrant execution/replay now passes three repetitions and 21 rows;
+see `outputs/qdrant_pilot_2026-10-18/RESULTS.md` and `docs/qdrant-pilot.md`. The old `PilotPlan`
+literals are unchanged. Preserve separate Python and MCP accounting, frozen
+rules/data, policy guards and unsupported skill/Dockerfile states. Inventory order can differ
+between worker requests: check full path-to-record equivalence, but retain and validate each
+original serialized request independently. Zero findings cannot justify dropping this target.
+Next is explicit common-report/HTML support for `qdrant-repository-pilot-report-v1`, not a
+replacement of the old public-pilot loader. Native results: two Semgrep reports per view,
+two Python reports on test-localhost strings, one unpinned MCP launch report and 79 matching
+package-advisory pairs per dependency path. No confirmed exploitability or new detector is
+implied. Preserve qualifier losses and unknown FastMCP/per-file coverage. Fresh closeout:
+106 focused Windows tests, 1,571 full offline Linux tests and 2,246 retained files replayed.
+No commit/push, new target, rule change or blanket release permission is granted.
+
 This repository contains implementation and execution artifacts. Phase 02 baseline decisions
 remain in `../Project_Phase_02/`; active integration and agent-specific planning continues in
 `../Project_Phase_03/` from 2026-10-02. Do not rewrite those planning/provenance records from
@@ -338,7 +446,75 @@ Failed/unverified attempts block, including interrupted attempts after a cleanup
 dependency cases, research/pilot governance, scoring and usefulness remain open. Keep this
 increment local until publication is separately requested; UI and final delivery stay last.
 
+### Controlled mutation governance follow-up: 15 October 2026
+
+The separate [mutation handler](docs/benchmark-dependency-mutations.md) governs the three existing
+September copied-SBOM transformations of `dependency-basic`. It does not widen old dependency-v1
+plans. Bind the original transformation and expectation-helper bytes; preserve original Syft
+output and replay the changed copy exactly before reuse. Version replacement includes consistent
+identifier/reference changes, not one JSON-field edit. The discrepancy is injected, not a Syft
+defect. The three variants share one development source family, not three independent samples.
+Use the shared attempt lock and dependency finish contract, no retry and no new public input.
+Empty/unresolved/malformed/unsupported input governance and research/pilot handlers remain open.
+Keep this continuation local; UI and final delivery stay last.
+
+### Controlled dependency input boundaries: 15 October 2026
+
+The separate [boundary handler](docs/benchmark-dependency-boundaries.md) governs only the four
+existing empty, unresolved, malformed and unsupported dependency fixtures. Old plans/schemas
+remain unchanged. Preserve no-package native exits without inventing output or zero counts;
+only the fixed empty-input treatment admits OSV 128 without a report. Parser failures retain
+their failed/blocked state, exact input error and zero launches. They do not become reusable
+successes because the failure was expected. Partial cells require full evidence replay before
+reuse. No retry, new target, tool/database update or scoring admission. Research/pilot governance
+is next; keep this increment local and UI/delivery last.
+
+### Governed fixed public pilot: 15 October 2026
+
+The additive [whole-pilot handler](docs/benchmark-public-pilot.md) binds the existing source
+pilot to the shared benchmark ledger. One outer cell retains all three approved inner
+repetitions; never claim per-stage resume or independent samples. Frozen cache/rule/database
+and implementation bytes precede launch. Reuse requires full native replay and command checks.
+Failed/interrupted attempts block without retry; finished workflow remains partial analysis.
+Do not refresh inputs, add a target or change the legacy pilot/report contracts. Controlled
+research-case governance, MP-04 acceptance, scoring and usefulness review remain open.
+Keep this continuation local; UI and delivery remain last.
+
+## Controlled Research Producer: 2026-10-15
+
+`research.controlled.run_controlled_research_case` separates the original fifteen-case
+execution from historical expected-outcome assertions. See
+`docs/controlled-research-execution.md`. Registry/profile/config pins, both policy views,
+internal repeats, frozen rules and isolated syntax/native invocations remain unchanged.
+Actual policy/syntax gates govern execution; expected gate/findings never do. Preserve sealed
+failures, explicit incomplete states and null unrun counts. The historical helper is unchanged.
+The subsequent bounded increment connects this producer to the shared attempt ledger; it is not
+already a governed research handler, new CLI or permission for unrestricted directory scans.
+MP-04 acceptance, scoring and usefulness review still follow; UI/delivery stay last.
+
+### Controlled Research Ledger (15 October 2026)
+
+`docs/benchmark-research.md` adds the `benchmark-research-plan-v1` handler to the existing
+ledger. Preserve the original fifteen cases in registry order and their original internal
+repetitions. No execution success gate may read detector expectations. Reuse checks exact
+frozen inputs, all implementation/rule bytes, process commands, native reconciliation and
+the sealed evidence; it is original-path verification, not portable report validation.
+Partial analysis and policy/syntax refusal are distinct terminal outcomes. Failed/interrupted
+attempts block; no retry or within-case resume is authorized. Aggregate finding totals stay
+null, while individual view/repetition counts remain visible. No new public/held-out admission,
+rule changes, scoring or independence claim. MP-05/06 precede UI and final delivery.
+
 ## Safety Controls (All Treatments)
+
+### Offline Scoring Follow-up (15 October 2026)
+
+`docs/offline-scoring.md` describes the additive MP-05 scoring contract and CLI. Historical
+replay pins original plan/validation evidence; it does not relax current-code execution gates.
+Keep stages, paths, repetitions, failures and review proposals separate. Null/undefined is not
+zero/clean. Export-field retention is not detector accuracy; package projections do not prove
+qualifier/relationship fidelity or matching completion. Original native records remain unchanged.
+Only the existing finite oracle and rule/path rubric support scoped engineering checks; no
+public accuracy or independent labels follow. Rehearse usefulness before UI; keep work local.
 
 
 - Build subprocess commands as argument arrays. Never invoke scanner commands through a shell.
@@ -352,6 +528,23 @@ increment local until publication is separately requested; UI and final delivery
 - Keep development, pilot, held-out, and demo cases separate.
 
 ## Required Checks
+
+### Offline HTML Follow-up (16 October 2026)
+
+The student approved a portable report folder and existing admitted results first. See
+`docs/offline-html-report.md`. Preserve source evidence and exact review bindings; report-only
+generation must not scan or follow arbitrary links. Default exports are empty. Selected exports
+are byte-identical and allowlisted; all output remains internal/unredacted pending sharing review.
+Do not infer native replay from derivative/package validation, vulnerability truth from alerts,
+or human decisions from AI proposals. Keep cross-case scoring separate. No new intake, detector,
+scan or publication follows from HTML. Final delivery and demonstration remain later work.
+
+`score html` adds a separate benchmark presentation; see `docs/offline-scoring-html.md`.
+Validate the scoring derivative without native replay and preserve session/role/stage/repeat,
+metric eligibility and attempt history. Repetition zero is shared or summary scope, not a run.
+Do not pool cross-case measurements into a repository verdict or count case IDs as independent
+families. Selected scoring exports remain byte-identical; internal/unredacted status persists.
+No new scanning, intake, outcome approval or publication is authorized by this renderer.
 
 ```powershell
 uv run ruff format --check .

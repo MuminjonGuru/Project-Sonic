@@ -6,6 +6,21 @@ and measuring evidence quality for AI-agent repositories.
 
 ## Architecture
 
+Offline scoring now reads pinned historical benchmark sessions without rerunning scanners.
+It produces separate coverage, package-handoff, export-field, repeatability and failure tables,
+with explicit unknowns and review provenance. See [offline scoring](docs/offline-scoring.md)
+for `score build`, `score validate` and original-source replay. These are evidence-quality
+measurements, not an overall safety score or public-pilot accuracy result.
+
+Separate [benchmark HTML](docs/offline-scoring-html.md) presents retained scoring tables with
+session, case, stage and repetition boundaries: `score html` and `score validate-html`.
+This internal, unredacted view preserves unknowns and historical failures; it is not a new scan
+or a pooled repository security score. Only explicitly selected scoring exports are copied.
+
+Offline [HTML reporting](docs/offline-html-report.md) now presents an existing common report
+and optional bound review history as a portable folder. `report html` does not rerun scanners;
+`report validate-html` checks the generated package. Reports remain internal and unredacted.
+
 ```mermaid
 flowchart TD
     subgraph intake["Host: admission and orchestration"]
@@ -18,6 +33,7 @@ flowchart TD
     subgraph evidence["Host: evidence preservation and offline processing"]
         R["Native reports, stdout/stderr, identities and hashes"] --> N["Typed findings, coverage, failures and dependency observations"]
         N --> E["Validated bundles, JSON/SARIF exports and offline replay"]
+        E --> H["Offline HTML and selected exports; retained evidence, no new scan"]
     end
     C --> V
     S --> R
@@ -38,22 +54,23 @@ and reported. It does not implement a replacement SAST engine.
 
 | Area | Implemented capability | Evidence boundary |
 |---|---|---|
-| Code | Pinned Semgrep execution, normalization and SARIF | Authored fixtures and one admitted public Python pilot; the 68-rule research profile remains a candidate |
+| Code | Pinned Semgrep execution, normalization and SARIF | Authored fixtures and two admitted public Python pilots; the 68-rule research profile remains a candidate |
 | Infrastructure-as-Code | Pinned KICS execution, normalization and SARIF | Selected Terraform/Kubernetes queries and authored fixtures |
-| Dependencies | Direct OSV analysis compared with Syft -> CycloneDX -> OSV | Controlled PyPI cases and one pinned public-repository lockfile |
-| Agent artifacts | Bounded validation worker -> pinned Agent Audit -> normalized evidence and SARIF | Thirteen authored Python/MCP cases plus the admitted public Python pilot; per-file completion remains unknown |
-| Artifact inventory and Git evidence | Filename candidates, commit/tree/blob replay and explicit all-file input decisions | Controlled cases and all 47 regular files of the fixed pilot; inventory breadth is not detection breadth |
+| Dependencies | Direct OSV analysis compared with Syft -> CycloneDX -> OSV | Controlled PyPI cases and two pinned public-repository lockfiles |
+| Agent artifacts | Bounded validation worker -> pinned Agent Audit -> normalized evidence and SARIF | Thirteen baseline cases, four URL contrasts and two admitted public pilots, including Qdrant MCP JSON; per-file completion remains unknown |
+| Artifact inventory and Git evidence | Filename candidates, commit/tree/blob replay and explicit all-file input decisions | Controlled cases; 47 files in the original pilot and 34 in Qdrant; inventory breadth is not detection breadth |
 | Selected input views | Verified byte copies, full-context policy guards and isolated Python/MCP validation | Controlled cases and explicitly approved pilot selections; a valid view alone does not authorize scanning |
-| Research Semgrep | Pinned 68-rule candidate with separate research and repository-policy views | Controlled cases and 26 selected Python files in the fixed pilot; no general repository admission or final profile freeze |
+| Research Semgrep | Pinned 68-rule candidate with separate research and repository-policy views | Controlled cases; 26 Python files in the original pilot and 19 in Qdrant; no general admission or final profile freeze |
 | Reporting and replay | Static/dependency/agent bundles and controlled research cases in common JSON/SARIF; dedicated public-pilot report and replay | Views, repetitions, refusals and dependency paths remain separate; no combined vulnerability total |
 
-The public-source helper accepts one frozen plan, not arbitrary repositories. Prompts, skills,
+Public-source execution uses separately admitted finite contracts, not arbitrary repositories. Prompts, skills,
 memory, permissions and agent communication have no comprehensive dedicated treatment here.
-The read-only results UI, final benchmark governance and held-out evaluation are not complete.
+Offline HTML replaces the planned web UI. Bounded benchmark governance and scoring are
+implemented; broader intake, shareable delivery and held-out evaluation remain incomplete.
 
 ### Detection Rules and Data
 
-For the public pilot, detection uses existing tools under explicit, pinned profiles:
+For the admitted public pilots, detection uses existing tools under explicit, pinned profiles:
 
 - **Semgrep:** all 68 pinned, unchanged GitLab Python rules in the
   [candidate profile](configs/research/semgrep-python-candidate-v1.json), applied in separate
@@ -64,13 +81,23 @@ For the public pilot, detection uses existing tools under explicit, pinned profi
   against the frozen offline vulnerability database. The direct lockfile-to-OSV path uses the
   same database and settings. [Dependency method](docs/dependency-pilot.md).
 - **KICS:** integrated and tested separately with selected Terraform/Kubernetes queries, but
-  not run on this pilot: its Dockerfile is outside the [selected profile](configs/tools/kics.toml).
+  not run on these pilots: their Dockerfiles are outside the [selected profile](configs/tools/kics.toml).
 
 The original controlled integration test uses a small project-authored
 [`eval(...)` Semgrep rule](rules/project-authored/semgrep-first-slice.yml). It is a fixture-only
 evidence-pipeline check, not part of the public pilot's 68-rule pack or a comprehensive custom
 agent-security ruleset. Input selection, isolation, suppression handling and evidence validation
 are platform controls, distinct from the scanners' detection rules.
+
+### Second Formative Pilot: Qdrant MCP
+
+The [Qdrant execution and replay contract](docs/qdrant-pilot.md) adds three sequential repetitions
+at `c56ae5adf62bb78d852bf7bbcbc5d7b75e2bbe41`, keeping Python, actual MCP JSON and both dependency
+paths separate. All seven stages repeat semantically. The MCP analyzer reports an unversioned
+`uvx` launch; other reports require source context, not automatic vulnerability acceptance.
+All 111 eligible lockfile identities survive the name/version projection, but qualifier losses
+remain explicit. Raw evidence stays local. Common-report/HTML binding for this new contract is
+the next increment; it must not be loaded as the original pilot or shown as comprehensive coverage.
 
 ## Start Reviewing Here
 
@@ -314,6 +341,12 @@ inventory. It retains failures and refuses unsupported input. This component ver
 not vulnerabilities. Source scanning is authorized separately by the fixed plan used in the
 pilot below; the original dependency evidence remains unchanged.
 
+The additive [offline repository intake](docs/repository-intake.md) exposes
+`target prepare-git` and `target verify-git` for externally pinned cached archive/raw-commit/tree
+evidence. It preserves the full supported Git inventory and replays source/snapshot bytes without
+downloads or scanning. New repositories still need separate scanner admission and input selection;
+this does not extend the fixed pilot below into an unrestricted repository scanner.
+
 ## Same-Repository Source Pilot
 
 The [bounded pilot runner](docs/same-repository-pilot.md) connects verified source intake,
@@ -375,7 +408,20 @@ before zero-launch reuse; no KICS retry or public Dockerfile support is added.
 The [paired dependency handler](docs/benchmark-dependencies.md) also governs the existing basic
 and corrected fixtures, binding the frozen database and replaying native evidence before reuse.
 It preserves per-stage package/match counts rather than summing both vulnerability paths.
-Other dependency cases, research/pilot handlers, scoring, broader recovery
+The separate [SBOM-mutation handler](docs/benchmark-dependency-mutations.md) governs the three
+existing copied-export transformations and replays each change from the preserved original.
+It does not label injected handoff discrepancies as upstream scanner defects.
+The [governed public pilot](docs/benchmark-public-pilot.md) adds whole-attempt verified reuse
+for the existing fixed three-repetition workflow, preserving all 18 stage rows. It has no
+per-stage resume or retry and does not admit another target or change the scanning treatment.
+
+The [input-boundary handler](docs/benchmark-dependency-boundaries.md) covers the four existing
+empty/unresolved/malformed/unsupported fixtures, retaining missing-output and blocked-failure states.
+The [controlled research producer](docs/controlled-research-execution.md) separates the
+existing 15-case execution path from expected-result assertions, preserving replayable
+case evidence. The [controlled research ledger](docs/benchmark-research.md) adds frozen
+whole-case plans, sequential attempts and evidence-verified reuse; internal repetitions and
+both policy views remain separate, and failures block without retry. Scoring, broader recovery
 and final-study freeze remain separate work. The UI follows tested, reviewed and useful
 results, including any justified
 versioned rule/profile refinement; it is not the next implementation task.

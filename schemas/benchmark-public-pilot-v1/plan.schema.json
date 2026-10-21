@@ -1,0 +1,199 @@
+{
+  "$defs": {
+    "DependencyDatabase": {
+      "additionalProperties": false,
+      "properties": {
+        "bytes": {
+          "exclusiveMinimum": 0,
+          "maximum": 2147483648,
+          "title": "Bytes",
+          "type": "integer"
+        },
+        "path": {
+          "maxLength": 512,
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "bytes",
+        "sha256"
+      ],
+      "title": "DependencyDatabase",
+      "type": "object"
+    },
+    "PlanFile": {
+      "additionalProperties": false,
+      "properties": {
+        "bytes": {
+          "maximum": 2097152,
+          "minimum": 0,
+          "title": "Bytes",
+          "type": "integer"
+        },
+        "path": {
+          "maxLength": 512,
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "bytes",
+        "sha256"
+      ],
+      "title": "PlanFile",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "automatic_retries": {
+      "const": 0,
+      "default": 0,
+      "title": "Automatic Retries",
+      "type": "integer"
+    },
+    "cache_files": {
+      "items": {
+        "$ref": "#/$defs/PlanFile"
+      },
+      "maxItems": 3,
+      "minItems": 3,
+      "title": "Cache Files",
+      "type": "array"
+    },
+    "cache_path": {
+      "title": "Cache Path",
+      "type": "string"
+    },
+    "case_id": {
+      "const": "langgraph-cicd-source-pilot-v1",
+      "default": "langgraph-cicd-source-pilot-v1",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "contract": {
+      "const": "benchmark-public-pilot-plan-v1",
+      "default": "benchmark-public-pilot-plan-v1",
+      "title": "Contract",
+      "type": "string"
+    },
+    "database": {
+      "$ref": "#/$defs/DependencyDatabase"
+    },
+    "execution_unit": {
+      "const": "whole-fixed-pilot",
+      "default": "whole-fixed-pilot",
+      "title": "Execution Unit",
+      "type": "string"
+    },
+    "implementation": {
+      "items": {
+        "$ref": "#/$defs/PlanFile"
+      },
+      "maxItems": 2048,
+      "minItems": 1,
+      "title": "Implementation",
+      "type": "array"
+    },
+    "internal_repetitions": {
+      "const": 3,
+      "default": 3,
+      "title": "Internal Repetitions",
+      "type": "integer"
+    },
+    "manual_retries": {
+      "const": 0,
+      "default": 0,
+      "title": "Manual Retries",
+      "type": "integer"
+    },
+    "max_workers": {
+      "const": 1,
+      "default": 1,
+      "title": "Max Workers",
+      "type": "integer"
+    },
+    "oracle": {
+      "const": "no-complete-public-vulnerability-oracle",
+      "default": "no-complete-public-vulnerability-oracle",
+      "title": "Oracle",
+      "type": "string"
+    },
+    "pins": {
+      "items": {
+        "$ref": "#/$defs/PlanFile"
+      },
+      "title": "Pins",
+      "type": "array"
+    },
+    "plan_id": {
+      "pattern": "^[a-z0-9][a-z0-9_.-]{0,79}$",
+      "title": "Plan Id",
+      "type": "string"
+    },
+    "repetitions": {
+      "const": 1,
+      "default": 1,
+      "title": "Repetitions",
+      "type": "integer"
+    },
+    "rule_files": {
+      "items": {
+        "$ref": "#/$defs/PlanFile"
+      },
+      "maxItems": 69,
+      "minItems": 69,
+      "title": "Rule Files",
+      "type": "array"
+    },
+    "rule_source": {
+      "title": "Rule Source",
+      "type": "string"
+    },
+    "source_family": {
+      "const": "langchain-samples-cicd-pipeline-example",
+      "default": "langchain-samples-cicd-pipeline-example",
+      "title": "Source Family",
+      "type": "string"
+    },
+    "split": {
+      "const": "formative-pilot-not-held-out",
+      "default": "formative-pilot-not-held-out",
+      "title": "Split",
+      "type": "string"
+    },
+    "target_execution": {
+      "const": false,
+      "default": false,
+      "title": "Target Execution",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "plan_id",
+    "pins",
+    "implementation",
+    "cache_path",
+    "rule_source",
+    "cache_files",
+    "rule_files",
+    "database"
+  ],
+  "title": "PublicPilotBenchmarkPlan",
+  "type": "object"
+}

@@ -1,0 +1,218 @@
+{
+  "$defs": {
+    "ResearchEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "case_state": {
+          "enum": [
+            "observed",
+            "policy-refused",
+            "syntax-refused"
+          ],
+          "title": "Case State",
+          "type": "string"
+        },
+        "finding_records": {
+          "default": null,
+          "title": "Finding Records",
+          "type": "null"
+        },
+        "manifest_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Manifest Sha256",
+          "type": "string"
+        },
+        "rows": {
+          "items": {
+            "$ref": "#/$defs/ResearchPassRow"
+          },
+          "maxItems": 4,
+          "title": "Rows",
+          "type": "array"
+        },
+        "run_id": {
+          "pattern": "^research-[0-9a-f]{32}$",
+          "title": "Run Id",
+          "type": "string"
+        },
+        "scanner_invocations": {
+          "enum": [
+            0,
+            2,
+            4
+          ],
+          "title": "Scanner Invocations",
+          "type": "integer"
+        },
+        "semantic_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Semantic Sha256",
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "partial-analysis",
+            "refused"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "syntax_invocations": {
+          "enum": [
+            0,
+            1
+          ],
+          "title": "Syntax Invocations",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "run_id",
+        "state",
+        "case_state",
+        "manifest_sha256",
+        "semantic_sha256",
+        "scanner_invocations",
+        "syntax_invocations",
+        "rows"
+      ],
+      "title": "ResearchEvidence",
+      "type": "object"
+    },
+    "ResearchPassRow": {
+      "additionalProperties": false,
+      "properties": {
+        "analysis_state": {
+          "enum": [
+            "not-established",
+            "incomplete"
+          ],
+          "title": "Analysis State",
+          "type": "string"
+        },
+        "finding_records": {
+          "minimum": 0,
+          "title": "Finding Records",
+          "type": "integer"
+        },
+        "key": {
+          "title": "Key",
+          "type": "string"
+        },
+        "native_exit_code": {
+          "enum": [
+            0,
+            2
+          ],
+          "title": "Native Exit Code",
+          "type": "integer"
+        },
+        "repetition": {
+          "maximum": 2,
+          "minimum": 1,
+          "title": "Repetition",
+          "type": "integer"
+        },
+        "role": {
+          "enum": [
+            "research",
+            "repository-policy"
+          ],
+          "title": "Role",
+          "type": "string"
+        },
+        "semantic_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Semantic Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "key",
+        "role",
+        "repetition",
+        "analysis_state",
+        "native_exit_code",
+        "finding_records",
+        "semantic_sha256"
+      ],
+      "title": "ResearchPassRow",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "attempt_id": {
+      "pattern": "^attempt_[0-9a-f]{32}$",
+      "title": "Attempt Id",
+      "type": "string"
+    },
+    "contract": {
+      "const": "benchmark-research-attempt-finish-v1",
+      "default": "benchmark-research-attempt-finish-v1",
+      "title": "Contract",
+      "type": "string"
+    },
+    "duration_ns": {
+      "minimum": 0,
+      "title": "Duration Ns",
+      "type": "integer"
+    },
+    "ended_at": {
+      "format": "date-time",
+      "title": "Ended At",
+      "type": "string"
+    },
+    "error_kind": {
+      "anyOf": [
+        {
+          "enum": [
+            "runner-or-verification-error",
+            "keyboard-interrupt"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Error Kind"
+    },
+    "evidence": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ResearchEvidence"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "start_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Start Sha256",
+      "type": "string"
+    },
+    "state": {
+      "enum": [
+        "partial-analysis",
+        "refused",
+        "execution-failed",
+        "interrupted"
+      ],
+      "title": "State",
+      "type": "string"
+    }
+  },
+  "required": [
+    "attempt_id",
+    "start_sha256",
+    "ended_at",
+    "duration_ns",
+    "state"
+  ],
+  "title": "ResearchFinish",
+  "type": "object"
+}

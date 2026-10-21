@@ -7,12 +7,21 @@ from typing import cast
 from pydantic import JsonValue
 
 from agentsec_evidence.agents.records import AgentRunDetails
+from agentsec_evidence.agents.validation import load_agent_json
 from agentsec_evidence.core.identity import sha256_file
 from agentsec_evidence.core.io import json_bytes
 from agentsec_evidence.core.time import utc_now
 from agentsec_evidence.exports.sarif import SARIF_SCHEMA_URI
 from agentsec_evidence.models.contracts import Summary
 from agentsec_evidence.operations.offline import load_existing_run, validate_existing_run
+from agentsec_evidence.reporting.custom import load_custom_source
+from agentsec_evidence.reporting.custom_contracts import BY_VERIFICATION
+from agentsec_evidence.reporting.custom_export import validate_custom_runs
+from agentsec_evidence.reporting.custom_models import (
+    CustomCommonReport,
+    CustomSource,
+    ExtendedSource,
+)
 from agentsec_evidence.reporting.dependency import (
     dependency_sarif,
     load_dependency_run,
@@ -29,7 +38,18 @@ from agentsec_evidence.reporting.models import (
 )
 from agentsec_evidence.reporting.pilot import load_pilot_source, validate_pilot_runs
 from agentsec_evidence.reporting.research import load_research_source, validate_research_runs
+from agentsec_evidence.research.retained import bounded_file
 from agentsec_evidence.validation.checks import validate_sarif
+
+type Report = CommonReport | CustomCommonReport
+
+
+def parse_common_report(data: bytes) -> Report:
+    # New source kinds have an additive schema; old report/schema bytes stay unchanged.
+    document = load_agent_json(data, max_bytes=64 * 1024**2)
+    if isinstance(document, dict) and document.get("contract") == "common-report-v5":
+        return CustomCommonReport.model_validate(document)
+    return CommonReport.model_validate(document)
 
 
 def require_new_derivative(path: Path, sources: list[Path]) -> Path:
@@ -40,6 +60,7 @@ def require_new_derivative(path: Path, sources: list[Path]) -> Path:
         if (
             (parent / "bundle-manifest.json").is_file()
             or ((parent / "manifest.json").is_file() and (parent / "report.json").is_file())
+            or ((parent / "manifest.json").is_file() and (parent / "verification.json").is_file())
             or (parent / "evidence-manifest.json").is_file()
             or (parent / "report-manifest.json").is_file()
         ):
@@ -69,7 +90,15 @@ def validate_report_sarif(project_root: Path, document: dict[str, JsonValue]) ->
 
 def load_report_source(
     project_root: Path, bundle: Path
-) -> tuple[ReportSource, dict[str, JsonValue]]:
+) -> tuple[ExtendedSource, dict[str, JsonValue]]:
+    if (bundle / "verification.json").is_file():
+        verification = load_agent_json(
+            bounded_file(bundle / "verification.json", 1024**2), max_bytes=1024**2
+        )
+        if verification.get("contract") in BY_VERIFICATION:
+            custom_source, document = load_custom_source(project_root, bundle)
+            validate_report_sarif(project_root, document)
+            return custom_source, document
     if (bundle / "pilot-report.json").is_file():
         pilot_source, document = load_pilot_source(project_root, bundle)
         validate_report_sarif(project_root, document)
@@ -137,7 +166,7 @@ def load_report_source(
     return source, document
 
 
-def write_common_report(*, project_root: Path, bundles: list[Path], output: Path) -> CommonReport:
+def write_common_report(*, project_root: Path, bundles: list[Path], output: Path) -> Report:
     # Build a new offline derivative only after validating the retained source bundles.
     # Preserve per-source runs and counting units; do not rescan or invent a combined total.
     if not bundles:
@@ -148,7 +177,7 @@ def write_common_report(*, project_root: Path, bundles: list[Path], output: Path
     if any(a.resolve().is_relative_to(b.resolve()) for a in roots for b in roots if a != b):
         raise ValueError("A source and its nested constituents cannot both enter one report")
     destination = require_new_derivative(output, roots)
-    sources: list[ReportSource] = []
+    sources: list[ExtendedSource] = []
     runs: list[JsonValue] = []
     for root in sorted(roots, key=lambda path: path.name):
         source, document = load_report_source(project_root, root)
@@ -158,24 +187,34 @@ def write_common_report(*, project_root: Path, bundles: list[Path], output: Path
         runs.extend(cast(list[JsonValue], document["runs"]))
     document = {"$schema": SARIF_SCHEMA_URI, "version": "2.1.0", "runs": runs}
     validate_report_sarif(project_root, document)
-    report = CommonReport(
-        contract="common-report-v4"
-        if any(isinstance(source, PublicPilotSource) for source in sources)
-        else "common-report-v3"
-        if any(isinstance(source, ResearchSource) for source in sources)
-        else "common-report-v2"
-        if any(isinstance(source, AgentSource) for source in sources)
-        else "common-report-v1",
-        generated_at=utc_now(),
-        sources=sources,
-        sarif_runs=len(runs),
-        provenance={
-            "reporter_sources": [
-                {"path": path.relative_to(project_root).as_posix(), "sha256": sha256_file(path)}
-                for path in sorted((project_root / "src/agentsec_evidence/reporting").glob("*.py"))
-            ]
-        },
-    )
+    provenance: dict[str, JsonValue] = {
+        "reporter_sources": [
+            {"path": path.relative_to(project_root).as_posix(), "sha256": sha256_file(path)}
+            for path in sorted((project_root / "src/agentsec_evidence/reporting").glob("*.py"))
+        ]
+    }
+    report: Report
+    if any(isinstance(source, CustomSource) for source in sources):
+        report = CustomCommonReport(
+            generated_at=utc_now(),
+            sources=sources,
+            sarif_runs=len(runs),
+            provenance=provenance,
+        )
+    else:
+        report = CommonReport(
+            contract="common-report-v4"
+            if any(isinstance(source, PublicPilotSource) for source in sources)
+            else "common-report-v3"
+            if any(isinstance(source, ResearchSource) for source in sources)
+            else "common-report-v2"
+            if any(isinstance(source, AgentSource) for source in sources)
+            else "common-report-v1",
+            generated_at=utc_now(),
+            sources=cast(list[ReportSource], sources),
+            sarif_runs=len(runs),
+            provenance=provenance,
+        )
     destination.mkdir(parents=True, exist_ok=False)
     files = {
         "report.json": json_bytes(report.model_dump(mode="json")),
@@ -224,7 +263,7 @@ def validate_common_report(project_root: Path, root: Path) -> dict[str, JsonValu
                 or sha256_file(path) != entry["sha256"]
             ):
                 raise ValueError("Common report integrity failure")
-        report = CommonReport.model_validate_json((root / "report.json").read_bytes())
+        report = parse_common_report(bounded_file(root / "report.json", 64 * 1024**2))
         source_refs = [
             {"run_id": source.run_id, "sha256": source.source_manifest_sha256}
             for source in report.sources
@@ -265,7 +304,9 @@ def validate_common_report(project_root: Path, root: Path) -> dict[str, JsonValu
                     != source.source_manifest_sha256
                 ):
                     raise ValueError("SARIF source manifest linkage differs")
-            if isinstance(source, PublicPilotSource):
+            if isinstance(source, CustomSource):
+                validate_custom_runs(source, matching)
+            elif isinstance(source, PublicPilotSource):
                 validate_pilot_runs(source, matching)
             elif isinstance(source, ResearchSource):
                 validate_research_runs(source, matching)
@@ -299,7 +340,9 @@ def validate_common_report(project_root: Path, root: Path) -> dict[str, JsonValu
     }
 
 
-def _source_run_count(source: ReportSource) -> int:
+def _source_run_count(source: ExtendedSource) -> int:
+    if isinstance(source, CustomSource):
+        return len(source.summary.treatments)
     if isinstance(source, PublicPilotSource):
         return len(source.summary.sarif_bindings)
     if isinstance(source, ResearchSource):
@@ -307,7 +350,7 @@ def _source_run_count(source: ReportSource) -> int:
     return 2 if isinstance(source, DependencySource) else 1
 
 
-def _source_run_ids(source: ReportSource) -> set[str]:
+def _source_run_ids(source: ExtendedSource) -> set[str]:
     identities = {source.run_id}
     if isinstance(source, PublicPilotSource):
         for repetition in source.summary.repetitions:

@@ -9,9 +9,16 @@ from agentsec_evidence.benchmarks.attempt_models import (
     BenchmarkProgress,
     BenchmarkProgressV2,
     DependencyAttemptFinish,
+    DependencyBoundaryFinish,
+    DependencyBoundaryProgress,
+    DependencyMutationProgress,
     DependencyProgress,
     KicsAttemptFinish,
     KicsProgress,
+    PublicPilotFinish,
+    PublicPilotProgress,
+    ResearchFinish,
+    ResearchProgress,
     SemgrepAttemptFinish,
     SemgrepProgress,
 )
@@ -22,9 +29,17 @@ from agentsec_evidence.benchmarks.models import (
     BenchmarkPlan,
     BenchmarkPlanV2,
     DependencyBenchmarkPlan,
+    DependencyBoundaryPlan,
+    DependencyBoundaryPreview,
+    DependencyMutationPlan,
+    DependencyMutationPreview,
     DependencyPreview,
     KicsBenchmarkPlan,
     KicsPreview,
+    PublicPilotBenchmarkPlan,
+    PublicPilotPreview,
+    ResearchBenchmarkPlan,
+    ResearchPreview,
     SemgrepBenchmarkPlan,
     SemgrepPreview,
 )
@@ -81,6 +96,41 @@ def main() -> None:
         ("progress", DependencyProgress),
     ):
         (dependency / f"{name}.schema.json").write_bytes(json_bytes(model.model_json_schema()))
+    mutation = root.parent / "benchmark-dependency-mutation-v1"
+    mutation.mkdir(exist_ok=True)
+    for name, model in (
+        ("plan", DependencyMutationPlan),
+        ("dry-run", DependencyMutationPreview),
+        ("progress", DependencyMutationProgress),
+    ):
+        (mutation / f"{name}.schema.json").write_bytes(json_bytes(model.model_json_schema()))
+    boundary = root.parent / "benchmark-dependency-boundary-v1"
+    boundary.mkdir(exist_ok=True)
+    for name, model in (
+        ("plan", DependencyBoundaryPlan),
+        ("dry-run", DependencyBoundaryPreview),
+        ("attempt-finish", DependencyBoundaryFinish),
+        ("progress", DependencyBoundaryProgress),
+    ):
+        (boundary / f"{name}.schema.json").write_bytes(json_bytes(model.model_json_schema()))
+    pilot = root.parent / "benchmark-public-pilot-v1"
+    pilot.mkdir(exist_ok=True)
+    for name, model in (
+        ("plan", PublicPilotBenchmarkPlan),
+        ("dry-run", PublicPilotPreview),
+        ("attempt-finish", PublicPilotFinish),
+        ("progress", PublicPilotProgress),
+    ):
+        (pilot / f"{name}.schema.json").write_bytes(json_bytes(model.model_json_schema()))
+    research = root.parent / "benchmark-research-v1"
+    research.mkdir(exist_ok=True)
+    for name, model in (
+        ("plan", ResearchBenchmarkPlan),
+        ("dry-run", ResearchPreview),
+        ("attempt-finish", ResearchFinish),
+        ("progress", ResearchProgress),
+    ):
+        (research / f"{name}.schema.json").write_bytes(json_bytes(model.model_json_schema()))
 
 
 if __name__ == "__main__":

@@ -1,0 +1,276 @@
+{
+  "$defs": {
+    "DependencyCellProgress": {
+      "additionalProperties": false,
+      "properties": {
+        "attempt_id": {
+          "anyOf": [
+            {
+              "pattern": "^attempt_[0-9a-f]{32}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Attempt Id"
+        },
+        "case_id": {
+          "pattern": "^[a-z0-9][a-z0-9_.-]{0,79}$",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "cell_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Cell Id",
+          "type": "string"
+        },
+        "eligible_packages": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Eligible Packages"
+        },
+        "finding_records": {
+          "default": null,
+          "title": "Finding Records",
+          "type": "null"
+        },
+        "repetition": {
+          "title": "Repetition",
+          "type": "integer"
+        },
+        "run_id": {
+          "anyOf": [
+            {
+              "pattern": "^dep-run-[0-9a-f]{32}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Run Id"
+        },
+        "scanner_invocations": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Scanner Invocations"
+        },
+        "separate_local_packages": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Separate Local Packages"
+        },
+        "stages": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/DependencyStageProgress"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Stages"
+        },
+        "state": {
+          "enum": [
+            "not-attempted",
+            "completed-with-findings",
+            "completed-without-findings",
+            "partial-analysis",
+            "execution-failed",
+            "interrupted"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "verified_terminal_attempt": {
+          "default": false,
+          "title": "Verified Terminal Attempt",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "cell_id",
+        "case_id",
+        "repetition",
+        "state"
+      ],
+      "title": "DependencyCellProgress",
+      "type": "object"
+    },
+    "DependencyStageProgress": {
+      "additionalProperties": false,
+      "properties": {
+        "advisory_match_records": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Advisory Match Records"
+        },
+        "package_observations": {
+          "minimum": 0,
+          "title": "Package Observations",
+          "type": "integer"
+        },
+        "stage": {
+          "enum": [
+            "lockfile",
+            "syft",
+            "cyclonedx",
+            "osv-direct",
+            "osv-sbom"
+          ],
+          "title": "Stage",
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "complete",
+            "partial",
+            "failed",
+            "unsupported"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "unique_pypi_projections": {
+          "minimum": 0,
+          "title": "Unique Pypi Projections",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "stage",
+        "state",
+        "package_observations",
+        "unique_pypi_projections"
+      ],
+      "title": "DependencyStageProgress",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "analysis_complete": {
+      "const": false,
+      "default": false,
+      "title": "Analysis Complete",
+      "type": "boolean"
+    },
+    "blocked": {
+      "title": "Blocked",
+      "type": "boolean"
+    },
+    "cells": {
+      "items": {
+        "$ref": "#/$defs/DependencyCellProgress"
+      },
+      "title": "Cells",
+      "type": "array"
+    },
+    "contract": {
+      "const": "benchmark-dependency-mutation-progress-v1",
+      "default": "benchmark-dependency-mutation-progress-v1",
+      "title": "Contract",
+      "type": "string"
+    },
+    "limitations": {
+      "default": [
+        "Three existing mutations of one development fixture, not independent repositories",
+        "Post-export changes are injected conditions, not defects attributed to Syft",
+        "Component, identifier and version/relationship consistency are distinct treatments",
+        "Per-stage counts remain separate; workflow completion is not oracle agreement or safety",
+        "Missing identifiers and partial analysis remain visible; failures block without retry",
+        "Replay needs the frozen database and original host paths; no independent-host claim"
+      ],
+      "items": {
+        "type": "string"
+      },
+      "title": "Limitations",
+      "type": "array"
+    },
+    "newly_attempted_cells": {
+      "maximum": 9,
+      "minimum": 0,
+      "title": "Newly Attempted Cells",
+      "type": "integer"
+    },
+    "plan_semantic_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Plan Semantic Sha256",
+      "type": "string"
+    },
+    "plan_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Plan Sha256",
+      "type": "string"
+    },
+    "reused_verified_cells": {
+      "maximum": 9,
+      "minimum": 0,
+      "title": "Reused Verified Cells",
+      "type": "integer"
+    },
+    "scoring_implemented": {
+      "const": false,
+      "default": false,
+      "title": "Scoring Implemented",
+      "type": "boolean"
+    },
+    "session": {
+      "title": "Session",
+      "type": "string"
+    },
+    "workflow_complete": {
+      "title": "Workflow Complete",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "plan_sha256",
+    "plan_semantic_sha256",
+    "session",
+    "cells",
+    "workflow_complete",
+    "blocked",
+    "newly_attempted_cells",
+    "reused_verified_cells"
+  ],
+  "title": "DependencyMutationProgress",
+  "type": "object"
+}

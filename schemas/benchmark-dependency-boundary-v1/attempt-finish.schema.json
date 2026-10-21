@@ -1,0 +1,346 @@
+{
+  "$defs": {
+    "DependencyBoundaryEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "bundle_files": {
+          "$ref": "#/$defs/RetainedManifest"
+        },
+        "eligible_packages": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Eligible Packages"
+        },
+        "finding_records": {
+          "default": null,
+          "title": "Finding Records",
+          "type": "null"
+        },
+        "input_failure": {
+          "anyOf": [
+            {
+              "enum": [
+                "malformed-lockfile",
+                "unsupported-lockfile-version"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Input Failure"
+        },
+        "run_id": {
+          "pattern": "^dep-run-[0-9a-f]{32}$",
+          "title": "Run Id",
+          "type": "string"
+        },
+        "scanner_invocations": {
+          "enum": [
+            0,
+            3
+          ],
+          "title": "Scanner Invocations",
+          "type": "integer"
+        },
+        "semantic_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Semantic Sha256"
+        },
+        "separate_local_packages": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Separate Local Packages"
+        },
+        "snapshot_files": {
+          "$ref": "#/$defs/RetainedManifest"
+        },
+        "stages": {
+          "items": {
+            "$ref": "#/$defs/DependencyBoundaryStage"
+          },
+          "maxItems": 5,
+          "minItems": 5,
+          "title": "Stages",
+          "type": "array"
+        },
+        "state": {
+          "enum": [
+            "completed-with-findings",
+            "completed-without-findings",
+            "partial-analysis",
+            "execution-failed"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "terminal_state": {
+          "enum": [
+            "complete",
+            "partial",
+            "failed"
+          ],
+          "title": "Terminal State",
+          "type": "string"
+        }
+      },
+      "required": [
+        "run_id",
+        "terminal_state",
+        "semantic_sha256",
+        "bundle_files",
+        "snapshot_files",
+        "state",
+        "scanner_invocations",
+        "stages"
+      ],
+      "title": "DependencyBoundaryEvidence",
+      "type": "object"
+    },
+    "DependencyBoundaryStage": {
+      "additionalProperties": false,
+      "properties": {
+        "advisory_match_records": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Advisory Match Records"
+        },
+        "native_exit_code": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Native Exit Code"
+        },
+        "output_status": {
+          "enum": [
+            "parsed",
+            "no-report-no-packages",
+            "not-run",
+            "input-parse-failed"
+          ],
+          "title": "Output Status",
+          "type": "string"
+        },
+        "package_observations": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Package Observations"
+        },
+        "stage": {
+          "enum": [
+            "lockfile",
+            "syft",
+            "cyclonedx",
+            "osv-direct",
+            "osv-sbom"
+          ],
+          "title": "Stage",
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "complete",
+            "partial",
+            "failed",
+            "unsupported",
+            "not-produced"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "unique_pypi_projections": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Unique Pypi Projections"
+        }
+      },
+      "required": [
+        "stage",
+        "state",
+        "output_status"
+      ],
+      "title": "DependencyBoundaryStage",
+      "type": "object"
+    },
+    "RetainedEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "bytes": {
+          "maximum": 16777216,
+          "minimum": 0,
+          "title": "Bytes",
+          "type": "integer"
+        },
+        "path": {
+          "maxLength": 4096,
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "bytes",
+        "sha256"
+      ],
+      "title": "RetainedEntry",
+      "type": "object"
+    },
+    "RetainedManifest": {
+      "additionalProperties": false,
+      "properties": {
+        "files": {
+          "items": {
+            "$ref": "#/$defs/RetainedEntry"
+          },
+          "maxItems": 4096,
+          "minItems": 1,
+          "title": "Files",
+          "type": "array"
+        }
+      },
+      "required": [
+        "files"
+      ],
+      "title": "RetainedManifest",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "attempt_id": {
+      "pattern": "^attempt_[0-9a-f]{32}$",
+      "title": "Attempt Id",
+      "type": "string"
+    },
+    "contract": {
+      "const": "benchmark-dependency-boundary-attempt-finish-v1",
+      "default": "benchmark-dependency-boundary-attempt-finish-v1",
+      "title": "Contract",
+      "type": "string"
+    },
+    "duration_ns": {
+      "minimum": 0,
+      "title": "Duration Ns",
+      "type": "integer"
+    },
+    "ended_at": {
+      "format": "date-time",
+      "title": "Ended At",
+      "type": "string"
+    },
+    "error_kind": {
+      "anyOf": [
+        {
+          "enum": [
+            "runner-or-verification-error",
+            "keyboard-interrupt"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Error Kind"
+    },
+    "evidence": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/DependencyBoundaryEvidence"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "start_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Start Sha256",
+      "type": "string"
+    },
+    "state": {
+      "enum": [
+        "completed-with-findings",
+        "completed-without-findings",
+        "partial-analysis",
+        "execution-failed",
+        "interrupted"
+      ],
+      "title": "State",
+      "type": "string"
+    }
+  },
+  "required": [
+    "attempt_id",
+    "start_sha256",
+    "ended_at",
+    "duration_ns",
+    "state"
+  ],
+  "title": "DependencyBoundaryFinish",
+  "type": "object"
+}

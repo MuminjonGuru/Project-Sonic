@@ -1,0 +1,171 @@
+# rules/tool_execution_rules.yaml
+# Security rules for AI agent tool execution — human-readable and CI-friendly
+
+family: tool_execution
+version: "1.0"
+description: >
+  Detection of eval/exec and shell command execution in AI agents —
+  from hardcoded code injection to LLM-driven dynamic tool usage.
+
+id_prefix: TOOL-EXEC
+
+categories:
+  - id: code_injection
+    name: Code Injection
+    description: Risk of unsanitized dynamic code evaluation (eval/exec/AST)
+  - id: shell_injection
+    name: Shell/Command Injection
+    description: Shell commands executed via subprocess, os.system, or shell flags
+  - id: param_flow
+    name: Parameter Flow to Execution
+    description: User- or LLM-provided data reaches exec/eval via tool parameters
+  - id: llm_driven_execution
+    name: LLM-Driven Execution
+    description: LLM outputs or agent decisions trigger eval/exec (self-modifying agents)
+
+rules:
+  - id: TOOL-EXEC-001
+    name: Unsanitized user input reaching eval/exec
+    category: code_injection
+    severity: critical
+    description: >
+      Dynamic code evaluation (eval/exec) using unsanitized user input —
+      a classic code injection vector with high impact.
+    patterns:
+      - "eval\s*\(\s*(?P<input>\\$?\\{?.*user.*\\}?)"
+      - "exec\s*\(\s*(?P<input>.*)"
+      - "ast\\.eval\\(.*user"
+      - "exec_globals\\s*=\\s*globals\\(\\)"
+    evidence:
+      fields:
+        - code_snippet
+        - input_source
+        - line
+        - function
+    remediation:
+      - "Sanitize user inputs before eval/exec."
+      - "Use AST parsing instead of raw eval where possible."
+      - "Apply whitelisted ops only (ast.literal_eval)."
+
+  - id: TOOL-EXEC-002
+    name: eval/exec with dynamic code from LLM or config
+    category: llm_driven_execution
+    severity: high
+    description: >
+      Agent or LLM generates code executed via eval/exec —
+      common in self-modifying agents and tool-using LLMs.
+    patterns:
+      - "eval\\s*\\(\\s*response\\.choices\\[0\\]\\.message\\.content"
+      - "exec\\s*\\(\\s*llm_result\\.output"
+      - "eval\\s*\\(\\s*agent\\.response"
+      - "eval\\s*\\(\\s*\\$\\{.*llm.*\\}"
+    evidence:
+      fields:
+        - source
+        - line
+    remediation:
+      - "Restrict LLM outputs: validate JSON, enforce schema, avoid raw text injection."
+      - "Wrap LLM code in safe exec contexts (e.g., restricted globals)."
+
+  - id: TOOL-EXEC-003
+    name: Shell command execution (subprocess/os.system)
+    category: shell_injection
+    severity: high
+    description: >
+      Shell commands executed via subprocess.run, os.system, or Popen.
+      Shell=True increases risk but enables flexibility.
+    patterns:
+      - "subprocess\\.run\\s*\\(\\s*(?P<cmd>.*shell\\s*=\\s*True)"
+      - "os\\.system\\s*\\(\\s*(?P<cmd>.+)"
+      - "Popen.*shell\\s*=\\s*True"
+    evidence:
+      fields:
+        - shell_flag
+        - line
+        - command_pattern
+    remediation:
+      - "Prefer `shell=False` where possible."
+      - "Avoid string concatenation in commands; use lists for args."
+      - "Quote arguments to prevent word splitting."
+
+  - id: TOOL-EXEC-004
+    name: Tool parameters reaching exec/eval (command injection)
+    category: param_flow
+    severity: medium
+    description: >
+      Tool configurations or parameters from user/LLM reach exec/eval.
+      Example: run_tool(command=user_input).
+    patterns:
+      - "\\.run_tool\\s*\\(\\s*command\\s*=\\s*\\$?\\{?\\w*\\s*user"
+      - "execute_tool\\(.*args=.*user_input"
+      - "invoke_tool\\(.*cmd=\\$?.*eval"
+    evidence:
+      fields:
+        - tool_name
+        - parameter
+        - line
+    remediation:
+      - "Validate tool params before execution."
+      - "Sanitize paths, flags, and arguments."
+      - "Use parameterized execution (e.g., subprocess with list args)."
+
+  - id: TOOL-EXEC-005
+    name: Dynamic imports/`_import_` + eval/exec chain
+    category: code_injection
+    severity: medium
+    description: >
+      Dynamic module loading followed by eval/exec of loaded modules.
+      Often used in plugins or agent tool discovery.
+    patterns:
+      - "_import_\\s*\\(\\s*(?P<mod>.*user)"
+      - "importlib\\.import_module\\s*\\(\\s*(?P<mod>.*user)"
+      - "globals\\(\\)\\[.*\\]\\.eval"
+    evidence:
+      fields:
+        - module
+        - line
+    remediation:
+      - "Restrict dynamic imports to known modules."
+      - "Avoid user-controlled module names."
+      - "Validate imports against allowlist."
+
+# Sample MCP config snippets for testing
+sample_configs:
+  mcp_tools:
+    - name: dynamic_eval_tool
+      type: code_execution
+      description: "Evaluates arbitrary Python expressions"
+      config:
+        command: "eval({{input}})"
+      params:
+        - name: input
+          required: true
+          type: string
+          description: "Python expression to evaluate"
+      risks:
+        - type: code_injection
+          severity: high
+          pattern: "eval"
+    - name: shell_runner
+      type: shell
+      description: "Runs shell commands with full shell support"
+      config:
+        command: "bash -c '{{command}}'"
+        shell: true
+      risks:
+        - type: shell_injection
+          severity: critical
+          pattern: "bash -c"
+
+# Rule metadata for reporting
+reporting:
+  fields:
+    - id
+    - name
+    - severity
+    - category
+    - evidence
+    - remediation
+  defaults:
+    severity: medium
+    category: param_flow

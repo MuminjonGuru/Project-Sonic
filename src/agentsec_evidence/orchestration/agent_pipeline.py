@@ -21,6 +21,9 @@ from agentsec_evidence.agents.records import (
     verify_input_report,
 )
 from agentsec_evidence.agents.semantics import agent_semantic_document, native_projection
+from agentsec_evidence.agents.url_contrast import CASE_IDS as URL_CONTRAST_CASE_IDS
+from agentsec_evidence.agents.url_contrast import CASE_SET as URL_CONTRAST_CASE_SET
+from agentsec_evidence.agents.url_contrast import load_url_contrast_case
 from agentsec_evidence.agents.validation import load_agent_json
 from agentsec_evidence.core.identity import new_opaque_id, semantic_hash, sha256_bytes
 from agentsec_evidence.core.io import atomic_write_bytes, json_bytes, model_bytes
@@ -64,7 +67,12 @@ def run_agent_scan(request: AgentScanRequest) -> PipelineResult:
     started = time.monotonic_ns()
     project = request.project_root.resolve(strict=True)
     workspace = request.workspace_root.resolve()
-    case, cases_raw = load_development_case(project, request.case_id)
+    if request.case_id in URL_CONTRAST_CASE_IDS:
+        case, cases_raw = load_url_contrast_case(project, request.case_id)
+        case_set = URL_CONTRAST_CASE_SET
+    else:
+        case, cases_raw = load_development_case(project, request.case_id)
+        case_set = "agent-artifact-development-v1"
     profile = load_toml_config(
         project / "configs/profiles/agent-development.toml", ExecutionProfile
     )
@@ -77,7 +85,7 @@ def run_agent_scan(request: AgentScanRequest) -> PipelineResult:
         workspace_root=workspace,
         target_source=staging / "target",
         source_label=f"agent-development:{case.id}",
-        revision="agent-artifact-development-v1",
+        revision=case_set,
         source_kind="project-fixture",
         license_status="project-authored-private",
     )

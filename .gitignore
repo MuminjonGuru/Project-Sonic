@@ -30,3 +30,6 @@ Thumbs.db
 workspace/
 outputs/
 releases/
+
+# Keep original private rule submissions out if copied inside this repository.
+new_rules/

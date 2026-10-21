@@ -1,0 +1,162 @@
+{
+  "$defs": {
+    "PublicPilotCell": {
+      "additionalProperties": false,
+      "properties": {
+        "case_id": {
+          "const": "langgraph-cicd-source-pilot-v1",
+          "default": "langgraph-cicd-source-pilot-v1",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "cell_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Cell Id",
+          "type": "string"
+        },
+        "coverage": {
+          "const": "not-measured",
+          "default": "not-measured",
+          "title": "Coverage",
+          "type": "string"
+        },
+        "finding_records": {
+          "default": null,
+          "title": "Finding Records",
+          "type": "null"
+        },
+        "internal_repetitions": {
+          "const": 3,
+          "default": 3,
+          "title": "Internal Repetitions",
+          "type": "integer"
+        },
+        "producer_invocations": {
+          "const": 0,
+          "default": 0,
+          "title": "Producer Invocations",
+          "type": "integer"
+        },
+        "repetition": {
+          "const": 1,
+          "default": 1,
+          "title": "Repetition",
+          "type": "integer"
+        },
+        "state": {
+          "const": "not-attempted",
+          "default": "not-attempted",
+          "title": "State",
+          "type": "string"
+        }
+      },
+      "required": [
+        "cell_id"
+      ],
+      "title": "PublicPilotCell",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "cells": {
+      "items": {
+        "$ref": "#/$defs/PublicPilotCell"
+      },
+      "maxItems": 1,
+      "minItems": 1,
+      "title": "Cells",
+      "type": "array"
+    },
+    "contract": {
+      "const": "benchmark-public-pilot-dry-run-v1",
+      "default": "benchmark-public-pilot-dry-run-v1",
+      "title": "Contract",
+      "type": "string"
+    },
+    "execution_authorized": {
+      "const": false,
+      "default": false,
+      "title": "Execution Authorized",
+      "type": "boolean"
+    },
+    "implementation_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Implementation Sha256",
+      "type": "string"
+    },
+    "limitations": {
+      "default": [
+        "One fixed public pilot with three internal repetitions, not independent samples",
+        "Only whole-attempt verified reuse; no per-stage recovery or retry",
+        "Dry run checks input bytes, not target parsing or container availability",
+        "No public vulnerability oracle, target execution, new repository or profile"
+      ],
+      "items": {
+        "type": "string"
+      },
+      "title": "Limitations",
+      "type": "array"
+    },
+    "metric_scoring_implemented": {
+      "const": false,
+      "default": false,
+      "title": "Metric Scoring Implemented",
+      "type": "boolean"
+    },
+    "plan_id": {
+      "pattern": "^[a-z0-9][a-z0-9_.-]{0,79}$",
+      "title": "Plan Id",
+      "type": "string"
+    },
+    "plan_semantic_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Plan Semantic Sha256",
+      "type": "string"
+    },
+    "plan_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Plan Sha256",
+      "type": "string"
+    },
+    "plan_valid": {
+      "const": true,
+      "default": true,
+      "title": "Plan Valid",
+      "type": "boolean"
+    },
+    "resume_implemented": {
+      "const": true,
+      "default": true,
+      "title": "Resume Implemented",
+      "type": "boolean"
+    },
+    "runtime_readiness": {
+      "const": "containers-not-checked",
+      "default": "containers-not-checked",
+      "title": "Runtime Readiness",
+      "type": "string"
+    },
+    "treatment_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Treatment Sha256",
+      "type": "string"
+    },
+    "validation_scope": {
+      "const": "fixed-pilot-resource-byte-bindings",
+      "default": "fixed-pilot-resource-byte-bindings",
+      "title": "Validation Scope",
+      "type": "string"
+    }
+  },
+  "required": [
+    "plan_id",
+    "plan_sha256",
+    "plan_semantic_sha256",
+    "treatment_sha256",
+    "implementation_sha256",
+    "cells"
+  ],
+  "title": "PublicPilotPreview",
+  "type": "object"
+}

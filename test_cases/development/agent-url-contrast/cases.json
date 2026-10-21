@@ -1,0 +1,62 @@
+{
+  "case_set": "agent-url-contrast-development-v1",
+  "role": "development-not-held-out",
+  "provenance": "Four condition contrasts approved by the student on 2026-10-18. Exact fixture text and expectations are AI-authored under that scope, not scanner-derived or independently adjudicated.",
+  "condition": "A directly decorated tool passes its caller-supplied string URL directly as the initial requests.get destination without a fixed destination restriction.",
+  "limitations": [
+    "Source-condition comparison only; not proof of attacker access, SSRF exploitability, redirect safety or effective network permissions.",
+    "No target code imports, installations or execution; example.com destinations are inert fixture text.",
+    "The three absent-condition cases do not establish general safety. Fixed URL selection can still have other risks.",
+    "One deliberately related development contrast family, not four independent real-world samples. Never held-out evaluation data."
+  ],
+  "cases": [
+    {
+      "id": "url-caller-tool",
+      "property_id": "python.tool-caller-controlled-request-url",
+      "artifact_kind": "python-source",
+      "input_path": "agent.py",
+      "content": "import requests\nfrom langchain_core.tools import tool\n\n\n@tool\ndef fetch_resource(url: str) -> str:\n    \"\"\"Fetch the resource selected by the caller.\"\"\"\n    response = requests.get(url, timeout=10)\n    return response.text\n",
+      "expected_parse": "parsed",
+      "expected_condition": "present",
+      "policy_observation": "none",
+      "extra_files": {},
+      "rationale": "The decorated function's URL parameter is passed directly to the request destination. This is the finite source condition, not a demonstrated exploit."
+    },
+    {
+      "id": "url-fixed-helper",
+      "property_id": "python.tool-caller-controlled-request-url",
+      "artifact_kind": "python-source",
+      "input_path": "agent.py",
+      "content": "import requests\n\n\ndef fetch_resource() -> str:\n    \"\"\"Fetch one fixed resource.\"\"\"\n    url = \"https://example.com/data.txt\"\n    response = requests.get(url, timeout=10)\n    return response.text\n",
+      "expected_parse": "parsed",
+      "expected_condition": "absent",
+      "policy_observation": "none",
+      "extra_files": {},
+      "rationale": "There is no tool decorator or function parameter. The local URL variable is assigned a fixed string. This reduces the public-pilot mismatch to a minimal development contrast."
+    },
+    {
+      "id": "url-fixed-tool",
+      "property_id": "python.tool-caller-controlled-request-url",
+      "artifact_kind": "python-source",
+      "input_path": "agent.py",
+      "content": "import requests\nfrom langchain_core.tools import tool\n\n\n@tool\ndef fetch_resource() -> str:\n    \"\"\"Fetch one fixed resource.\"\"\"\n    url = \"https://example.com/data.txt\"\n    response = requests.get(url, timeout=10)\n    return response.text\n",
+      "expected_parse": "parsed",
+      "expected_condition": "absent",
+      "policy_observation": "none",
+      "extra_files": {},
+      "rationale": "Adding a tool decorator does not introduce a caller-supplied destination. The parameterless function still uses a fixed local URL string."
+    },
+    {
+      "id": "url-allowlisted-tool",
+      "property_id": "python.tool-caller-controlled-request-url",
+      "artifact_kind": "python-source",
+      "input_path": "agent.py",
+      "content": "import requests\nfrom langchain_core.tools import tool\n\n\n@tool\ndef fetch_resource(name: str) -> str:\n    \"\"\"Fetch one of the explicitly configured resources.\"\"\"\n    destinations = {\n        \"status\": \"https://example.com/status.json\",\n        \"help\": \"https://example.com/help.txt\",\n    }\n    if name not in destinations:\n        raise ValueError(\"Unknown resource\")\n    response = requests.get(destinations[name], timeout=10)\n    return response.text\n",
+      "expected_parse": "parsed",
+      "expected_condition": "absent",
+      "policy_observation": "none",
+      "extra_files": {},
+      "rationale": "The caller selects a key in a local fixed URL mapping, not an arbitrary initial destination. Redirects, destination integrity and deployment controls are outside this condition."
+    }
+  ]
+}

@@ -1,0 +1,103 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "denominator": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Denominator"
+    },
+    "eligibility": {
+      "title": "Eligibility",
+      "type": "string"
+    },
+    "excluded": {
+      "minimum": 0,
+      "title": "Excluded",
+      "type": "integer"
+    },
+    "limitation": {
+      "title": "Limitation",
+      "type": "string"
+    },
+    "name": {
+      "title": "Name",
+      "type": "string"
+    },
+    "numerator": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Numerator"
+    },
+    "status": {
+      "enum": [
+        "measured",
+        "undefined",
+        "unknown",
+        "not-applicable"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "unit": {
+      "title": "Unit",
+      "type": "string"
+    },
+    "unknown": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Unknown"
+    },
+    "value": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Value"
+    },
+    "version": {
+      "const": "evidence-scoring-v1",
+      "default": "evidence-scoring-v1",
+      "title": "Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "name",
+    "status",
+    "numerator",
+    "denominator",
+    "value",
+    "unit",
+    "eligibility",
+    "excluded",
+    "unknown",
+    "limitation"
+  ],
+  "title": "Metric",
+  "type": "object"
+}

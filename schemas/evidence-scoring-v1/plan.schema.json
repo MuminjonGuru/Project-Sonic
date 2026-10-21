@@ -1,0 +1,142 @@
+{
+  "$defs": {
+    "ReviewInput": {
+      "additionalProperties": false,
+      "properties": {
+        "previous": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Previous"
+        },
+        "report": {
+          "title": "Report",
+          "type": "string"
+        },
+        "report_manifest_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Report Manifest Sha256",
+          "type": "string"
+        },
+        "review": {
+          "title": "Review",
+          "type": "string"
+        },
+        "review_manifest_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Review Manifest Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "report",
+        "review",
+        "report_manifest_sha256",
+        "review_manifest_sha256"
+      ],
+      "title": "ReviewInput",
+      "type": "object"
+    },
+    "SessionInput": {
+      "additionalProperties": false,
+      "properties": {
+        "plan_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Plan Sha256",
+          "type": "string"
+        },
+        "role": {
+          "enum": [
+            "development",
+            "formative-pilot"
+          ],
+          "title": "Role",
+          "type": "string"
+        },
+        "session": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Session",
+          "type": "string"
+        },
+        "validation_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Validation Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "session",
+        "plan_sha256",
+        "validation_sha256",
+        "role"
+      ],
+      "title": "SessionInput",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "analysis_version": {
+      "const": "evidence-scoring-v1",
+      "default": "evidence-scoring-v1",
+      "title": "Analysis Version",
+      "type": "string"
+    },
+    "contract": {
+      "const": "evidence-scoring-plan-v1",
+      "default": "evidence-scoring-plan-v1",
+      "title": "Contract",
+      "type": "string"
+    },
+    "exclusions": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Exclusions",
+      "type": "array"
+    },
+    "reviews": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/ReviewInput"
+      },
+      "maxItems": 8,
+      "title": "Reviews",
+      "type": "array"
+    },
+    "scope": {
+      "const": "development-and-formative-evidence-not-held-out",
+      "default": "development-and-formative-evidence-not-held-out",
+      "title": "Scope",
+      "type": "string"
+    },
+    "selection_rationale": {
+      "maxLength": 4000,
+      "minLength": 20,
+      "title": "Selection Rationale",
+      "type": "string"
+    },
+    "sessions": {
+      "items": {
+        "$ref": "#/$defs/SessionInput"
+      },
+      "maxItems": 32,
+      "minItems": 1,
+      "title": "Sessions",
+      "type": "array"
+    }
+  },
+  "required": [
+    "sessions",
+    "selection_rationale",
+    "exclusions"
+  ],
+  "title": "ScorePlan",
+  "type": "object"
+}

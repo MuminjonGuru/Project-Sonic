@@ -64,7 +64,7 @@ def _portable_command(argv: list[str]) -> list[str]:
     return result
 
 
-def _capture(retained: RetainedResearch, prefix: str) -> tuple[ProcessCapture, bool]:
+def read_research_capture(retained: RetainedResearch, prefix: str) -> tuple[ProcessCapture, bool]:
     record = _json(retained, prefix + "/execution.json")
     expected = {f.name for f in fields(ProcessCapture)} - {"stdout", "stderr"}
     if set(record) != expected or not isinstance(record.get("argv"), list):
@@ -176,7 +176,7 @@ def _load_research_source(case_root: Path) -> tuple[ResearchSource, dict[str, Js
         request_bytes = retained.read(f"{case_id}/request.json")
         if request != AgentInputRequest.model_validate_json(request_bytes):
             raise ValueError("Syntax request differs from selected scope")
-        capture, cleaned = _capture(retained, f"{case_id}/syntax")
+        capture, cleaned = read_research_capture(retained, f"{case_id}/syntax")
         limits = ExecutionProfile.model_validate(
             tomllib.loads(retained.read("execution-profile.toml").decode())
         )
@@ -217,7 +217,7 @@ def _load_research_source(case_root: Path) -> tuple[ResearchSource, dict[str, Js
                     key = f"{role}-{repetition}"
                     expected_passes.add(key)
                     prefix = f"{case_id}/{key}"
-                    process, cleaned = _capture(retained, prefix)
+                    process, cleaned = read_research_capture(retained, prefix)
                     name = process.argv[process.argv.index("--name") + 1]
                     expected = build_research_argv(
                         docker=Path(process.argv[0]),

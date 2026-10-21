@@ -1,0 +1,782 @@
+"""
+network_data_transfer_expanded.py
+
+Security scanner for AI agent network & data transfer — expanded edition.
+
+新增:
+- WebSocket, gRPC, S3, and multi-protocol support
+- Credential flow tracing (secrets → destinations → headers → TLS)
+- Side-channel injection (DNS, timing, logs, TLS fingerprinting)
+- Streaming risks (chunk tampering, memory leaks, partial writes)
+- Agent-native patterns (LLM-determined endpoints, streaming tools)
+- Tampering & replay detection (signing, nonces, timestamps)
+- Service-mesh awareness (mTLS, SPIFFE, Istio patterns)
+
+Version: 1.1.0
+"""
+
+from _future_ import annotations
+
+_doc_ = """
+Network & Data Transfer scanner (expanded edition) for AI agents.
+
+Detects dynamic endpoints, credential-bound flows, streaming risks,
+side-channel leakage, and agent-specific patterns like LLM-determined destinations.
+"""
+
+_version_ = "1.1.0"
+
+import ast
+import re
+import os
+import json
+from pathlib import Path
+from dataclasses import dataclass, field
+from typing import List, Dict, Any, Optional, Tuple, Set, Callable
+from enum import Enum
+from datetime import datetime
+
+
+
+class Severity(Enum):
+    CRITICAL = "critical"
+    HIGH = "high"
+    MEDIUM = "medium"
+    LOW = "low"
+
+
+
+class Category(Enum):
+    DYNAMIC_DESTINATION = "dynamic_destination"
+    CREDENTIAL_BINDING = "credential_binding"
+    DATA_FLOW_INTEGRITY = "data_flow_integrity"
+    SIDE_CHANNEL = "side_channel"
+    STREAMING = "streaming"
+    INTEGRITY = "integrity"
+
+
+
+@dataclass
+class Finding:
+    id: str
+    title: str
+    severity: Severity
+    category: Category
+    description: str
+    evidence: Dict[str, Any]
+    location: Optional[str] = None
+    rule_id: Optional[str] = None
+    remediation_hint: Optional[str] = None
+    references: List[str] = field(default_factory=list)
+    tags: List[str] = field(default_factory=list)
+    context: Dict[str, Any] = field(default_factory=dict)
+
+
+
+@dataclass
+class ScannerContext:
+    source_path: Path
+    config: Dict[str, Any] = field(default_factory=dict)
+    rules: List[Dict[str, Any]] = field(default_factory=list)
+    credential_map: Dict[str, Path] = field(default_factory=dict)
+
+
+
+# === CREDENTIAL & SECRET TRACING (NEW) ===
+
+CREDENTIAL_HINTS = {
+    "aws": ["aws_secret", "aws_key", "aws_token", "aws_creds", "AWS_SECRET"],
+    "gcp": ["gcp_key", "gcp_creds", "service_account", "GCP_KEY"],
+    "azure": ["azure_secret", "azure_key", "AZURE_SECRET"],
+    "db": ["db_password", "db_secret", "postgres_pass", "MYSQL_PWD"],
+    "jwt": ["jwt_secret", "jwt_token", "access_token", "refresh_token"],
+}
+
+SERVICE_PATTERNS = {
+    "http": ["requests", "httpx", "urllib", "aiohttp"],
+    "grpc": ["grpc", "grpc.aio", "grpcio"],
+    "websocket": ["websockets", "WebSocket", "asyncio.WebSocket"],
+    "s3": ["boto3", "s3", "s3fs", "gcs", "adls"],
+}
+
+KNOWN_GOOD_HOSTS = {
+    "api.openai.com", "api.anthropic.com", "api.mistral.ai", "api.google.com",
+    "api.aws.amazon.com", "api.github.com", "api.slack.com", "api.discord.com",
+}
+
+# — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — —
+# RULES DEFINITION (EXPANDED)
+# — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — —
+
+DEFAULT_RULES = {
+    "network_data_transfer": {
+        "id_prefix": "NET-DATA",
+        "description": "Detection of dynamic network and data transfer patterns in AI agents",
+        "rules": [
+            # — — — BASE (001–006) — — —
+            {
+                "id": "NET-DATA-001",
+                "name": "Caller-controlled destination URL (HTTP/WebSocket/etc)",
+                "category": Category.DYNAMIC_DESTINATION,
+                "severity": Severity.HIGH,
+                "patterns": [
+                    r"requests\.get\s*\(\s*url\s*=\s*\$\{?\w*\s*user",
+                    r"urllib\.request\.urlopen\s*\(\s*url\s*=\s*\$\{",
+                    r"httpx\.Client\s*\(\s*base_url\s*=\s*\$",
+                    r"WebSocket\s*\(\s*url\s*=\s*.*\$\{.*user",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "destination": match.group(0).split("=")[-1].strip() if match else "unknown",
+                    "line": node.lineno,
+                    "function": _get_call_name(node.func),
+                },
+                "remediation_hint": "Validate destination URLs against allowlist; avoid direct concatenation of user input into URLs.",
+            },
+            {
+                "id": "NET-DATA-002",
+                "name": "Credential-bound URL (secrets used conditionally)",
+                "category": Category.CREDENTIAL_BINDING,
+                "severity": Severity.MEDIUM,
+                "patterns": [
+                    r"http(s)?://.*(?P<cred>\$?\{?\w*(?:key|token|secret|cred|aws|gcp|azure)\w*\}?)",
+                    r"aws\.s3\.Object\(.+Key=.*\$\{.*\}",
+                    r"db\.connect\(.+credentials=\$\{.*\}",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "credential_pattern": match.group("cred") if match else "unspecified",
+                    "destination": match.group(0).split("://")[0] + "://" + match.group(0).split("://")[1][:50],
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Explicitly bind credentials (e.g., use `AWS_ROLE` only for `prod.*` hosts).",
+            },
+            {
+                "id": "NET-DATA-003",
+                "name": "Dynamic host resolution (DNS wildcard, subdomain takeover)",
+                "category": Category.DYNAMIC_DESTINATION,
+                "severity": Severity.HIGH,
+                "patterns": [
+                    r"http(s)?://\$\{.*subdomain\}.*\.example\.com",
+                    r"http(s)?://.*\+\s*\$\{.*domain\}",
+                    r"http(s)?://.*(?<!\.)\*\.(?!\.)",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "wildcard_pattern": match.group(0)[:50] if match else "unknown",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Pin DNS targets to known hosts or use wildcard allowlists with suffix matching.",
+            },
+            {
+                "id": "NET-DATA-004",
+                "name": "Streaming data with potential memory leakage",
+                "category": Category.STREAMING,
+                "severity": Severity.MEDIUM,
+                "patterns": [
+                    r"requests\.get\s*\(\s*stream\s*=\s*True",
+                    r"urlopen\s*\(\s*stream\s*=\s*True",
+                    r"with\s+open\s*\(\s*.*\s*,\s*streaming\s*=\s*True",
+                    r"DataFrame\.iterrows\(\)",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "stream_flag": match.group(0) if match else "True",
+                    "line": node.lineno,
+                    "context": "response streaming or iteration",
+                },
+                "remediation_hint": "Process and clear streams incrementally; avoid holding full responses in memory.",
+            },
+            {
+                "id": "NET-DATA-005",
+                "name": "Side-channel: Logging or stdout of sensitive data",
+                "category": Category.SIDE_CHANNEL,
+                "severity": Severity.MEDIUM,
+                "patterns": [
+                    r"log\.info\s*\(\s*f?.*\$?\{?\w*\s*(?:token|key|secret|password)",
+                    r"print\s*\(\s*f?.*\$?\{?\w*\s*(?:token|key|secret|password)",
+                    r"logger\.debug\s*\(\s*response\.json\(\)",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "logged_content": match.group(0).split("print(")[-1][:60] if match else "unknown",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Mask secrets in logs (e.g., `secret_key[:4] + '****' + secret_key[-4:]`).",
+            },
+            {
+                "id": "NET-DATA-006",
+                "name": "Agent-specific: Dynamic call to external service (LLM or tool)",
+                "category": Category.DYNAMIC_DESTINATION,
+                "severity": Severity.HIGH,
+                "patterns": [
+                    r"agent\.call_api\s*\(\s*url\s*=\s*\$\{",
+                    r"llm\.run\s*\(\s*endpoint\s*=\s*user_input",
+                    r"run_tool\s*\(\s*service\s*=\s*llm_response",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "agent_method": node.func.attr if hasattr(node.func, "attr") else "call",
+                    "destination": match.group(0) if match else "unknown",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Validate agent-determined endpoints using a registry or allowlist.",
+            },
+            # — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — —
+            # NEW: MULTI-PROTOCOL & STREAMING (101–112)
+            # — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — —
+            {
+                "id": "NET-DATA-101",
+                "name": "WebSocket hijacking risk (connection URL from LLM/user)",
+                "category": Category.DYNAMIC_DESTINATION,
+                "severity": Severity.HIGH,
+                "patterns": [
+                    r"websockets\.connect\s*\(\s*uri\s*=\s*\$\{",
+                    r"WebSocket\s*\(\s*url\s*=\s*f['\"].*\$\{",
+                    r"ws://\$\{.*subdomain\}\.example\.com",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "ws_url": match.group(0) if match else "dynamic",
+                    "line": node.lineno,
+                    "protocol": "WebSocket",
+                },
+                "remediation_hint": "Validate WebSocket URLs with allowlist; prefer `wss://` and validate origin.",
+            },
+            {
+                "id": "NET-DATA-102",
+                "name": "gRPC endpoint controlled by agent or user",
+                "category": Category.DYNAMIC_DESTINATION,
+                "severity": Severity.MEDIUM,
+                "patterns": [
+                    r"grpc\.insecure_channel\s*\(\s*target\s*=\s*\$\{",
+                    r"channel\.unary_unary\s*\(\s*f['\"].*\$\{",
+                    r"stub\.method\s*\(.*metadata=\$\{",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "grpc_target": match.group(0) if match else "dynamic",
+                    "line": node.lineno,
+                    "protocol": "gRPC",
+                },
+                "remediation_hint": "Pin gRPC services to known endpoints; validate `.proto` schemas.",
+            },
+            {
+                "id": "NET-DATA-103",
+                "name": "S3/GCS/ADLS bucket paths under user/LLM control",
+                "category": Category.CREDENTIAL_BINDING,
+                "severity": Severity.HIGH,
+                "patterns": [
+                    r"s3://\$\{.*bucket\}/\$\{.*key\}",
+                    r"gs://.*user.*\$\{.*env\}",
+                    r"adls://.*\$\{.*tenant\}/.*\$\{.*path\}",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "storage_service": "s3" if "s3://" else "gcs" if "gs://" else "adls",
+                    "path_template": match.group(0) if match else "dynamic",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Use bucket naming conventions; restrict prefixes via IAM policies.",
+            },
+            {
+                "id": "NET-DATA-104",
+                "name": "Streaming tampering risk (chunk-level injection)",
+                "category": Category.STREAMING,
+                "severity": Severity.MEDIUM,
+                "patterns": [
+                    r"response\.iter_lines\(\s*chunk_size\s*=\s*None",
+                    r"stream\.chunks\s*\(\s*size\s*=\s*\$?",
+                    r"asyncio\.StreamReader\s*\(\s*limit\s*=\s*None",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "stream_type": "line-by-line" if "iter_lines" else "chunked",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Validate chunk boundaries and signatures; avoid streaming untrusted sources.",
+            },
+            {
+                "id": "NET-DATA-105",
+                "name": "TLS fingerprinting or SNI leakage (public logs)",
+                "category": Category.SIDE_CHANNEL,
+                "severity": Severity.LOW,
+                "patterns": [
+                    r"log\.info\s*\(\s*f?.*\$\{.*host\}.*\.sni",
+                    r"requests\.get\s*\(\s*verify\s*=\s*True\s*#.*TLS",
+                    r"context\.load_default_certs\(\)",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "tls_hint": match.group(0).split("TLS")[-1][:40] if match else "default",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Randomize SNI or use TLS tunneling; avoid logging full hostnames in public logs.",
+            },
+            {
+                "id": "NET-DATA-106",
+                "name": "Replay-prone request (missing nonces/timestamps)",
+                "category": Category.INTEGRITY,
+                "severity": Severity.MEDIUM,
+                "patterns": [
+                    r"requests\.post\s*\(\s*data\s*=\s*payload\s*#.*replay-safe",
+                    r"timestamp\s*=\s*\$\{.*\}",
+                    r"nonce\s*=\s*secrets\.get\(\s*'nonce'\)",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "replay_risk": "high" if "nonce" not in str(node.args) else "medium",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Add nonces/timestamps to requests; sign payloads for integrity.",
+            },
+            {
+                "id": "NET-DATA-107",
+                "name": "Side-channel via DNS (covert exfiltration, tunneling)",
+                "category": Category.SIDE_CHANNEL,
+                "severity": Severity.HIGH,
+                "patterns": [
+                    r"requests\.get\s*\(\s*url\s*=\s*f['\"].*\$\{.*data\}\.dns\.example\.com",
+                    r"dnspython\.query\s*\(\s*qname\s*=\s*f['\"].*\$",
+                    r"DNS\.record\s*\(\s*name\s*=\s*f['\"].*\$\{.*payload\}",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "dns_tunnel": match.group(0)[:60] if match else "dynamic",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Obfuscate payloads in DNS labels; restrict DNS to known domains.",
+            },
+            {
+                "id": "NET-DATA-108",
+                "name": "Service-mesh: mTLS or SPIFFE identity binding",
+                "category": Category.INTEGRITY,
+                "severity": Severity.LOW,
+                "patterns": [
+                    r"os\.environ\['SPIFFE_ID'\]",
+                    r"client\.cert\s*=\s*'/spiffe/cert\.pem'",
+                    r"X-Forwarded-Client-Cert\s*=\s*f['\"].*\$",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "mesh_identity": match.group(0).split("'")[1] if match else "SPIFFE",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Bind destinations to SPIFFE IDs; require mTLS for sensitive services.",
+            },
+            {
+                "id": "NET-DATA-109",
+                "name": "Proxy injection point (transparent MITM possible)",
+                "category": Category.SIDE_CHANNEL,
+                "severity": Severity.MEDIUM,
+                "patterns": [
+                    r"httpx\.Client\s*\(\s*proxies\s*=\s*\$\{",
+                    r"session\.proxies\s*=\s*get_proxy_list\(\)",
+                    r"urllib\.ProxyHandler\s*\(\s*proxies\s*=\s*\$",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "proxy_type": match.group(0).split("proxies")[0] if match else "dynamic",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Use static proxies or sign requests end-to-end to bypass transparent proxies.",
+            },
+            {
+                "id": "NET-DATA-110",
+                "name": "Secret binding via environment variable interpolation",
+                "category": Category.CREDENTIAL_BINDING,
+                "severity": Severity.MEDIUM,
+                "patterns": [
+                    r"http(s)?://.*$AWS_SECRET.*\.example\.com",
+                    r"os\.path\.join\(\$\{.*\},.*os\.environ\['.*SECRET'\]",
+                    r"requests\.get\s*\(\s*headers\s*=\s*{'Authorization': f'bearer \$\{.*\}'",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "env_var": match.group(0).split("$")[-1].split("}")[0] if match else "unknown",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Avoid direct `$VAR` in URLs; interpolate secrets after validation.",
+            },
+            {
+                "id": "NET-DATA-111",
+                "name": "Chunk boundary tampering (JSON/protobuf split across chunks)",
+                "category": Category.STREAMING,
+                "severity": Severity.MEDIUM,
+                "patterns": [
+                    r"response\.json\(\)\.get\('data',\s*\$\{",
+                    r"protobuf\.parse\s*\(\s*chunk\s*=\s*next\(stream",
+                    r"stream\.read\(\s*size\s*=\s*4096\)",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "chunk_size": match.group(0).split("size=")[-1][:30] if match else "default",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Prefix chunks with length headers or use framing (e.g., NDJSON, gRPC frames).",
+            },
+            {
+                "id": "NET-DATA-112",
+                "name": "Agent self-determined routing (LLM routes to new services)",
+                "category": Category.DYNAMIC_DESTINATION,
+                "severity": Severity.HIGH,
+                "patterns": [
+                    r"route\s*=\s*llm\.decide_route\(\s*prompt\s*=\s*user_input",
+                    r"services\.get\(\s*agent\.selected_service\)",
+                    r"agent\.call\(\s*service\s*=\s*llm\.choose_service\(\)",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "routing_method": "llm-decided",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Record LLM routing decisions in logs; use allowlists per service.",
+            },
+        ],
+        "rule_map": {},
+    }
+}
+
+# Initialize rule_map
+DEFAULT_RULES["network_data_transfer"]["rule_map"] = {
+    rule["id"]: rule for rule in DEFAULT_RULES["network_data_transfer"]["rules"]
+}
+
+
+
+# — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — —
+# AST SCANNER (EXPANDED)
+# — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — —
+
+def scan_ast_file(path: Path, context: ScannerContext) -> List[Finding]:
+    """Scan Python files for network/data transfer patterns (expanded)."""
+    findings = []
+    try:
+        source = path.read_text(encoding="utf-8")
+        tree = ast.parse(source, filename=str(path))
+
+        call_nodes = [n for n in ast.walk(tree) if isinstance(n, ast.Call)]
+
+        for node in call_nodes:
+            func_name = _get_call_name(node.func)
+            if not func_name:
+                continue
+
+            func_lower = func_name.lower()
+            all_patterns = SERVICE_PATTERNS.keys()
+
+            if any(f in func_lower for f in [
+                "http", "request", "stream", "open", "connect", "grpc", "websockets", "s3", "bucket"
+            ]):
+                source_snippet = _get_line_snippet(source, node.lineno)
+
+                for rule in context.rules:
+                    for pattern in rule["patterns"]:
+                        if re.search(pattern, source_snippet, re.IGNORECASE):
+                            evidence = rule["evidence_extractor"](node, None) | {
+                                "file": str(path),
+                                "code_line": source_snippet.strip(),
+                                "service": _detect_service(func_lower),
+                            }
+
+                            severity = rule["severity"]
+                            if _is_known_good_destination(source_snippet):
+                                severity = Severity.LOW
+
+                            # Add service-specific tags
+                            tags = rule.get("tags", [])
+                            if "stream" in func_lower:
+                                tags.append("streaming")
+                            if "grpc" in func_lower:
+                                tags.append("grpc")
+
+                            findings.append(
+                                Finding(
+                                    id=rule["id"],
+                                    title=rule["name"],
+                                    severity=severity,
+                                    category=rule["category"],
+                                    description=f"Found {func_name} usage matching pattern: {pattern}",
+                                    evidence=evidence,
+                                    location=f"{path}:{node.lineno}",
+                                    rule_id=rule["id"],
+                                    remediation_hint=rule.get("remediation_hint"),
+                                    references=[
+                                        "https://owasp.org/www-community/attacks/Server-Side_Request_Forgery",
+                                        "https://cheatsheetseries.owasp.org/cheatsheets/SSRF_Bypass_Cheat_Sheet.html",
+                                    ],
+                                    tags=tags,
+                                    context={
+                                        "framework": "generic",
+                                        "service_type": _detect_service(func_lower),
+                                        "streaming": "stream" in func_lower,
+                                    },
+                                    file_line_range=(node.lineno, node.end_lineno or node.lineno),
+                                )
+                            )
+    except Exception as e:
+        findings.append(
+            Finding(
+                id="NET-DATA-099",
+                title="AST parse failed",
+                severity=Severity.LOW,
+                category=Category.SIDE_CHANNEL,
+                description=f"Failed to parse {path}: {e}",
+                evidence={"exception": str(e)},
+                context={"path": str(path)},
+            )
+        )
+    return findings
+
+
+
+def _get_call_name(func_node: ast.AST) -> Optional[str]:
+    if isinstance(func_node, ast.Name):
+        return func_node.id
+    if isinstance(func_node, ast.Attribute):
+        return f"{_get_call_name(func_node.value)}.{func_node.attr}"
+    if isinstance(func_node, ast.Call):
+        return f"{_get_call_name(func_node.func)}()"
+    return None
+
+
+
+def _get_line_snippet(source: str, lineno: int, context_lines: int = 3) -> str:
+    lines = source.splitlines()
+    start = max(0, lineno - 1 - context_lines)
+    end = min(len(lines), lineno + context_lines)
+    return "\n".join(
+        f"{i + 1:>5} | {line}"
+        for i, line in enumerate(lines[start:end], start=start)
+    )
+
+
+
+def _is_known_good_destination(snippet: str) -> bool:
+    url_match = re.search(r"https?://[^\s,')\"\]]+", snippet)
+    if not url_match:
+        return False
+    host = url_match.group(0).replace("http://", "").replace("https://", "").split("/")[0]
+    return any(host.endswith(k) for k in KNOWN_GOOD_HOSTS)
+
+
+
+def _detect_service(func_lower: str) -> str:
+    if "grpc" in func_lower:
+        return "grpc"
+    if "websockets" in func_lower or "ws://" in func_lower:
+        return "websocket"
+    if "s3" in func_lower or "boto" in func_lower:
+        return "s3"
+    return "http"
+
+
+
+# — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — —
+# CREDENTIAL & SECRET TRACING (NEW)
+# — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — —
+
+def trace_credentials(context: ScannerContext) -> Dict[str, Path]:
+    """Build a map of credential names to file locations where they’re defined."""
+    cred_map: Dict[str, Path] = {}
+    for py_file in context.source_path.rglob("*.py"):
+        try:
+            source = py_file.read_text()
+            tree = ast.parse(source, filename=str(py_file))
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Assign):
+                    for target in node.targets:
+                        if isinstance(target, ast.Name):
+                            name = target.id.lower()
+                            if any(k in name for k in CREDENTIAL_HINTS.keys()):
+                                for cred_type, hints in CREDENTIAL_HINTS.items():
+                                    if any(h in name for h in hints):
+                                        cred_map[target.id] = py_file
+        except Exception:
+            continue
+    return cred_map
+
+
+
+def trace_flow_from_secret(secret_name: str, context: ScannerContext) -> List[Dict[str, Any]]:
+    """Trace usage of a secret across code (URLs, headers, etc.)."""
+    flows = []
+    for py_file in context.source_path.rglob("*.py"):
+        try:
+            source = py_file.read_text()
+            if secret_name in source:
+                # Extract context lines
+                lines = source.splitlines()
+                for i, line in enumerate(lines, start=1):
+                    if secret_name in line and any(f in line for f in ["http", "header", "auth", "url"]):
+                        flows.append({
+                            "file": str(py_file),
+                            "line": i,
+                            "context": line.strip(),
+                            "usage": "url" if "http" in line else "header" if "auth" in line else "other",
+                        })
+        except Exception:
+            continue
+    return flows
+
+
+
+# — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — —
+# MCP & CLI INTEGRATION (EXPANDED)
+# — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — —
+
+def scan_mcp_configs(root: Path, context: ScannerContext) -> List[Finding]:
+    """Scan MCP configs for network/data transfer patterns (expanded)."""
+    findings = []
+    config_files = list(root.rglob("mcp*.yaml")) + list(root.rglob("mcp*.yml")) + list(root.rglob("mcp*.json"))
+    for cfg_path in config_files:
+        try:
+            text = cfg_path.read_text()
+            data = _load_config(text, cfg_path.suffix)
+            for tool in data.get("tools", []) if isinstance(data, dict) else []:
+                name = tool.get("name", "unnamed")
+                config_str = str(tool)
+                if any(p in config_str.lower() for p in ["url", "endpoint", "host", "stream"]):
+                    severity = Severity.HIGH if "stream" in config_str.lower() else Severity.MEDIUM
+                    findings.append(
+                        Finding(
+                            id="NET-DATA-MCP-001",
+                            title=f"Tool '{name}' may perform network/data transfers",
+                            severity=severity,
+                            category=Category.DYNAMIC_DESTINATION,
+                            description=f"MCP config defines network-capable tool.",
+                            evidence={
+                                "file": str(cfg_path),
+                                "tool_name": name,
+                                "tool_schema": tool,
+                                "field_match": [
+                                    k for k in tool.keys() if k.lower() in ["url", "endpoint", "host", "stream"]
+                                ],
+                            },
+                            location=f"{cfg_path}:{cfg_path.read_text().find(name)}",
+                            rule_id="NET-DATA-MCP-001",
+                            remediation_hint="Pin endpoints and use secrets for dynamic destinations.",
+                            references=["https://github.com/NVIDIA/SkillSpector"],
+                            tags=["MCP", "network", "stream" if "stream" in config_str.lower() else "request"],
+                            context={"config_type": "yaml" if cfg_path.suffix == ".yaml" else "json"},
+                        )
+                    )
+        except Exception as e:
+            findings.append(
+                Finding(
+                    id="NET-DATA-MCP-999",
+                    title=f"Failed to parse MCP config: {cfg_path}",
+                    severity=Severity.LOW,
+                    category=Category.SIDE_CHANNEL,
+                    description=str(e),
+                    evidence={"path": str(cfg_path)},
+                )
+            )
+    return findings
+
+
+
+def _load_config(text: str, ext: str) -> Dict[str, Any]:
+    if ext in (".json",):
+        return json.loads(text)
+    import yaml
+    return yaml.safe_load(text) or {}
+
+
+
+# — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — —
+# MAIN ENTRYPOINT & CLI (EXPANDED)
+# — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — —
+
+def run_network_data_scan(
+    source_path: Path,
+    context: Optional[ScannerContext] = None,
+    scan_mcp: bool = True,
+    min_severity: Severity = Severity.LOW,
+    trace_credentials_flag: bool = True,
+) -> List[Finding]:
+    """Main entrypoint for network & data transfer analysis (expanded)."""
+    ctx = context or ScannerContext(
+        source_path=source_path,
+        rules=DEFAULT_RULES["network_data_transfer"]["rules"].copy(),
+    )
+
+    # Trace credentials if enabled
+    if trace_credentials_flag:
+        ctx.credential_map = trace_credentials(ctx)
+
+    all_findings: List[Finding] = []
+
+    py_files = list(source_path.rglob("*.py"))
+    for py_file in py_files:
+        all_findings.extend(scan_ast_file(py_file, ctx))
+
+    if scan_mcp:
+        all_findings.extend(scan_mcp_configs(source_path, ctx))
+
+    # Deduplicate
+    seen = set()
+    unique_findings: List[Finding] = []
+    for f in all_findings:
+        key = (f.id, f.location, hash(tuple(sorted(f.evidence.items()))))
+        if key not in seen:
+            seen.add(key)
+            unique_findings.append(f)
+
+    # Sort by severity
+    unique_findings.sort(key=lambda f: f.severity.value, reverse=True)
+
+    return unique_findings
+
+
+
+if _name_ == "_main_":
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description="Scan for network & data transfer risks in AI agents (expanded)",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  network_data_transfer_expanded.py . --trace-secrets
+  network_data_transfer_expanded.py ./my_agent --min-severity=high --ci
+
+For more info: https://github.com/yourorg/network-data-transfer-scanner
+""",
+    )
+    parser.add_argument("path", type=Path, help="Project root to scan")
+    parser.add_argument("--no-mcp", action="store_true", help="Skip MCP config scanning")
+    parser.add_argument("--no-secrets", action="store_true", help="Skip credential tracing")
+    parser.add_argument(
+        "--format", choices=["table", "json"], default="table", help="Output format"
+    )
+    parser.add_argument(
+        "--min-severity",
+        choices=["low", "medium", "high", "critical"],
+        default="low",
+        help="Minimum severity to report",
+    )
+    parser.add_argument("--ci", action="store_true", help="CI mode: exit non-zero on critical findings")
+    args = parser.parse_args()
+
+    ctx = ScannerContext(
+        source_path=args.path,
+        config={"min_severity": args.min_severity},
+        rules=DEFAULT_RULES["network_data_transfer"]["rules"].copy(),
+    )
+
+    findings = run_network_data_scan(
+        args.path,
+        context=ctx,
+        scan_mcp=not args.no_mcp,
+        trace_credentials_flag=not args.no_secrets,
+        min_severity=Severity(args.min_severity),
+    )
+
+    if args.format == "json":
+        print(json.dumps([vars(f) for f in findings], indent=2, default=str))
+    else:
+        print("\n🌐 Network & Data Transfer Scan Results (Expanded)")
+        print("=" * 60)
+
+        for f in findings:
+            print(f"\n[{f.severity.value.upper()}] {f.id}: {f.title}")
+            print(f" Location: {f.location}")
+            print(f" Service: {f.evidence.get('service', 'http')}")
+            print(f" Evidence: {f.evidence.get('destination', f.evidence.get('credential_pattern', 'N/A'))}")
+            if f.remediation_hint:
+                print(f" Remediation: {f.remediation_hint}")
+            if f.tags:
+                print(f" Tags: {', '.join(f.tags)}")
+
+        if args.ci:
+            critical_count = sum(1 for f in findings if f.severity == Severity.CRITICAL)
+            if critical_count > 0:
+                print(f"\n❌ CI fail: {critical_count} critical findings")
+                exit(1)
+            else:
+                print(f"\n✅ CI pass: {len(findings)} findings")
+
+        print("\n✅ Done.")

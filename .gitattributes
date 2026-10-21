@@ -11,3 +11,9 @@
 *.pdf binary
 *.png binary
 *.zip binary
+
+# Preserve verbatim provenance payloads, including original whitespace defects.
+rule_candidates/**/payloads/*.txt -text -whitespace
+
+# This vendor input is byte-pinned by the existing benchmark protocol.
+schemas/vendor/oasis/sarif-schema-2.1.0.json -text -whitespace

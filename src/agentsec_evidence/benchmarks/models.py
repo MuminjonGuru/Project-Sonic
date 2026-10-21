@@ -5,6 +5,7 @@ from typing import Annotated, Literal, Self
 from pydantic import Field, StrictInt, model_validator
 
 from agentsec_evidence.agents.validation import canonical_artifact_path
+from agentsec_evidence.dependencies.mutations import Mutation
 from agentsec_evidence.models.contracts import Sha256
 from agentsec_evidence.research.models import ResearchModel
 
@@ -345,6 +346,10 @@ type AdmittedPlan = (
     | SemgrepBenchmarkPlan
     | KicsBenchmarkPlan
     | DependencyBenchmarkPlan
+    | DependencyMutationPlan
+    | DependencyBoundaryPlan
+    | PublicPilotBenchmarkPlan
+    | ResearchBenchmarkPlan
 )
 
 
@@ -549,7 +554,401 @@ class DependencyPreview(ResearchModel):
     )
 
 
-type AdmittedCell = PlannedCell | SemgrepCell | KicsCell | DependencyCell
+DependencyMutationCaseId = Literal[
+    "dev-dependency-remove-component-v1",
+    "dev-dependency-remove-purl-v1",
+    "dev-dependency-change-version-v1",
+]
+
+
+class DependencyMutationCase(ResearchModel):
+    case_id: DependencyMutationCaseId
+    mutation: Mutation
+    source_family: Literal["dependency-development-v1"] = "dependency-development-v1"
+    source_case: Literal["dev-dependency-basic-v1"] = "dev-dependency-basic-v1"
+    split: Literal["development-not-held-out"] = "development-not-held-out"
+    files: tuple[PlanFile, ...] = Field(min_length=2, max_length=2)
+    selected_paths: tuple[Literal["uv.lock"]] = ("uv.lock",)
+    expectation_sha256: Sha256
+    expectation_reference: Literal["existing-finite-oracle-and-mutation-helper"] = (
+        "existing-finite-oracle-and-mutation-helper"
+    )
+    review_status: Literal["historical-engineering-expectation-not-independent"] = (
+        "historical-engineering-expectation-not-independent"
+    )
+
+    @model_validator(mode="after")
+    def check_files(self) -> Self:
+        check_file_set(self.files)
+        if {f.path for f in self.files} != {"uv.lock", "osv-scanner.toml"}:
+            raise ValueError("Mutation case requires the original basic fixture")
+        if self.case_id != f"dev-dependency-{self.mutation}-v1":
+            raise ValueError("Mutation case and transformation differ")
+        return self
+
+
+class DependencyMutationPlan(ResearchModel):
+    contract: Literal["benchmark-dependency-mutation-plan-v1"] = (
+        "benchmark-dependency-mutation-plan-v1"
+    )
+    plan_id: Identifier
+    admission: Literal["existing-dependency-sbom-mutations-v1"] = (
+        "existing-dependency-sbom-mutations-v1"
+    )
+    treatment: Literal["paired-offline-pypi-sbom-mutations-v1"] = (
+        "paired-offline-pypi-sbom-mutations-v1"
+    )
+    split: Literal["development-not-held-out"] = "development-not-held-out"
+    pins: tuple[PlanFile, ...] = Field(min_length=11, max_length=11)
+    implementation: tuple[PlanFile, ...] = Field(min_length=1, max_length=2048)
+    database: DependencyDatabase
+    cases: tuple[DependencyMutationCase, ...] = Field(min_length=1, max_length=3)
+    repetitions: StrictInt = Field(ge=1, le=3)
+    order: Literal["case-order-then-repetition"] = "case-order-then-repetition"
+    stage_order: tuple[Literal["osv-direct"], Literal["syft"], Literal["osv-sbom"]] = (
+        "osv-direct",
+        "syft",
+        "osv-sbom",
+    )
+    max_workers: Literal[1] = 1
+    automatic_retries: Literal[0] = 0
+    manual_retries: Literal[0] = 0
+    target_execution: Literal[False] = False
+    protocol_status: Literal["development-plan-not-confirmatory-freeze"] = (
+        "development-plan-not-confirmatory-freeze"
+    )
+
+    @model_validator(mode="after")
+    def check_bindings(self) -> Self:
+        check_file_set(self.pins)
+        check_file_set(self.implementation)
+        if len({c.case_id for c in self.cases}) != len(self.cases):
+            raise ValueError("Duplicate dependency mutation case")
+        if any(
+            not f.path.startswith("src/") or not f.path.endswith(".py") for f in self.implementation
+        ):
+            raise ValueError("Implementation pins must name src Python files")
+        return self
+
+
+class DependencyMutationCell(ResearchModel):
+    cell_id: Sha256
+    case_id: DependencyMutationCaseId
+    mutation: Mutation
+    repetition: StrictInt = Field(ge=1, le=3)
+    input_files: tuple[PlanFile, ...]
+    selected_paths: tuple[Literal["uv.lock"]] = ("uv.lock",)
+    expectation_sha256: Sha256
+    state: Literal["not-attempted"] = "not-attempted"
+    producer_invocations: Literal[0] = 0
+    finding_records: None = None
+    coverage: Literal["not-measured"] = "not-measured"
+
+
+class DependencyMutationPreview(ResearchModel):
+    contract: Literal["benchmark-dependency-mutation-dry-run-v1"] = (
+        "benchmark-dependency-mutation-dry-run-v1"
+    )
+    plan_id: Identifier
+    plan_sha256: Sha256
+    plan_semantic_sha256: Sha256
+    treatment_sha256: Sha256
+    implementation_sha256: Sha256
+    cells: tuple[DependencyMutationCell, ...] = Field(min_length=1, max_length=9)
+    database: DependencyDatabase
+    limits: dict[str, int | float]
+    tool_images: tuple[str, str]
+    plan_valid: Literal[True] = True
+    validation_scope: Literal["fixed-development-byte-bindings-database-and-transformation"] = (
+        "fixed-development-byte-bindings-database-and-transformation"
+    )
+    execution_authorized: Literal[False] = False
+    runtime_readiness: Literal["containers-not-checked"] = "containers-not-checked"
+    resume_implemented: Literal[True] = True
+    metric_scoring_implemented: Literal[False] = False
+    limitations: tuple[str, ...] = (
+        "Three existing post-export mutations of one basic fixture, not independent repositories",
+        "Original Syft export is preserved; only the copied export is changed and consumed",
+        "Version change includes consistent identifiers/references, not a single JSON-field edit",
+        "Exact replay verifies treatment/evidence, not accuracy or expected outcome agreement",
+        "No public input, target execution, new mutation, retry or database refresh",
+    )
+
+
+DependencyBoundaryCaseId = Literal[
+    "dev-dependency-empty-v1",
+    "dev-dependency-unresolved-v1",
+    "dev-dependency-malformed-v1",
+    "dev-dependency-unsupported-v1",
+]
+
+
+class DependencyBoundaryCase(ResearchModel):
+    case_id: DependencyBoundaryCaseId
+    source_family: Literal["dependency-development-v1"] = "dependency-development-v1"
+    split: Literal["development-not-held-out"] = "development-not-held-out"
+    files: tuple[PlanFile, ...] = Field(min_length=1, max_length=1)
+    selected_paths: tuple[Literal["uv.lock"]] = ("uv.lock",)
+    expectation_sha256: Sha256
+    review_status: Literal["historical-engineering-expectation-not-independent"] = (
+        "historical-engineering-expectation-not-independent"
+    )
+
+
+class DependencyBoundaryPlan(ResearchModel):
+    contract: Literal["benchmark-dependency-boundary-plan-v1"] = (
+        "benchmark-dependency-boundary-plan-v1"
+    )
+    plan_id: Identifier
+    pins: tuple[PlanFile, ...] = Field(min_length=10, max_length=10)
+    implementation: tuple[PlanFile, ...] = Field(min_length=1, max_length=2048)
+    database: DependencyDatabase
+    cases: tuple[DependencyBoundaryCase, ...] = Field(min_length=1, max_length=4)
+    repetitions: StrictInt = Field(ge=1, le=3)
+    order: Literal["case-order-then-repetition"] = "case-order-then-repetition"
+    stage_order: tuple[Literal["osv-direct"], Literal["syft"], Literal["osv-sbom"]] = (
+        "osv-direct",
+        "syft",
+        "osv-sbom",
+    )
+    max_workers: Literal[1] = 1
+    automatic_retries: Literal[0] = 0
+    manual_retries: Literal[0] = 0
+    mutation: None = None
+    target_execution: Literal[False] = False
+    protocol_status: Literal["development-plan-not-confirmatory-freeze"] = (
+        "development-plan-not-confirmatory-freeze"
+    )
+
+    @model_validator(mode="after")
+    def check_bindings(self) -> Self:
+        check_file_set(self.pins)
+        check_file_set(self.implementation)
+        if len({c.case_id for c in self.cases}) != len(self.cases):
+            raise ValueError("Duplicate dependency boundary case")
+        if any(
+            not p.path.startswith("src/") or not p.path.endswith(".py") for p in self.implementation
+        ):
+            raise ValueError("Implementation pins must name src Python files")
+        return self
+
+
+class DependencyBoundaryCell(ResearchModel):
+    cell_id: Sha256
+    case_id: DependencyBoundaryCaseId
+    repetition: StrictInt = Field(ge=1, le=3)
+    input_files: tuple[PlanFile, ...]
+    selected_paths: tuple[Literal["uv.lock"]] = ("uv.lock",)
+    expectation_sha256: Sha256
+    state: Literal["not-attempted"] = "not-attempted"
+    producer_invocations: Literal[0] = 0
+    finding_records: None = None
+    coverage: Literal["not-measured"] = "not-measured"
+
+
+class DependencyBoundaryPreview(ResearchModel):
+    contract: Literal["benchmark-dependency-boundary-dry-run-v1"] = (
+        "benchmark-dependency-boundary-dry-run-v1"
+    )
+    plan_id: Identifier
+    plan_sha256: Sha256
+    plan_semantic_sha256: Sha256
+    treatment_sha256: Sha256
+    implementation_sha256: Sha256
+    cells: tuple[DependencyBoundaryCell, ...] = Field(min_length=1, max_length=12)
+    database: DependencyDatabase
+    limits: dict[str, int | float]
+    tool_images: tuple[str, str]
+    plan_valid: Literal[True] = True
+    validation_scope: Literal["fixed-development-input-boundary-byte-bindings"] = (
+        "fixed-development-input-boundary-byte-bindings"
+    )
+    execution_authorized: Literal[False] = False
+    runtime_readiness: Literal["containers-not-checked"] = "containers-not-checked"
+    resume_implemented: Literal[True] = True
+    metric_scoring_implemented: Literal[False] = False
+    limitations: tuple[str, ...] = (
+        "Four existing development input boundaries; no new target or scanner",
+        "Malformed/unsupported format remains a blocked producer failure, not clean analysis",
+        "No output is not zero findings; no-package exit is preserved with missing-output state",
+        "Only verified partial/completed attempts can be reused; no retry or bypass",
+        "Historical engineering expectations are not independent labels or scoring",
+    )
+
+
+class PublicPilotBenchmarkPlan(ResearchModel):
+    contract: Literal["benchmark-public-pilot-plan-v1"] = "benchmark-public-pilot-plan-v1"
+    plan_id: Identifier
+    case_id: Literal["langgraph-cicd-source-pilot-v1"] = "langgraph-cicd-source-pilot-v1"
+    source_family: Literal["langchain-samples-cicd-pipeline-example"] = (
+        "langchain-samples-cicd-pipeline-example"
+    )
+    split: Literal["formative-pilot-not-held-out"] = "formative-pilot-not-held-out"
+    pins: tuple[PlanFile, ...]
+    implementation: tuple[PlanFile, ...] = Field(min_length=1, max_length=2048)
+    cache_path: str
+    rule_source: str
+    cache_files: tuple[PlanFile, ...] = Field(min_length=3, max_length=3)
+    rule_files: tuple[PlanFile, ...] = Field(min_length=69, max_length=69)
+    database: DependencyDatabase
+    repetitions: Literal[1] = 1
+    internal_repetitions: Literal[3] = 3
+    execution_unit: Literal["whole-fixed-pilot"] = "whole-fixed-pilot"
+    max_workers: Literal[1] = 1
+    automatic_retries: Literal[0] = 0
+    manual_retries: Literal[0] = 0
+    target_execution: Literal[False] = False
+    oracle: Literal["no-complete-public-vulnerability-oracle"] = (
+        "no-complete-public-vulnerability-oracle"
+    )
+
+    @model_validator(mode="after")
+    def check_bindings(self) -> Self:
+        for records in (self.pins, self.implementation, self.cache_files, self.rule_files):
+            check_file_set(records)
+        for path in (self.cache_path, self.rule_source):
+            canonical_artifact_path(path)
+            if not path.startswith("workspace/") or path.startswith("workspace/benchmarks/"):
+                raise ValueError("Pilot inputs require a separate private workspace path")
+        if any(
+            not p.path.startswith("src/") or not p.path.endswith(".py") for p in self.implementation
+        ):
+            raise ValueError("Implementation pins must name src Python files")
+        return self
+
+
+class PublicPilotCell(ResearchModel):
+    cell_id: Sha256
+    case_id: Literal["langgraph-cicd-source-pilot-v1"] = "langgraph-cicd-source-pilot-v1"
+    repetition: Literal[1] = 1
+    internal_repetitions: Literal[3] = 3
+    state: Literal["not-attempted"] = "not-attempted"
+    finding_records: None = None
+    producer_invocations: Literal[0] = 0
+    coverage: Literal["not-measured"] = "not-measured"
+
+
+class PublicPilotPreview(ResearchModel):
+    contract: Literal["benchmark-public-pilot-dry-run-v1"] = "benchmark-public-pilot-dry-run-v1"
+    plan_id: Identifier
+    plan_sha256: Sha256
+    plan_semantic_sha256: Sha256
+    treatment_sha256: Sha256
+    implementation_sha256: Sha256
+    cells: tuple[PublicPilotCell, ...] = Field(min_length=1, max_length=1)
+    validation_scope: Literal["fixed-pilot-resource-byte-bindings"] = (
+        "fixed-pilot-resource-byte-bindings"
+    )
+    plan_valid: Literal[True] = True
+    execution_authorized: Literal[False] = False
+    runtime_readiness: Literal["containers-not-checked"] = "containers-not-checked"
+    resume_implemented: Literal[True] = True
+    metric_scoring_implemented: Literal[False] = False
+    limitations: tuple[str, ...] = (
+        "One fixed public pilot with three internal repetitions, not independent samples",
+        "Only whole-attempt verified reuse; no per-stage recovery or retry",
+        "Dry run checks input bytes, not target parsing or container availability",
+        "No public vulnerability oracle, target execution, new repository or profile",
+    )
+
+
+class ResearchCase(ResearchModel):
+    case_id: Identifier
+    case_sha256: Sha256
+    internal_repetitions: StrictInt = Field(ge=1, le=2)
+
+
+class ResearchBenchmarkPlan(ResearchModel):
+    contract: Literal["benchmark-research-plan-v1"] = "benchmark-research-plan-v1"
+    plan_id: Identifier
+    source_family: Literal["controlled-research-runner"] = "controlled-research-runner"
+    split: Literal["development-not-held-out"] = "development-not-held-out"
+    pins: tuple[PlanFile, ...] = Field(min_length=6, max_length=6)
+    implementation: tuple[PlanFile, ...] = Field(min_length=1, max_length=2048)
+    rule_source: str
+    rule_files: tuple[PlanFile, ...] = Field(min_length=69, max_length=69)
+    cases: tuple[ResearchCase, ...] = Field(min_length=15, max_length=15)
+    repetitions: Literal[1] = 1
+    order: Literal["registry-order"] = "registry-order"
+    execution_unit: Literal["whole-controlled-case"] = "whole-controlled-case"
+    max_workers: Literal[1] = 1
+    automatic_retries: Literal[0] = 0
+    manual_retries: Literal[0] = 0
+    target_execution: Literal[False] = False
+    oracle: Literal["authored-engineering-expectations-not-independent-labels"] = (
+        "authored-engineering-expectations-not-independent-labels"
+    )
+
+    @model_validator(mode="after")
+    def check_bindings(self) -> Self:
+        for records in (self.pins, self.implementation, self.rule_files):
+            check_file_set(records)
+        canonical_artifact_path(self.rule_source)
+        if not self.rule_source.startswith("workspace/") or self.rule_source.startswith(
+            "workspace/benchmarks/"
+        ):
+            raise ValueError("Rules require a separate private workspace path")
+        if len({case.case_id for case in self.cases}) != len(self.cases):
+            raise ValueError("Duplicate controlled research case")
+        if any(
+            not p.path.startswith("src/") or not p.path.endswith(".py") for p in self.implementation
+        ):
+            raise ValueError("Implementation pins must name src Python files")
+        return self
+
+
+class ResearchCell(ResearchCase):
+    cell_id: Sha256
+    repetition: Literal[1] = 1
+    state: Literal["not-attempted"] = "not-attempted"
+    finding_records: None = None
+    producer_invocations: Literal[0] = 0
+    coverage: Literal["not-measured"] = "not-measured"
+
+
+class ResearchPreview(ResearchModel):
+    contract: Literal["benchmark-research-dry-run-v1"] = "benchmark-research-dry-run-v1"
+    plan_id: Identifier
+    plan_sha256: Sha256
+    plan_semantic_sha256: Sha256
+    treatment_sha256: Sha256
+    implementation_sha256: Sha256
+    cells: tuple[ResearchCell, ...] = Field(min_length=15, max_length=15)
+    validation_scope: Literal["fixed-controlled-research-byte-bindings"] = (
+        "fixed-controlled-research-byte-bindings"
+    )
+    plan_valid: Literal[True] = True
+    execution_authorized: Literal[False] = False
+    runtime_readiness: Literal["containers-not-checked"] = "containers-not-checked"
+    resume_implemented: Literal[True] = True
+    metric_scoring_implemented: Literal[False] = False
+    limitations: tuple[str, ...] = (
+        "Fifteen existing cases in one development family; no held-out or public admission",
+        "One whole case per cell, retaining original internal dual-view repetitions",
+        "Expected detector outcomes do not govern execution success",
+        "No retry, per-pass recovery, accuracy scoring or complete-analysis claim",
+        "Byte validation does not establish Docker or image availability",
+    )
+
+
+type AdmittedCell = (
+    PlannedCell
+    | SemgrepCell
+    | KicsCell
+    | DependencyCell
+    | DependencyMutationCell
+    | DependencyBoundaryCell
+    | PublicPilotCell
+    | ResearchCell
+)
 type AdmittedPreview = (
-    BenchmarkDryRunV2 | BenchmarkDryRunV3 | SemgrepPreview | KicsPreview | DependencyPreview
+    BenchmarkDryRunV2
+    | BenchmarkDryRunV3
+    | SemgrepPreview
+    | KicsPreview
+    | DependencyPreview
+    | DependencyMutationPreview
+    | DependencyBoundaryPreview
+    | PublicPilotPreview
+    | ResearchPreview
 )

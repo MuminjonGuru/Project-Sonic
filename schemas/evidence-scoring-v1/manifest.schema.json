@@ -1,0 +1,61 @@
+{
+  "$defs": {
+    "ScoreFile": {
+      "additionalProperties": false,
+      "properties": {
+        "bytes": {
+          "minimum": 0,
+          "title": "Bytes",
+          "type": "integer"
+        },
+        "path": {
+          "enum": [
+            "plan.json",
+            "scores.json",
+            "measurements.csv",
+            "attempts.csv",
+            "TABLES.md",
+            "SUMMARY.md"
+          ],
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "sha256",
+        "bytes"
+      ],
+      "title": "ScoreFile",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "contract": {
+      "const": "evidence-scoring-manifest-v1",
+      "default": "evidence-scoring-manifest-v1",
+      "title": "Contract",
+      "type": "string"
+    },
+    "entries": {
+      "items": {
+        "$ref": "#/$defs/ScoreFile"
+      },
+      "maxItems": 6,
+      "minItems": 6,
+      "title": "Entries",
+      "type": "array"
+    }
+  },
+  "required": [
+    "entries"
+  ],
+  "title": "ScoreManifest",
+  "type": "object"
+}

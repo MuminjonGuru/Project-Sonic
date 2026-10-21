@@ -1,0 +1,170 @@
+{
+  "$defs": {
+    "ResearchCell": {
+      "additionalProperties": false,
+      "properties": {
+        "case_id": {
+          "pattern": "^[a-z0-9][a-z0-9_.-]{0,79}$",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "case_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Case Sha256",
+          "type": "string"
+        },
+        "cell_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Cell Id",
+          "type": "string"
+        },
+        "coverage": {
+          "const": "not-measured",
+          "default": "not-measured",
+          "title": "Coverage",
+          "type": "string"
+        },
+        "finding_records": {
+          "default": null,
+          "title": "Finding Records",
+          "type": "null"
+        },
+        "internal_repetitions": {
+          "maximum": 2,
+          "minimum": 1,
+          "title": "Internal Repetitions",
+          "type": "integer"
+        },
+        "producer_invocations": {
+          "const": 0,
+          "default": 0,
+          "title": "Producer Invocations",
+          "type": "integer"
+        },
+        "repetition": {
+          "const": 1,
+          "default": 1,
+          "title": "Repetition",
+          "type": "integer"
+        },
+        "state": {
+          "const": "not-attempted",
+          "default": "not-attempted",
+          "title": "State",
+          "type": "string"
+        }
+      },
+      "required": [
+        "case_id",
+        "case_sha256",
+        "internal_repetitions",
+        "cell_id"
+      ],
+      "title": "ResearchCell",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "cells": {
+      "items": {
+        "$ref": "#/$defs/ResearchCell"
+      },
+      "maxItems": 15,
+      "minItems": 15,
+      "title": "Cells",
+      "type": "array"
+    },
+    "contract": {
+      "const": "benchmark-research-dry-run-v1",
+      "default": "benchmark-research-dry-run-v1",
+      "title": "Contract",
+      "type": "string"
+    },
+    "execution_authorized": {
+      "const": false,
+      "default": false,
+      "title": "Execution Authorized",
+      "type": "boolean"
+    },
+    "implementation_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Implementation Sha256",
+      "type": "string"
+    },
+    "limitations": {
+      "default": [
+        "Fifteen existing cases in one development family; no held-out or public admission",
+        "One whole case per cell, retaining original internal dual-view repetitions",
+        "Expected detector outcomes do not govern execution success",
+        "No retry, per-pass recovery, accuracy scoring or complete-analysis claim",
+        "Byte validation does not establish Docker or image availability"
+      ],
+      "items": {
+        "type": "string"
+      },
+      "title": "Limitations",
+      "type": "array"
+    },
+    "metric_scoring_implemented": {
+      "const": false,
+      "default": false,
+      "title": "Metric Scoring Implemented",
+      "type": "boolean"
+    },
+    "plan_id": {
+      "pattern": "^[a-z0-9][a-z0-9_.-]{0,79}$",
+      "title": "Plan Id",
+      "type": "string"
+    },
+    "plan_semantic_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Plan Semantic Sha256",
+      "type": "string"
+    },
+    "plan_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Plan Sha256",
+      "type": "string"
+    },
+    "plan_valid": {
+      "const": true,
+      "default": true,
+      "title": "Plan Valid",
+      "type": "boolean"
+    },
+    "resume_implemented": {
+      "const": true,
+      "default": true,
+      "title": "Resume Implemented",
+      "type": "boolean"
+    },
+    "runtime_readiness": {
+      "const": "containers-not-checked",
+      "default": "containers-not-checked",
+      "title": "Runtime Readiness",
+      "type": "string"
+    },
+    "treatment_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Treatment Sha256",
+      "type": "string"
+    },
+    "validation_scope": {
+      "const": "fixed-controlled-research-byte-bindings",
+      "default": "fixed-controlled-research-byte-bindings",
+      "title": "Validation Scope",
+      "type": "string"
+    }
+  },
+  "required": [
+    "plan_id",
+    "plan_sha256",
+    "plan_semantic_sha256",
+    "treatment_sha256",
+    "implementation_sha256",
+    "cells"
+  ],
+  "title": "ResearchPreview",
+  "type": "object"
+}

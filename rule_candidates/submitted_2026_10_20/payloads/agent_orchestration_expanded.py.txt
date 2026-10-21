@@ -1,0 +1,1121 @@
+"""
+agent_orchestration_expanded.py — Part 1 of 2
+
+Security scanner for AI agent orchestration patterns — enhanced edition.
+
+New:
+- Nested orchestrator calls (e.g., orchestrator.route(agent2.call(agent3)))
+- Enhanced evidence (AST call chain, cross-agent references)
+- Security scoring (dynamic severity, confidence, heatmaps)
+- Cross-agent correlation (agent1.memory → agent2.context)
+- MCP orchestration integration (state stores, memory stores, routing tables)
+- Framework-specific rules (LangChain, AutoGen, MCP, custom)
+- CLI enhancements (--orchestrator-type, --max-handoffs, --ignore-static-routes)
+
+Version: 1.1.0
+"""
+
+from _future_ import annotations
+
+_doc_ = """
+Agent Orchestration scanner (expanded edition) for AI agents.
+
+Detects handoff hijacking, dynamic routing, shared state injection,
+and orchestrator-specific patterns like LLM-driven handoffs and self-modifications.
+"""
+
+_version_ = "1.1.0"
+
+import ast
+import re
+import os
+import json
+from pathlib import Path
+from dataclasses import dataclass, field
+from typing import List, Dict, Any, Optional, Tuple, Set
+from enum import Enum
+
+
+
+class Severity(Enum):
+    CRITICAL = "critical"
+    HIGH = "high"
+    MEDIUM = "medium"
+    LOW = "low"
+
+
+
+class Category(Enum):
+    HANDOFF_HIJACKING = "handoff_hijacking"
+    DYNAMIC_ROUTING = "dynamic_routing"
+    SHARED_STATE = "shared_state"
+    CROSS_AGENT_LEAKAGE = "cross_agent_leakage"
+    ORCHESTRATOR_SELF_MOD = "orchestrator_self_mod"
+
+
+
+@dataclass
+class Finding:
+    id: str
+    title: str
+    severity: Severity
+    category: Category
+    description: str
+    evidence: Dict[str, Any]
+    location: Optional[str] = None
+    rule_id: Optional[str] = None
+    remediation_hint: Optional[str] = None
+    references: List[str] = field(default_factory=list)
+    tags: List[str] = field(default_factory=list)
+    context: Dict[str, Any] = field(default_factory=dict)
+
+
+
+@dataclass
+class ScannerContext:
+    source_path: Path
+    config: Dict[str, Any] = field(default_factory=dict)
+    rules: List[Dict[str, Any]] = field(default_factory=list)
+    mcp_orchestration_roots: List[Dict[str, Any]] = field(default_factory=list)
+
+
+
+# === ORCHESTRATION PATTERN DETECTORS (ENHANCED) ===
+
+ORCHESTRATION_PATTERNS = {
+    "handoff": [
+        r"orchestrator\.send",
+        r"orchestrator\.route",
+        r"orchestrator\.forward",
+    ],
+    "routing": [
+        r"orchestrator\.route.*llm",
+        r"orchestrator\.select.*agent",
+        r"orchestrator\.dispatch.*task",
+    ],
+    "shared_state": [
+        r"orchestrator\.state\.update",
+        r"orchestrator\.state\.get",
+        r"orchestrator\.state\.persist",
+    ],
+    "cross_agent": [
+        r"agent1\.memory\s*→\s*agent2\.context",
+        r"agent1\.state\s*→\s*agent2\.input",
+        r"orchestrator\.share.*agent",
+    ],
+    "self_mod": [
+        r"orchestrator\.update_routing_policy",
+        r"orchestrator\.rewrite_handoff_rules",
+        r"orchestrator\.tune_performance",
+    ],
+}
+
+# Common persistence patterns
+PERSISTENCE_PATTERNS = {
+    "file": [
+        r"save.*orchestrator|persist.*orchestrator",
+        r"write.*orchestrator_config",
+    ],
+    "db": [
+        r"db\.save.*orchestrator",
+        r"redis\.set.*orchestrator",
+        r"sqlite\.execute.*orchestrator",
+    ],
+    "cloud": [
+        r"s3\.put.*orchestrator",
+        r"gcs\.upload.*orchestrator",
+        r"azure\.blob.*orchestrator",
+    ],
+}
+
+
+
+def is_orchestration_operation(func_name: str) -> bool:
+    """Detect if function is likely an orchestration operation."""
+    func_lower = func_name.lower()
+    return any(
+        p in func_lower
+        for p in ["orchestrat", "route", "handoff", "forward", "dispatch", "share"]
+    )
+
+
+
+def analyze_orchestration_persistence(path: str, content: Optional[str] = None) -> Dict[str, Any]:
+    """Analyze orchestration persistence: file, db, or cloud."""
+    if content and any(p in content for p in ["db.save", "redis.set", "sqlite.execute"]):
+        return {"type": "db", "confidence": 0.8}
+    if any(path.endswith(ext) for ext in [".json", ".yaml", ".pkl"]):
+        return {"type": "file", "confidence": 0.7}
+    if any(ext in path.lower() for ext in ["/s3/", "/gcs/", "azure/"]):
+        return {"type": "cloud", "confidence": 0.9}
+    return {"type": "unknown", "confidence": 0.5}
+
+
+
+# === LLM-DRIVEN DETECTION (ENHANCED) ===
+
+def is_llm_driven_orchestration(code_snippet: str) -> Dict[str, Any]:
+    """Detect if orchestration is LLM-driven."""
+    llm_indicators = 0
+    if re.search(r"orchestrator\.(route|select|dispatch).*llm", code_snippet):
+        llm_indicators += 30
+    if re.search(r"llm\.suggest.*orchestrat|llm\.propose.*orchestrat", code_snippet):
+        llm_indicators += 25
+    if re.search(r"orchestrator\.response\s*\.\s*(route|update)", code_snippet):
+        llm_indicators += 25
+    if re.search(r"agent\.response\s*\.\s*orchestrat", code_snippet):
+        llm_indicators += 20
+
+    return {
+        "llm_driven_score": min(100, llm_indicators),
+        "llm_drivers": [
+            "route",
+            "select",
+            "dispatch",
+            "propose",
+        ],
+        "is_llm_driven": llm_indicators >= 50,
+    }
+
+
+
+# === NESTED ORCHESTRATION DETECTOR (NEW) ===
+
+def score_nested_orchestration(code_snippet: str) -> Dict[str, Any]:
+    """Score how likely orchestration includes nested patterns."""
+    nested_risks = 0
+    if re.search(r"orchestrator\.route\(agent2\.call\(agent3\)\)", code_snippet):
+        nested_risks += 30
+    if re.search(r"orchestrator\.forward\(data\s*=\s*agent2\.response\)", code_snippet):
+        nested_risks += 25
+    if re.search(r"orchestrator\.dispatch\(task\s*=\s*llm\.suggest\(\)\)", code_snippet):
+        nested_risks += 25
+    if re.search(r"orchestrator\.state\.update\(agent\s*=\s*agent2\.get_state\(\)\)", code_snippet):
+        nested_risks += 20
+
+    return {
+        "nested_risk_score": min(100, nested_risks),
+        "nested_vectors": [
+            "nested-calls",
+            "cross-agent-calls",
+            "llm-suggest",
+            "state-get",
+        ],
+        "is_nested": nested_risks >= 60,
+    }
+
+
+
+# === HANDOFF HIJACKING SCORER (ENHANCED) ===
+
+def score_handoff_hijacking(code_snippet: str) -> Dict[str, Any]:
+    """Score how prone an orchestration handoff is to hijacking."""
+    hijack_risks = 0
+    if re.search(r"orchestrator\.send\(agent\s*=\s*.*prompt\s*=\s*\$\{", code_snippet):
+        hijack_risks += 25
+    if re.search(r"orchestrator\.forward\(data\s*=\s*response", code_snippet):
+        hijack_risks += 25
+    if re.search(r"orchestrator\.route\(task\s*=\s*llm", code_snippet):
+        hijack_risks += 25
+    if re.search(r"orchestrator\.dispatch\(agent\s*=\s*agent2", code_snippet):
+        hijack_risks += 25
+
+    return {
+        "hijack_risk_score": min(100, hijack_risks),
+        "hijack_vectors": [
+            "prompt-injection",
+            "data-forward",
+            "llm-routing",
+            "agent-dispatch",
+        ],
+        "is_vulnerable": hijack_risks >= 50,
+    }
+
+
+
+# === DYNAMIC ROUTING SCORER (ENHANCED) ===
+
+def score_dynamic_routing(code_snippet: str) -> Dict[str, Any]:
+    """Score how dynamic an orchestration routing decision is."""
+    routing_risks = 0
+    if re.search(r"orchestrator\.route\(.*llm", code_snippet):
+        routing_risks += 30
+    if re.search(r"orchestrator\.select\(agent\s*=\s*llm", code_snippet):
+        routing_risks += 25
+    if re.search(r"orchestrator\.dispatch\(.*llm", code_snippet):
+        routing_risks += 25
+    if re.search(r"orchestrator\.choose\(agent\s*=\s*llm", code_snippet):
+        routing_risks += 20
+
+    return {
+        "routing_risk_score": min(100, routing_risks),
+        "routing_vectors": [
+            "llm-routing",
+            "agent-selection",
+            "task-dispatch",
+            "agent-choose",
+        ],
+        "is_dynamic": routing_risks >= 60,
+    }
+
+
+
+# === SHARED STATE INJECTION SCORER (ENHANCED) ===
+
+def score_shared_state_injection(code_snippet: str) -> Dict[str, Any]:
+    """Score how likely shared state includes injection vectors."""
+    injection_risks = 0
+    if re.search(r"orchestrator\.state\.update\(agent\s*=\s*\$\{", code_snippet):
+        injection_risks += 25
+    if re.search(r"orchestrator\.state\.update\(data\s*=\s*response", code_snippet):
+        injection_risks += 25
+    if re.search(r"orchestrator\.state\.update\(context\s*=\s*llm", code_snippet):
+        injection_risks += 25
+    if re.search(r"orchestrator\.state\.update\(prompt\s*=\s*user", code_snippet):
+        injection_risks += 25
+
+    return {
+        "injection_risk_score": min(100, injection_risks),
+        "injection_vectors": [
+            "agent-update",
+            "data-forward",
+            "llm-context",
+            "user-prompt",
+        ],
+        "is_vulnerable": injection_risks >= 50,
+    }
+
+
+
+# === CROSS-AGENT LEAKAGE SCORER (ENHANCED) ===
+
+def score_cross_agent_leakage(code_snippet: str) -> Dict[str, Any]:
+    """Score how likely cross-agent handoffs include leakage."""
+    leakage_risks = 0
+    if re.search(r"agent1\.memory\s*→\s*agent2\.context", code_snippet):
+        leakage_risks += 30
+    if re.search(r"orchestrator\.share\(agent\s*=\s*\$\{", code_snippet):
+        leakage_risks += 25
+    if re.search(r"orchestrator\.forward\(agent\s*=\s*\$\{", code_snippet):
+        leakage_risks += 25
+    if re.search(r"orchestrator\.send\(agent\s*=\s*\$\{", code_snippet):
+        leakage_risks += 20
+
+    return {
+        "leakage_risk_score": min(100, leakage_risks),
+        "leakage_vectors": [
+            "memory-forward",
+            "agent-share",
+            "forward-agent",
+            "send-agent",
+        ],
+        "is_vulnerable": leakage_risks >= 50,
+    }
+
+
+
+# === FRAMEWORK DETECTION (ENHANCED) ===
+
+FRAMEWORK_PATTERNS = {
+    "langchain": [
+        r"AgentExecutor",
+        r"SequentialChain",
+        r"AgentRunner",
+    ],
+    "autogen": [
+        r"GroupChat",
+        r"ManagerAgent",
+        r"ConversableAgent\.group_chat",
+    ],
+    "mcp": [
+        r"orchestrator\.state\.store",
+        r"orchestrator\.memory\.persist",
+        r"orchestrator\.context\.store",
+    ],
+}
+
+
+
+def detect_framework(path: Path, source: str) -> List[str]:
+    """Detect which agent frameworks are used in the code."""
+    frameworks = []
+    for fw, patterns in FRAMEWORK_PATTERNS.items():
+        if any(re.search(p, source, re.IGNORECASE) for p in patterns):
+            frameworks.append(fw)
+    return frameworks
+
+
+
+def score_framework_mismatch(code_snippet: str, frameworks: List[str]) -> Dict[str, Any]:
+    """Score how likely framework-specific patterns are mismatched."""
+    mismatch_risks = 0
+    if "langchain" in frameworks and re.search(r"AgentExecutor", code_snippet):
+        mismatch_risks += 20
+    if "autogen" in frameworks and re.search(r"GroupChat", code_snippet):
+        mismatch_risks += 20
+    if "mcp" in frameworks and re.search(r"orchestrator\.state\.store", code_snippet):
+        mismatch_risks += 20
+    if len(frameworks) > 2:
+        mismatch_risks += 20 # multi-framework = higher mismatch risk
+
+    return {
+        "mismatch_risk_score": min(100, mismatch_risks),
+        "mismatch_vectors": frameworks,
+        "is_vulnerable": mismatch_risks >= 40,
+    }
+
+
+
+# === ORCHESTRATOR SELF-MOD SCORER (ENHANCED) ===
+
+def score_orchestrator_self_mod(code_snippet: str) -> Dict[str, Any]:
+    """Score how likely orchestrator includes self-modification patterns."""
+    self_mod_risks = 0
+    if re.search(r"orchestrator\.update_routing_policy", code_snippet):
+        self_mod_risks += 25
+    if re.search(r"orchestrator\.rewrite_handoff_rules", code_snippet):
+        self_mod_risks += 25
+    if re.search(r"orchestrator\.tune_performance", code_snippet):
+        self_mod_risks += 20
+    if re.search(r"orchestrator\.self_evaluate", code_snippet):
+        self_mod_risks += 20
+
+    return {
+        "self_mod_risk_score": min(100, self_mod_risks),
+        "self_mod_vectors": [
+            "update_routing",
+            "rewrite_handoff",
+            "tune_performance",
+            "self_evaluate",
+        ],
+        "is_self_mod": self_mod_risks >= 50,
+    }
+
+
+
+# === SECURITY SCORING ENGINE (ENHANCED) ===
+
+def compute_risk_score(finding: Finding, context: ScannerContext = None) -> Dict[str, Any]:
+    """Compute dynamic risk score (0–100) and confidence level for orchestration findings."""
+    base = {
+        "critical": 90,
+        "high": 70,
+        "medium": 50,
+        "low": 30,
+    }.get(finding.severity.value, 40)
+
+    evidence = finding.evidence
+    llm_driven = evidence.get("llm_driven", {})
+    nested = evidence.get("nested", {})
+    hijacking = evidence.get("hijacking", {})
+    routing = evidence.get("routing", {})
+    shared_state = evidence.get("shared_state", {})
+    leakage = evidence.get("leakage", {})
+    framework_mismatch = evidence.get("framework_mismatch", {})
+    self_mod = evidence.get("self_mod", {})
+
+    llm_modifier = llm_driven.get("llm_driven_score", 0) if isinstance(llm_driven, dict) else 0
+    nested_modifier = nested.get("nested_risk_score", 0) if isinstance(nested, dict) else 0
+    hijacking_modifier = hijacking.get("hijack_risk_score", 0) if isinstance(hijacking, dict) else 0
+    routing_modifier = routing.get("routing_risk_score", 0) if isinstance(routing, dict) else 0
+    shared_state_modifier = shared_state.get("injection_risk_score", 0) if isinstance(shared_state, dict) else 0
+    leakage_modifier = leakage.get("leakage_risk_score", 0) if isinstance(leakage, dict) else 0
+    framework_modifier = framework_mismatch.get("mismatch_risk_score", 0) if isinstance(framework_mismatch, dict) else 0
+    self_mod_modifier = self_mod.get("self_mod_risk_score", 0) if isinstance(self_mod, dict) else 0
+
+    final_score = min(
+        100,
+        base
+        + llm_modifier
+        + nested_modifier
+        + hijacking_modifier
+        + routing_modifier
+        + shared_state_modifier
+        + leakage_modifier
+        + framework_modifier
+        + self_mod_modifier,
+    )
+
+    evidence_items = list(evidence.items())
+    confidence = 0.5 + (len(evidence_items) / 12)
+
+    return {
+        "risk_score": final_score,
+        "llm_modifier": llm_modifier,
+        "nested_modifier": nested_modifier,
+        "hijacking_modifier": hijacking_modifier,
+        "routing_modifier": routing_modifier,
+        "shared_state_modifier": shared_state_modifier,
+        "leakage_modifier": leakage_modifier,
+        "framework_modifier": framework_modifier,
+        "self_mod_modifier": self_mod_modifier,
+        "confidence": round(confidence, 2),
+    }
+
+
+
+# === RULES (22 RULES) — START — ===
+
+DEFAULT_RULES = {
+    "agent_orchestration": {
+        "id_prefix": "ORG",
+        "description": "Detection of agent orchestration patterns",
+        "rules": [
+            # BASE (001–015)
+            {
+                "id": "ORG-001",
+                "name": "Handoff hijacking: orchestrator sends messages to agents with user/LLM-controlled content",
+                "category": Category.HANDOFF_HIJACKING,
+                "severity": Severity.HIGH,
+                "patterns": [
+                    r"orchestrator\.send\s*\(\s*agent\s*=\s*.*prompt\s*=\s*\$\{",
+                    r"orchestrator\.forward\s*\(\s*data\s*=\s*response",
+                    r"orchestrator\.route\s*\(\s*task\s*=\s*llm",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "hijacking_change": match.group(0)[:60] if match else "unknown",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Validate orchestrator handoff messages; avoid direct concatenation of user/LLM inputs.",
+            },
+            {
+                "id": "ORG-002",
+                "name": "Dynamic routing: orchestrator routes tasks to agents based on LLM decisions",
+                "category": Category.DYNAMIC_ROUTING,
+                "severity": Severity.HIGH,
+                "patterns": [
+                    r"orchestrator\.route\s*\(\s*task\s*=\s*llm",
+                    r"orchestrator\.select\s*\(\s*agent\s*=\s*llm",
+                    r"orchestrator\.dispatch\s*\(\s*task\s*=\s*llm",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "routing_change": match.group(0)[:60] if match else "unknown",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Validate LLM routing decisions; use human-in-the-loop for critical handoffs.",
+            },
+            {
+                "id": "ORG-003",
+                "name": "Shared state injection: orchestrator updates shared context with user/LLM input",
+                "category": Category.SHARED_STATE,
+                "severity": Severity.MEDIUM,
+                "patterns": [
+                    r"orchestrator\.state\.update\s*\(\s*agent\s*=\s*\$\{",
+                    r"orchestrator\.state\.update\s*\(\s*data\s*=\s*response",
+                    r"orchestrator\.state\.update\s*\(\s*context\s*=\s*llm",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "shared_state_change": match.group(0)[:60] if match else "unknown",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Validate shared state updates; use schema validation for context fields.",
+            },
+            {
+                "id": "ORG-004",
+                "name": "Cross-agent leakage: orchestrator forwards agent memories/context between agents",
+                "category": Category.CROSS_AGENT_LEAKAGE,
+                "severity": Severity.MEDIUM,
+                "patterns": [
+                    r"orchestrator\.share\s*\(\s*agent\s*=\s*agent1",
+                    r"orchestrator\.forward\s*\(\s*agent\s*=\s*agent2",
+                    r"orchestrator\.send\s*\(\s*agent\s*=\s*agent1",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "leakage_change": match.group(0)[:60] if match else "unknown",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Limit cross-agent memory sharing; use encryption or anonymization.",
+            },
+            {
+                "id": "ORG-005",
+                "name": "Orchestrator self-modification: orchestrator updates its own routing policy",
+                "category": Category.ORCHESTRATOR_SELF_MOD,
+                "severity": Severity.MEDIUM,
+                "patterns": [
+                    r"orchestrator\.update_routing_policy",
+                    r"orchestrator\.rewrite_handoff_rules",
+                    r"orchestrator\.tune_performance",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "self_mod_change": match.group(0)[:60] if match else "unknown",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Validate orchestrator self-modifications; add external review hooks.",
+            },
+            {
+                "id": "ORG-006",
+                "name": "LLM-driven orchestration: orchestrator makes changes based on LLM suggestion/response",
+                "category": Category.DYNAMIC_ROUTING,
+                "severity": Severity.HIGH,
+                "patterns": [
+                    r"orchestrator\.update\s*\(\s*response\s*=\s*llm",
+                    r"llm\.suggest.*orchestrat",
+                    r"orchestrator\.response\s*\.\s*(route|update)",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "llm_change": match.group(0)[:60] if match else "unknown",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Validate LLM suggestions; use human-in-the-loop for critical changes.",
+            },
+            {
+                "id": "ORG-007",
+                "name": "Agent framework-specific: LangChain orchestration patterns detected",
+                "category": Category.DYNAMIC_ROUTING,
+                "severity": Severity.LOW,
+                "patterns": [
+                    r"AgentExecutor",
+                    r"SequentialChain",
+                    r"AgentRunner",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "framework": "langchain",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Use LangChain-specific best practices for orchestration.",
+            },
+            {
+                "id": "ORG-008",
+                "name": "Agent framework-specific: AutoGen orchestration patterns detected",
+                "category": Category.DYNAMIC_ROUTING,
+                "severity": Severity.LOW,
+                "patterns": [
+                    r"GroupChat",
+                    r"ManagerAgent",
+                    r"ConversableAgent\.group_chat",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "framework": "autogen",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Pin AutoGen orchestration paths; use `save_chat_history()` for persistence.",
+            },
+            {
+                "id": "ORG-009",
+                "name": "Agent framework-specific: MCP orchestration patterns detected",
+                "category": Category.DYNAMIC_ROUTING,
+                "severity": Severity.LOW,
+                "patterns": [
+                    r"orchestrator\.state\.store",
+                    r"orchestrator\.memory\.persist",
+                    r"orchestrator\.context\.store",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "framework": "mcp",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Explicitly declare MCP orchestration permissions; avoid implicit writes.",
+            },
+            {
+                "id": "ORG-010",
+                "name": "Persistence of orchestration: orchestrator saves changes to file/DB for long-term reuse",
+                "category": Category.ORCHESTRATOR_SELF_MOD,
+                "severity": Severity.MEDIUM,
+                "patterns": [
+                    r"save_orchestrator",
+                    r"persist_orchestrator",
+                    r"write_orchestrator_config",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "persistence_type": match.group(0)[:60] if match else "unknown",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Version orchestration changes; validate persisted changes before reuse.",
+            },
+            {
+                "id": "ORG-011",
+                "name": "Nested orchestration: orchestrator calls include nested agent calls (e.g., orchestrator.route(agent2.call(agent3)))",
+                "category": Category.DYNAMIC_ROUTING,
+                "severity": Severity.HIGH,
+                "patterns": [
+                    r"orchestrator\.route\(agent2\.call\(agent3\)\)",
+                    r"orchestrator\.forward\(data\s*=\s*agent2\.response\)",
+                    r"orchestrator\.dispatch\(task\s*=\s*llm\.suggest\(\)\)",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "nested_patterns": score_nested_orchestration(match.group(0)) if match else {},
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Validate nested orchestrator calls; add timeout and retry logic.",
+            },
+            {
+                "id": "ORG-012",
+                "name": "Handoff hijacking: orchestrator sends messages with LLM-determined content",
+                "category": Category.HANDOFF_HIJACKING,
+                "severity": Severity.HIGH,
+                "patterns": [
+                    r"orchestrator\.send\(agent\s*=\s*agent2\s*,\s*prompt\s*=\s*llm",
+                    r"orchestrator\.forward\(data\s*=\s*llm\.response",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "hijacking_patterns": score_handoff_hijacking(match.group(0)) if match else {},
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Validate orchestrator handoff messages; avoid direct concatenation of user/LLM inputs.",
+            },
+            {
+                "id": "ORG-013",
+                "name": "Dynamic routing: orchestrator routes tasks based on LLM decisions",
+                "category": Category.DYNAMIC_ROUTING,
+                "severity": Severity.HIGH,
+                "patterns": [
+                    r"orchestrator\.route\(task\s*=\s*llm",
+                    r"orchestrator\.select\(agent\s*=\s*llm",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "routing_patterns": score_dynamic_routing(match.group(0)) if match else {},
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Validate LLM routing decisions; use human-in-the-loop for critical handoffs.",
+            },
+            {
+                "id": "ORG-014",
+                "name": "Shared state injection: orchestrator updates shared context with LLM-determined values",
+                "category": Category.SHARED_STATE,
+                "severity": Severity.MEDIUM,
+                "patterns": [
+                    r"orchestrator\.state\.update\(agent\s*=\s*agent1\s*,\s*context\s*=\s*llm",
+                    r"orchestrator\.state\.update\(data\s*=\s*llm\.response",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "shared_state_patterns": score_shared_state_injection(match.group(0)) if match else {},
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Validate shared state updates; use schema validation for context fields.",
+            },
+            {
+                "id": "ORG-015",
+                "name": "Cross-agent leakage: orchestrator forwards agent memories/context between agents",
+                "category": Category.CROSS_AGENT_LEAKAGE,
+                "severity": Severity.MEDIUM,
+                "patterns": [
+                    r"orchestrator\.share\(agent\s*=\s*agent1\s*,\s*context\s*=\s*agent2",
+                    r"orchestrator\.forward\(agent\s*=\s*agent2\s*,\s*memory\s*=\s*agent1",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "leakage_patterns": score_cross_agent_leakage(match.group(0)) if match else {},
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Limit cross-agent memory sharing; use encryption or anonymization.",
+            },
+            {
+                "id": "ORG-016",
+                "name": "Orchestrator self-modification: orchestrator updates its own routing policy",
+                "category": Category.ORCHESTRATOR_SELF_MOD,
+                "severity": Severity.MEDIUM,
+                "patterns": [
+                    r"orchestrator\.update_routing_policy",
+                    r"orchestrator\.rewrite_handoff_rules",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "self_mod_patterns": "orchestrator",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Validate orchestrator self-modifications; add external review hooks.",
+            },
+            {
+                "id": "ORG-017",
+                "name": "LLM-driven orchestration: orchestrator makes changes based on LLM suggestion/response",
+                "category": Category.DYNAMIC_ROUTING,
+                "severity": Severity.HIGH,
+                "patterns": [
+                    r"orchestrator\.update\(response\s*=\s*llm",
+                    r"llm\.suggest.*orchestrat",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "llm_driven_patterns": is_llm_driven_orchestration(match.group(0)) if match else {},
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Validate LLM suggestions; use human-in-the-loop for critical changes.",
+            },
+            {
+                "id": "ORG-018",
+                "name": "Agent framework-specific: LangChain orchestration patterns detected",
+                "category": Category.DYNAMIC_ROUTING,
+                "severity": Severity.LOW,
+                "patterns": [
+                    r"AgentExecutor",
+                    r"SequentialChain",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "framework": "langchain",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Use LangChain-specific best practices for orchestration.",
+            },
+            {
+                "id": "ORG-019",
+                "name": "Agent framework-specific: AutoGen orchestration patterns detected",
+                "category": Category.DYNAMIC_ROUTING,
+                "severity": Severity.LOW,
+                "patterns": [
+                    r"GroupChat",
+                    r"ManagerAgent",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "framework": "autogen",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Pin AutoGen orchestration paths; use `save_chat_history()` for persistence.",
+            },
+            {
+                "id": "ORG-020",
+                "name": "Agent framework-specific: MCP orchestration patterns detected",
+                "category": Category.DYNAMIC_ROUTING,
+                "severity": Severity.LOW,
+                "patterns": [
+                    r"orchestrator\.state\.store",
+                    r"orchestrator\.memory\.persist",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "framework": "mcp",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Explicitly declare MCP orchestration permissions; avoid implicit writes.",
+            },
+            {
+                "id": "ORG-021",
+                "name": "Persistence of orchestration: orchestrator saves changes to file/DB for long-term reuse",
+                "category": Category.ORCHESTRATOR_SELF_MOD,
+                "severity": Severity.MEDIUM,
+                "patterns": [
+                    r"save_orchestrator",
+                    r"persist_orchestrator",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "persistence_type": match.group(0)[:60] if match else "unknown",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Version orchestration changes; validate persisted changes before reuse.",
+            },
+            {
+                "id": "ORG-022",
+                "name": "Cross-agent leakage: orchestrator forwards agent memories/context between agents",
+                "category": Category.CROSS_AGENT_LEAKAGE,
+                "severity": Severity.MEDIUM,
+                "patterns": [
+                    r"orchestrator\.share\(agent\s*=\s*agent1",
+                    r"orchestrator\.forward\(agent\s*=\s*agent2",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "leakage_change": match.group(0)[:60] if match else "unknown",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Limit cross-agent memory sharing; use encryption or anonymization.",
+            },
+        ],
+        "rule_map": {},
+    }
+}
+
+# Initialize rule_map
+DEFAULT_RULES["agent_orchestration"]["rule_map"] = {
+    rule["id"]: rule for rule in DEFAULT_RULES["agent_orchestration"]["rules"]
+}
+
+
+
+# === AST SCANNER (ENHANCED) — PART 1 — ===
+
+def scan_ast_file(path: Path, context: ScannerContext) -> List[Finding]:
+    """Scan Python files for agent orchestration patterns (enhanced)."""
+    findings = []
+    try:
+        source = path.read_text(encoding="utf-8")
+        tree = ast.parse(source, filename=str(path))
+
+        call_nodes = [n for n in ast.walk(tree) if isinstance(n, ast.Call)]
+
+        for node in call_nodes:
+            func_name = _get_call_name(node.func)
+            if not func_name:
+                continue
+
+            func_lower = func_name.lower()
+            if any(f in func_lower for f in ["orchestrat", "route", "handoff", "forward", "dispatch", "share"]):
+                source_snippet = _get_line_snippet(source, node.lineno)
+
+                for rule in context.rules:
+                    for pattern in rule["patterns"]:
+                        if re.search(pattern, source_snippet, re.IGNORECASE):
+                            # Compute additional metrics
+                            llm_driven = is_llm_driven_orchestration(source_snippet)
+                            nested = score_nested_orchestration(source_snippet)
+                            hijacking = score_handoff_hijacking(source_snippet)
+                            routing = score_dynamic_routing(source_snippet)
+                            shared_state = score_shared_state_injection(source_snippet)
+                            leakage = score_cross_agent_leakage(source_snippet)
+                            self_mod = score_orchestrator_self_mod(source_snippet)
+                            framework = detect_framework(path, source_snippet)
+                            framework_mismatch = score_framework_mismatch(source_snippet, framework)
+
+                            evidence = rule["evidence_extractor"](node, None) | {
+                                "file": str(path),
+                                "code_line": source_snippet.strip(),
+                                "llm_driven": llm_driven,
+                                "nested": nested,
+                                "hijacking": hijacking,
+                                "routing": routing,
+                                "shared_state": shared_state,
+                                "leakage": leakage,
+                                "self_mod": self_mod,
+                                "framework_mismatch": framework_mismatch,
+                                "frameworks": framework,
+                            }
+
+                            findings.append(
+                                Finding(
+                                    id=rule["id"],
+                                    title=rule["name"],
+                                    severity=rule["severity"],
+                                    category=rule["category"],
+                                    description=f"Found {func_name} usage matching pattern: {pattern}",
+                                    evidence=evidence,
+                                    location=f"{path}:{node.lineno}",
+                                    rule_id=rule["id"],
+                                    remediation_hint=rule.get("remediation_hint"),
+                                    references=[
+                                        "https://langchain-ai.github.io/langchain/",
+                                        "https://microsoft.github.io/autogen/",
+                                    ],
+                                    tags=[
+                                        "orchestration" if "orchestrat" in func_lower else "routing",
+                                        "llm-driven" if llm_driven["is_llm_driven"] else None,
+                                        "nested" if nested["is_nested"] else None,
+                                        "hijacking" if hijacking["is_vulnerable"] else None,
+                                        "routing" if routing["is_dynamic"] else None,
+                                    ] + framework,
+                                    context={
+                                        "framework": framework[0] if framework else "generic",
+                                        "llm_driven": llm_driven,
+                                        "nested": nested,
+                                        "hijacking": hijacking,
+                                        "routing": routing,
+                                        "shared_state": shared_state,
+                                        "leakage": leakage,
+                                        "self_mod": self_mod,
+                                        "framework_mismatch": framework_mismatch,
+                                    },
+                                    file_line_range=(node.lineno, node.end_lineno or node.lineno),
+                                )
+                            )
+    except Exception as e:
+        findings.append(
+            Finding(
+                id="ORG-099",
+                title="AST parse failed",
+                severity=Severity.LOW,
+                category=Category.DYNAMIC_ROUTING,
+                description=f"Failed to parse {path}: {e}",
+                evidence={"exception": str(e)},
+                context={"path": str(path)},
+            )
+        )
+    return findings
+
+
+
+def _get_call_name(func_node: ast.AST) -> Optional[str]:
+    if isinstance(func_node, ast.Name):
+        return func_node.id
+    if isinstance(func_node, ast.Attribute):
+        return f"{_get_call_name(func_node.value)}.{func_node.attr}"
+    if isinstance(func_node, ast.Call):
+        return f"{_get_call_name(func_node.func)}()"
+    return None
+
+
+
+def _get_line_snippet(source: str, lineno: int, context_lines: int = 3) -> str:
+    lines = source.splitlines()
+    start = max(0, lineno - 1 - context_lines)
+    end = min(len(lines), lineno + context_lines)
+    return "\n".join(
+        f"{i + 1:>5} | {line}"
+        for i, line in enumerate(lines[start:end], start=start)
+    )
+# === MCP ORCHESTRATION STORAGE PARSER (PART 2) ===
+
+def parse_mcp_orchestration_storage(root: Path) -> List[Dict[str, Any]]:
+    """Parse MCP config for orchestration storage patterns (e.g., state stores, memory stores)."""
+    state_stores = []
+    config_files = list(root.rglob("mcp*.yaml")) + list(root.rglob("mcp*.yml")) + list(root.rglob("mcp*.json"))
+    for cfg_path in config_files:
+        try:
+            text = cfg_path.read_text()
+            data = json.loads(text) if cfg_path.suffix == ".json" else _load_yaml(text)
+
+            # Look for orchestration storage at top-level or under 'orchestrator' / 'state' / 'memory' keys
+            if "orchestrator" in data:
+                orchestrator = data["orchestrator"]
+                if isinstance(orchestrator, dict):
+                    if "state" in orchestrator or "memory" in orchestrator:
+                        state = orchestrator.get("state", orchestrator.get("memory", {}))
+                        if isinstance(state, dict):
+                            state_stores.append({
+                                "path": state.get("path", "/"),
+                                "type": state.get("type", "shared"),
+                                "mode": state.get("mode", "read-write"),
+                                "source": str(cfg_path),
+                            })
+            if "state" in data:
+                states = data["state"] if isinstance(data["state"], list) else [data["state"]]
+                for state in states:
+                    if isinstance(state, dict):
+                        if "orchestrat" in str(state.get("path", "")).lower():
+                            state_stores.append({
+                                "path": state.get("path", "/"),
+                                "type": state.get("type", "shared"),
+                                "mode": state.get("mode", "read-write"),
+                                "source": str(cfg_path),
+                            })
+            if "memory" in data:
+                memories = data["memory"] if isinstance(data["memory"], list) else [data["memory"]]
+                for mem in memories:
+                    if isinstance(mem, dict):
+                        if "orchestrat" in str(mem.get("path", "")).lower():
+                            state_stores.append({
+                                "path": mem.get("path", "/"),
+                                "type": mem.get("type", "shared"),
+                                "mode": mem.get("mode", "read-write"),
+                                "source": str(cfg_path),
+                            })
+        except Exception:
+            continue
+    return state_stores
+
+
+
+def _load_yaml(text: str) -> Dict[str, Any]:
+    import yaml
+    return yaml.safe_load(text) or {}
+
+
+
+# === CLI (PART 2) ===
+
+if _name_ == "_main_":
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description="Scan for agent orchestration risks (expanded)",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  agent_orchestration_expanded.txt . --max-handoffs 10 --ignore-static-routes
+  agent_orchestration_expanded.txt ./my_agent --min-severity=high --ci
+
+For more info: https://github.com/yourorg/agent-orchestration-scanner
+""",
+    )
+    parser.add_argument("path", type=Path, help="Project root to scan")
+    parser.add_argument("--no-mcp", action="store_true", help="Skip MCP orchestration storage parsing")
+    parser.add_argument("--max-handoffs", type=int, default=10, help="Max handoffs per orchestrator before flagging")
+    parser.add_argument("--min-severity", choices=["low", "medium", "high", "critical"], default="low")
+    parser.add_argument("--format", choices=["table", "json"], default="table")
+    parser.add_argument("--ci", action="store_true", help="CI mode: exit non-zero on critical findings")
+    parser.add_argument(
+        "--orchestrator-type",
+        choices=["sequential", "parallel", "hierarchical", "event-driven"],
+        default="sequential",
+        help="Expected orchestrator pattern for risk scoring",
+    )
+    parser.add_argument(
+        "--ignore-static-routes",
+        action="store_true",
+        help="Ignore static route patterns (e.g., orchestrator.route(agent='agent1'))",
+    )
+    args = parser.parse_args()
+
+    ctx = ScannerContext(
+        source_path=args.path,
+        config={
+            "min_severity": args.min_severity,
+            "max_handoffs": args.max_handoffs,
+            "orchestrator_type": args.orchestrator_type,
+            "ignore_static_routes": args.ignore_static_routes,
+        },
+        rules=DEFAULT_RULES["agent_orchestration"]["rules"].copy(),
+    )
+
+    findings = scan_ast_file(args.path, ctx)
+
+    # Optional MCP parsing
+    if not args.no_mcp:
+        ctx.mcp_orchestration_roots = parse_mcp_orchestration_storage(args.path)
+        for store in ctx.mcp_orchestration_roots:
+            if store["type"] in ["shared", "memory", "state"]:
+                severity = Severity.HIGH if store["mode"] == "read-write" else Severity.MEDIUM
+                findings.append(
+                    Finding(
+                        id="ORG-MCP-001",
+                        title=f"MCP orchestration storage '{store['path']}' ({store['type']}, {store['mode']})",
+                        severity=severity,
+                        category=Category.SHARED_STATE,
+                        description=f"Orchestration storage type: {store['type']}; mode: {store['mode']}",
+                        evidence={
+                            "type": store["type"],
+                            "mode": store["mode"],
+                            "path": store["path"],
+                            "source": store["source"],
+                        },
+                        location=str(args.path),
+                    )
+                )
+
+    # Deduplicate
+    seen = set()
+    unique_findings: List[Finding] = []
+    for f in findings:
+        key = (f.id, f.location, hash(tuple(sorted(f.evidence.items()))))
+        if key not in seen:
+            seen.add(key)
+            unique_findings.append(f)
+
+    unique_findings.sort(key=lambda f: f.severity.value, reverse=True)
+
+    if args.format == "json":
+        output = []
+        for f in unique_findings:
+            output.append(
+                {
+                    **vars(f),
+                    "risk_score": compute_risk_score(f, ctx),
+                }
+            )
+        print(json.dumps(output, indent=2, default=str))
+    else:
+        print("\n🤖 Agent Orchestration Scan Results (Expanded)")
+        print("=" * 60)
+
+        for f in unique_findings:
+            risk = compute_risk_score(f, ctx)
+            print(f"\n[{f.severity.value.upper()}] {f.id}: {f.title}")
+            print(f" Location: {f.location}")
+            print(f" Evidence: {f.evidence.get('hijacking_change', f.evidence.get('routing_change', 'N/A'))}")
+            if f.evidence.get("llm_driven"):
+                print(f" LLM-Driven: {f.evidence['llm_driven']['llm_driven_score']}/100")
+            if f.evidence.get("nested"):
+                print(f" Nested: {f.evidence['nested']['nested_risk_score']}/100")
+            if f.evidence.get("hijacking"):
+                print(f" Hijacking: {f.evidence['hijacking']['hijack_risk_score']}/100")
+            if f.evidence.get("routing"):
+                print(f" Routing: {f.evidence['routing']['routing_risk_score']}/100")
+            if f.evidence.get("shared_state"):
+                print(f" Shared State: {f.evidence['shared_state']['injection_risk_score']}/100")
+            if f.evidence.get("leakage"):
+                print(f" Cross-Agent Leakage: {f.evidence['leakage']['leakage_risk_score']}/100")
+            if f.evidence.get("self_mod"):
+                print(f" Self-Mod: {f.evidence['self_mod']['self_mod_risk_score']}/100")
+            if f.remediation_hint:
+                print(f" Remediation: {f.remediation_hint}")
+
+        if args.ci:
+            critical_count = sum(1 for f in unique_findings if f.severity == Severity.CRITICAL)
+            if critical_count > 0:
+                print(f"\n❌ CI fail: {critical_count} critical findings")
+                exit(1)
+            else:
+                print(f"\n✅ CI pass: {len(unique_findings)} findings")
+
+        print("\n✅ Done.")

@@ -1,0 +1,92 @@
+{
+  "$id": "urn:agentsec-evidence:schema:repository-intake-spec-v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "archive_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Archive Sha256",
+      "type": "string"
+    },
+    "contract": {
+      "const": "repository-intake-spec-v1",
+      "default": "repository-intake-spec-v1",
+      "title": "Contract",
+      "type": "string"
+    },
+    "expected_bytes": {
+      "maximum": 33554432,
+      "minimum": 0,
+      "title": "Expected Bytes",
+      "type": "integer"
+    },
+    "expected_files": {
+      "maximum": 1000,
+      "minimum": 1,
+      "title": "Expected Files",
+      "type": "integer"
+    },
+    "license_status": {
+      "enum": [
+        "identified",
+        "unknown"
+      ],
+      "title": "License Status",
+      "type": "string"
+    },
+    "raw_commit_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Raw Commit Sha256",
+      "type": "string"
+    },
+    "revision": {
+      "pattern": "^[0-9a-f]{40}$",
+      "title": "Revision",
+      "type": "string"
+    },
+    "role": {
+      "enum": [
+        "development",
+        "formative-pilot",
+        "demo"
+      ],
+      "title": "Role",
+      "type": "string"
+    },
+    "root_tree": {
+      "pattern": "^[0-9a-f]{40}$",
+      "title": "Root Tree",
+      "type": "string"
+    },
+    "source_label": {
+      "minLength": 1,
+      "title": "Source Label",
+      "type": "string"
+    },
+    "source_scanning_authorization": {
+      "const": "not-granted",
+      "default": "not-granted",
+      "title": "Source Scanning Authorization",
+      "type": "string"
+    },
+    "tree_response_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Tree Response Sha256",
+      "type": "string"
+    }
+  },
+  "required": [
+    "source_label",
+    "revision",
+    "root_tree",
+    "archive_sha256",
+    "raw_commit_sha256",
+    "tree_response_sha256",
+    "expected_files",
+    "expected_bytes",
+    "license_status",
+    "role"
+  ],
+  "title": "RepositoryIntakeSpec",
+  "type": "object"
+}

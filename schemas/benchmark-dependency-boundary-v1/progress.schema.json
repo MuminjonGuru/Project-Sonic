@@ -1,0 +1,329 @@
+{
+  "$defs": {
+    "DependencyBoundaryRow": {
+      "additionalProperties": false,
+      "properties": {
+        "attempt_id": {
+          "anyOf": [
+            {
+              "pattern": "^attempt_[0-9a-f]{32}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Attempt Id"
+        },
+        "case_id": {
+          "pattern": "^[a-z0-9][a-z0-9_.-]{0,79}$",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "cell_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Cell Id",
+          "type": "string"
+        },
+        "eligible_packages": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Eligible Packages"
+        },
+        "finding_records": {
+          "default": null,
+          "title": "Finding Records",
+          "type": "null"
+        },
+        "input_failure": {
+          "anyOf": [
+            {
+              "enum": [
+                "malformed-lockfile",
+                "unsupported-lockfile-version"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Input Failure"
+        },
+        "repetition": {
+          "title": "Repetition",
+          "type": "integer"
+        },
+        "run_id": {
+          "anyOf": [
+            {
+              "pattern": "^dep-run-[0-9a-f]{32}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Run Id"
+        },
+        "scanner_invocations": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Scanner Invocations"
+        },
+        "separate_local_packages": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Separate Local Packages"
+        },
+        "stages": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/DependencyBoundaryStage"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Stages"
+        },
+        "state": {
+          "enum": [
+            "not-attempted",
+            "completed-with-findings",
+            "completed-without-findings",
+            "partial-analysis",
+            "execution-failed",
+            "interrupted"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "verified_terminal_attempt": {
+          "default": false,
+          "title": "Verified Terminal Attempt",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "cell_id",
+        "case_id",
+        "repetition",
+        "state"
+      ],
+      "title": "DependencyBoundaryRow",
+      "type": "object"
+    },
+    "DependencyBoundaryStage": {
+      "additionalProperties": false,
+      "properties": {
+        "advisory_match_records": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Advisory Match Records"
+        },
+        "native_exit_code": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Native Exit Code"
+        },
+        "output_status": {
+          "enum": [
+            "parsed",
+            "no-report-no-packages",
+            "not-run",
+            "input-parse-failed"
+          ],
+          "title": "Output Status",
+          "type": "string"
+        },
+        "package_observations": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Package Observations"
+        },
+        "stage": {
+          "enum": [
+            "lockfile",
+            "syft",
+            "cyclonedx",
+            "osv-direct",
+            "osv-sbom"
+          ],
+          "title": "Stage",
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "complete",
+            "partial",
+            "failed",
+            "unsupported",
+            "not-produced"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "unique_pypi_projections": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Unique Pypi Projections"
+        }
+      },
+      "required": [
+        "stage",
+        "state",
+        "output_status"
+      ],
+      "title": "DependencyBoundaryStage",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "analysis_complete": {
+      "const": false,
+      "default": false,
+      "title": "Analysis Complete",
+      "type": "boolean"
+    },
+    "blocked": {
+      "title": "Blocked",
+      "type": "boolean"
+    },
+    "cells": {
+      "items": {
+        "$ref": "#/$defs/DependencyBoundaryRow"
+      },
+      "title": "Cells",
+      "type": "array"
+    },
+    "contract": {
+      "const": "benchmark-dependency-boundary-progress-v1",
+      "default": "benchmark-dependency-boundary-progress-v1",
+      "title": "Contract",
+      "type": "string"
+    },
+    "limitations": {
+      "default": [
+        "Existing empty/unresolved/malformed/unsupported development inputs only",
+        "Expected parser failures remain failed and block the session; no retry or bypass",
+        "Missing scanner reports have null counts, even when native exit says no packages",
+        "Partial evidence is not clean analysis, safety or independent oracle agreement",
+        "No target execution or tool/database refresh; UI and scoring are separate work"
+      ],
+      "items": {
+        "type": "string"
+      },
+      "title": "Limitations",
+      "type": "array"
+    },
+    "newly_attempted_cells": {
+      "maximum": 12,
+      "minimum": 0,
+      "title": "Newly Attempted Cells",
+      "type": "integer"
+    },
+    "plan_semantic_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Plan Semantic Sha256",
+      "type": "string"
+    },
+    "plan_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Plan Sha256",
+      "type": "string"
+    },
+    "reused_verified_cells": {
+      "maximum": 12,
+      "minimum": 0,
+      "title": "Reused Verified Cells",
+      "type": "integer"
+    },
+    "scoring_implemented": {
+      "const": false,
+      "default": false,
+      "title": "Scoring Implemented",
+      "type": "boolean"
+    },
+    "session": {
+      "title": "Session",
+      "type": "string"
+    },
+    "workflow_complete": {
+      "title": "Workflow Complete",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "plan_sha256",
+    "plan_semantic_sha256",
+    "session",
+    "cells",
+    "workflow_complete",
+    "blocked",
+    "newly_attempted_cells",
+    "reused_verified_cells"
+  ],
+  "title": "DependencyBoundaryProgress",
+  "type": "object"
+}

@@ -1,0 +1,284 @@
+{
+  "$defs": {
+    "ResearchPassRow": {
+      "additionalProperties": false,
+      "properties": {
+        "analysis_state": {
+          "enum": [
+            "not-established",
+            "incomplete"
+          ],
+          "title": "Analysis State",
+          "type": "string"
+        },
+        "finding_records": {
+          "minimum": 0,
+          "title": "Finding Records",
+          "type": "integer"
+        },
+        "key": {
+          "title": "Key",
+          "type": "string"
+        },
+        "native_exit_code": {
+          "enum": [
+            0,
+            2
+          ],
+          "title": "Native Exit Code",
+          "type": "integer"
+        },
+        "repetition": {
+          "maximum": 2,
+          "minimum": 1,
+          "title": "Repetition",
+          "type": "integer"
+        },
+        "role": {
+          "enum": [
+            "research",
+            "repository-policy"
+          ],
+          "title": "Role",
+          "type": "string"
+        },
+        "semantic_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Semantic Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "key",
+        "role",
+        "repetition",
+        "analysis_state",
+        "native_exit_code",
+        "finding_records",
+        "semantic_sha256"
+      ],
+      "title": "ResearchPassRow",
+      "type": "object"
+    },
+    "ResearchRow": {
+      "additionalProperties": false,
+      "properties": {
+        "attempt_id": {
+          "anyOf": [
+            {
+              "pattern": "^attempt_[0-9a-f]{32}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Attempt Id"
+        },
+        "case_id": {
+          "pattern": "^[a-z0-9][a-z0-9_.-]{0,79}$",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "case_state": {
+          "anyOf": [
+            {
+              "enum": [
+                "observed",
+                "policy-refused",
+                "syntax-refused"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Case State"
+        },
+        "cell_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Cell Id",
+          "type": "string"
+        },
+        "finding_records": {
+          "default": null,
+          "title": "Finding Records",
+          "type": "null"
+        },
+        "repetition": {
+          "const": 1,
+          "default": 1,
+          "title": "Repetition",
+          "type": "integer"
+        },
+        "rows": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/ResearchPassRow"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rows"
+        },
+        "run_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Run Id"
+        },
+        "scanner_invocations": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Scanner Invocations"
+        },
+        "state": {
+          "enum": [
+            "not-attempted",
+            "partial-analysis",
+            "refused",
+            "execution-failed",
+            "interrupted"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "syntax_invocations": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Syntax Invocations"
+        },
+        "verified_terminal_attempt": {
+          "default": false,
+          "title": "Verified Terminal Attempt",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "cell_id",
+        "case_id",
+        "state"
+      ],
+      "title": "ResearchRow",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "analysis_complete": {
+      "const": false,
+      "default": false,
+      "title": "Analysis Complete",
+      "type": "boolean"
+    },
+    "blocked": {
+      "title": "Blocked",
+      "type": "boolean"
+    },
+    "cells": {
+      "items": {
+        "$ref": "#/$defs/ResearchRow"
+      },
+      "maxItems": 15,
+      "minItems": 15,
+      "title": "Cells",
+      "type": "array"
+    },
+    "contract": {
+      "const": "benchmark-research-progress-v1",
+      "default": "benchmark-research-progress-v1",
+      "title": "Contract",
+      "type": "string"
+    },
+    "limitations": {
+      "default": [
+        "Controlled development evidence, not independent accuracy or held-out evaluation",
+        "Expected findings are frozen but never control execution success",
+        "Keep views/repetitions separate; no aggregated vulnerability count",
+        "Only verified whole-cell reuse; failure/interruption blocks without retry",
+        "Replay requires original host paths and frozen source/rules"
+      ],
+      "items": {
+        "type": "string"
+      },
+      "title": "Limitations",
+      "type": "array"
+    },
+    "newly_attempted_cells": {
+      "maximum": 15,
+      "minimum": 0,
+      "title": "Newly Attempted Cells",
+      "type": "integer"
+    },
+    "plan_semantic_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Plan Semantic Sha256",
+      "type": "string"
+    },
+    "plan_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Plan Sha256",
+      "type": "string"
+    },
+    "reused_verified_cells": {
+      "maximum": 15,
+      "minimum": 0,
+      "title": "Reused Verified Cells",
+      "type": "integer"
+    },
+    "scoring_implemented": {
+      "const": false,
+      "default": false,
+      "title": "Scoring Implemented",
+      "type": "boolean"
+    },
+    "session": {
+      "title": "Session",
+      "type": "string"
+    },
+    "workflow_complete": {
+      "title": "Workflow Complete",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "plan_sha256",
+    "plan_semantic_sha256",
+    "session",
+    "cells",
+    "workflow_complete",
+    "blocked",
+    "newly_attempted_cells",
+    "reused_verified_cells"
+  ],
+  "title": "ResearchProgress",
+  "type": "object"
+}

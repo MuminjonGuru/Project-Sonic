@@ -1,0 +1,1202 @@
+import ast
+import re
+import os
+import json
+from pathlib import Path
+from dataclasses import dataclass, field
+from typing import List, Dict, Any, Optional, Tuple, Set
+from enum import Enum
+
+
+
+class Severity(Enum):
+    CRITICAL = "critical"
+    HIGH = "high"
+    MEDIUM = "medium"
+    LOW = "low"
+
+
+
+class Category(Enum):
+    SELF_PROMPT = "self_prompt"
+    TOOL_REGENERATION = "tool_regeneration"
+    MEMORY_STRATEGY = "memory_strategy"
+    CONTEXT_TUNING = "context_tuning"
+    SELF_EVALUATION = "self_evaluation"
+    PERSISTENCE = "persistence"
+    INJECTION = "injection"
+    VALIDATION = "validation"
+
+
+
+@dataclass
+class Finding:
+    id: str
+    title: str
+    severity: Severity
+    category: Category
+    description: str
+    evidence: Dict[str, Any]
+    location: Optional[str] = None
+    rule_id: Optional[str] = None
+    remediation_hint: Optional[str] = None
+    references: List[str] = field(default_factory=list)
+    tags: List[str] = field(default_factory=list)
+    context: Dict[str, Any] = field(default_factory=dict)
+
+
+
+@dataclass
+class ScannerContext:
+    source_path: Path
+    config: Dict[str, Any] = field(default_factory=dict)
+    rules: List[Dict[str, Any]] = field(default_factory=list)
+    mcp_self_mod_roots: List[Dict[str, Any]] = field(default_factory=list)
+
+
+
+# === SELF-MODIFICATION PATTERN DETECTORS (EXPANDED) ===
+
+SELF_MOD_PATTERNS = {
+    "prompt": [
+        r"update_system_prompt",
+        r"system_prompt\s*=\s*",
+        r"prompt_template\.update",
+    ],
+    "tool": [
+        r"generate_tools",
+        r"update_tool_signature",
+        r"tool_signatures\s*=\s*",
+    ],
+    "memory": [
+        r"update_memory",
+        r"memory\s*=\s*",
+        r"memory_strategy\s*=\s*",
+    ],
+    "context": [
+        r"max_tokens\s*=\s*\d+",
+        r"context_window\s*=\s*",
+        r"max_history\s*=\s*",
+    ],
+    "evaluation": [
+        r"evaluate\(self\)",
+        r"self_evaluate",
+        r"update\(self\)",
+    ],
+}
+
+# Common persistence patterns
+PERSISTENCE_PATTERNS = {
+    "file": [
+        r"save.*self|persist.*self",
+        r"write.*config",
+    ],
+    "db": [
+        r"db\.save.*self",
+        r"redis\.set.*self",
+        r"sqlite\.execute.*self",
+    ],
+    "cloud": [
+        r"s3\.put.*self",
+        r"gcs\.upload.*self",
+        r"azure\.blob.*self",
+    ],
+}
+
+
+
+def is_self_modification(func_name: str) -> bool:
+    """Detect if function is likely a self-modification operation."""
+    func_lower = func_name.lower()
+    return any(
+        p in func_lower
+        for p in ["update", "rewrite", "regenerate", "tune", "evaluate", "self"]
+    )
+
+
+
+def analyze_self_mod_persistence(path: str, content: Optional[str] = None) -> Dict[str, Any]:
+    """Analyze self-modification persistence: file, db, or cloud."""
+    if content and any(p in content for p in ["db.save", "redis.set", "sqlite.execute"]):
+        return {"type": "db", "confidence": 0.8}
+    if any(path.endswith(ext) for ext in [".json", ".yaml", ".pkl"]):
+        return {"type": "file", "confidence": 0.7}
+    if any(ext in path.lower() for ext in ["/s3/", "/gcs/", "azure/"]):
+        return {"type": "cloud", "confidence": 0.9}
+    return {"type": "unknown", "confidence": 0.5}
+
+
+
+# === LLM-DRIVEN DETECTION (EXPANDED) ===
+
+def is_llm_driven_modification(code_snippet: str) -> Dict[str, Any]:
+    """Detect if modification is LLM-driven."""
+    llm_indicators = 0
+    if re.search(r"llm\.(decide|suggest|generate|propose)", code_snippet):
+        llm_indicators += 25
+    if re.search(r"prompt\s*=\s*llm", code_snippet):
+        llm_indicators += 20
+    if re.search(r"llm\.suggest.*self", code_snippet):
+        llm_indicators += 25
+    if re.search(r"agent\.response\s*\.\s*(update|rewrite)", code_snippet):
+        llm_indicators += 30
+
+    return {
+        "llm_driven_score": min(100, llm_indicators),
+        "llm_drivers": [
+            "decide",
+            "suggest",
+            "generate",
+            "propose",
+        ],
+        "is_llm_driven": llm_indicators >= 40,
+    }
+
+
+
+# === SELF-MODIFICATION INJECTION VECTORS (NEW) ===
+
+def score_self_mod_injection(code_snippet: str) -> Dict[str, Any]:
+    """Score how prone a self-modification is to injection vectors."""
+    injection_risks = 0
+    if re.search(r"agent\.prompt\s*\+=\s*|agent\.prompt\s*=\s*\$\{", code_snippet):
+        injection_risks += 25
+    if re.search(r"eval\s*\(\s*response", code_snippet):
+        injection_risks += 25
+    if re.search(r"exec\s*\(\s*response", code_snippet):
+        injection_risks += 25
+    if re.search(r"prompt\s*=\s*user", code_snippet):
+        injection_risks += 25
+
+    return {
+        "injection_risk_score": min(100, injection_risks),
+        "injection_vectors": [
+            "direct-concatenation",
+            "eval-response",
+            "exec-response",
+            "user-prompt",
+        ],
+        "is_vulnerable": injection_risks >= 50,
+    }
+
+
+
+# === VALIDATION HOOKS DETECTOR (NEW) ===
+
+def score_validation_hooks(code_snippet: str) -> Dict[str, Any]:
+    """Score how thorough validation is for self-modification."""
+    validation_risks = 0
+    if re.search(r"validate\s*\(|self\.check\s*\(", code_snippet):
+        validation_risks += 25
+    if re.search(r"verify.*self|validate.*self", code_snippet):
+        validation_risks += 25
+    if re.search(r"pre_hook|post_hook", code_snippet):
+        validation_risks += 20
+    if re.search(r"approval\s*=\s*true", code_snippet):
+        validation_risks += 20
+
+    return {
+        "validation_risk_score": min(100, validation_risks),
+        "validation_vectors": [
+            "validate-self",
+            "verify-self",
+            "pre-post-hooks",
+            "approval",
+        ],
+        "is_thorough": validation_risks >= 60,
+    }
+
+
+
+# === SELF-MODIFICATION DRIFT DETECTOR (NEW) ===
+
+def score_self_mod_drift(code_snippet: str) -> Dict[str, Any]:
+    """Score how likely a self-modification includes drift detection."""
+    drift_risks = 0
+    if re.search(r"diff\s*\(\s*self|diff\(self\.memory", code_snippet):
+        drift_risks += 25
+    if re.search(r"version\s*=\s*|version_tag", code_snippet):
+        drift_risks += 20
+    if re.search(r"rollback.*self|revert.*self", code_snippet):
+        drift_risks += 20
+    if re.search(r"snapshot.*self|commit.*self", code_snippet):
+        drift_risks += 20
+
+    return {
+        "drift_risk_score": min(100, drift_risks),
+        "drift_vectors": [
+            "diffing",
+            "versioning",
+            "rollback",
+            "snapshot",
+        ],
+        "is_vulnerable": drift_risks >= 50,
+    }
+
+
+
+# === SELF-MODIFICATION LOOPS DETECTOR (NEW) ===
+
+def score_self_mod_loops(code_snippet: str) -> Dict[str, Any]:
+    """Score how likely a self-modification includes recursive loops."""
+    loops_risks = 0
+    if re.search(r"agent\.update\(\)\.evaluate\(\)\.update\(\)", code_snippet):
+        loops_risks += 30
+    if re.search(r"while.*self\..*update", code_snippet):
+        loops_risks += 25
+    if re.search(r"for.*self\.", code_snippet):
+        loops_risks += 20
+    if re.search(r"recursion.*self", code_snippet):
+        loops_risks += 25
+
+    return {
+        "loops_risk_score": min(100, loops_risks),
+        "loop_vectors": [
+            "recursive-update",
+            "while-update",
+            "for-self",
+            "recursion",
+        ],
+        "is_vulnerable": loops_risks >= 50,
+    }
+
+
+
+# === CONTEXT WINDOW OVERFLOW IN SELF-MOD (NEW) ===
+
+def score_context_overflow_self_mod(code_snippet: str) -> Dict[str, Any]:
+    """Score how likely self-modification involves context expansion."""
+    overflow_risks = 0
+    if re.search(r"max_tokens\s*=\s*(?:\d+|None)|max_tokens\s*\*=\s*\d+", code_snippet):
+        overflow_risks += 25
+    if re.search(r"context_window\s*=\s*(?:large|unlimited)", code_snippet):
+        overflow_risks += 20
+    if re.search(r"max_history\s*=\s*None", code_snippet):
+        overflow_risks += 20
+    if re.search(r"truncate\s*=\s*False", code_snippet):
+        overflow_risks += 15
+
+    return {
+        "overflow_risk_score": min(100, overflow_risks),
+        "overflow_vectors": [
+            "max-tokens",
+            "context-window",
+            "max-history",
+            "truncation",
+        ],
+        "is_vulnerable": overflow_risks >= 50,
+    }
+
+
+
+# === MEMORY-TO-CODE PIPELINES DETECTOR (NEW) ===
+
+def score_memory_to_code_self_mod(code_snippet: str) -> Dict[str, Any]:
+    """Score how likely self-modified memory is used in `eval()`/`exec()` pipelines."""
+    to_code_risks = 0
+    if re.search(r"eval\s*\(\s*memory", code_snippet):
+        to_code_risks += 30
+    if re.search(r"exec\s*\(\s*memory", code_snippet):
+        to_code_risks += 30
+    if re.search(r"memory\s*=\s*eval", code_snippet):
+        to_code_risks += 20
+    if re.search(r"code\s*=\s*memory", code_snippet):
+        to_code_risks += 20
+
+    return {
+        "to_code_risk_score": min(100, to_code_risks),
+        "to_code_vectors": [
+            "eval-memory",
+            "exec-memory",
+            "memory-as-code",
+        ],
+        "is_vulnerable": to_code_risks >= 50,
+    }
+
+
+
+# === FRAMEWORK MISMATCH DETECTOR (NEW) ===
+
+FRAMEWORK_PATTERNS = {
+    "langchain": [
+        r"PromptTemplate\.update",
+        r"ChatMessageHistory\.update",
+        r"agent\.update_tools",
+    ],
+    "autogen": [
+        r"ConversableAgent\.update",
+        r"user_proxy\.update_memory",
+        r"assistant\.update_tool_signature",
+    ],
+    "mcp": [
+        r"state\.store.*self",
+        r"context\.store.*self",
+        r"memory\.persist.*self",
+    ],
+}
+
+
+
+def detect_framework(path: Path, source: str) -> List[str]:
+    """Detect which agent frameworks are used in the code."""
+    frameworks = []
+    for fw, patterns in FRAMEWORK_PATTERNS.items():
+        if any(re.search(p, source, re.IGNORECASE) for p in patterns):
+            frameworks.append(fw)
+    return frameworks
+
+
+
+def score_framework_mismatch(code_snippet: str, frameworks: List[str]) -> Dict[str, Any]:
+    """Score how likely framework-specific patterns are mismatched."""
+    mismatch_risks = 0
+    if "langchain" in frameworks and re.search(r"PromptTemplate", code_snippet):
+        mismatch_risks += 20
+    if "autogen" in frameworks and re.search(r"ConversableAgent", code_snippet):
+        mismatch_risks += 20
+    if "mcp" in frameworks and re.search(r"state\.store", code_snippet):
+        mismatch_risks += 20
+    if len(frameworks) > 2:
+        mismatch_risks += 20 # multi-framework = higher mismatch risk
+
+    return {
+        "mismatch_risk_score": min(100, mismatch_risks),
+        "mismatch_vectors": frameworks,
+        "is_vulnerable": mismatch_risks >= 40,
+    }
+
+
+
+# === PERSISTENCE DETECTOR (NEW) ===
+
+def score_persistence(code_snippet: str) -> Dict[str, Any]:
+    """Score how likely a self-modification includes persistence."""
+    persistence_risks = 0
+    if re.search(r"save.*self|persist.*self", code_snippet):
+        persistence_risks += 25
+    if re.search(r"write.*config|dump.*self", code_snippet):
+        persistence_risks += 25
+    if re.search(r"version\s*=\s*|version_tag", code_snippet):
+        persistence_risks += 20
+    if re.search(r"commit.*self|history.*self", code_snippet):
+        persistence_risks += 20
+
+    return {
+        "persistence_risk_score": min(100, persistence_risks),
+        "persistence_vectors": [
+            "save-persist",
+            "write-config",
+            "versioning",
+            "commit-history",
+        ],
+        "is_persistent": persistence_risks >= 50,
+    }
+
+
+
+# === SECURITY SCORING ENGINE (EXPANDED) ===
+
+def compute_risk_score(finding: Finding, context: ScannerContext = None) -> Dict[str, Any]:
+    """Compute dynamic risk score (0–100) and confidence level for self-modification findings."""
+    base = {
+        "critical": 90,
+        "high": 70,
+        "medium": 50,
+        "low": 30,
+    }.get(finding.severity.value, 40)
+
+    evidence = finding.evidence
+    llm_driven = evidence.get("llm_driven", {})
+    injection = evidence.get("injection", {})
+    validation = evidence.get("validation", {})
+    drift = evidence.get("drift", {})
+    loops = evidence.get("loops", {})
+    overflow = evidence.get("overflow", {})
+    to_code = evidence.get("to_code", {})
+    persistence = evidence.get("persistence", {})
+    framework_mismatch = evidence.get("framework_mismatch", {})
+
+    llm_modifier = llm_driven.get("llm_driven_score", 0) if isinstance(llm_driven, dict) else 0
+    injection_modifier = injection.get("injection_risk_score", 0) if isinstance(injection, dict) else 0
+    validation_modifier = validation.get("validation_risk_score", 0) if isinstance(validation, dict) else 0
+    drift_modifier = drift.get("drift_risk_score", 0) if isinstance(drift, dict) else 0
+    loops_modifier = loops.get("loops_risk_score", 0) if isinstance(loops, dict) else 0
+    overflow_modifier = overflow.get("overflow_risk_score", 0) if isinstance(overflow, dict) else 0
+    to_code_modifier = to_code.get("to_code_risk_score", 0) if isinstance(to_code, dict) else 0
+    persistence_modifier = persistence.get("persistence_risk_score", 0) if isinstance(persistence, dict) else 0
+    framework_modifier = framework_mismatch.get("mismatch_risk_score", 0) if isinstance(framework_mismatch, dict) else 0
+
+    final_score = min(
+        100,
+        base
+        + llm_modifier
+        + injection_modifier
+        + validation_modifier
+        + drift_modifier
+        + loops_modifier
+        + overflow_modifier
+        + to_code_modifier
+        + persistence_modifier
+        + framework_modifier,
+    )
+
+    evidence_items = list(evidence.items())
+    confidence = 0.5 + (len(evidence_items) / 12)
+
+    return {
+        "risk_score": final_score,
+        "llm_modifier": llm_modifier,
+        "injection_modifier": injection_modifier,
+        "validation_modifier": validation_modifier,
+        "drift_modifier": drift_modifier,
+        "loops_modifier": loops_modifier,
+        "overflow_modifier": overflow_modifier,
+        "to_code_modifier": to_code_modifier,
+        "persistence_modifier": persistence_modifier,
+        "framework_modifier": framework_modifier,
+        "confidence": round(confidence, 2),
+    }
+
+
+
+# === RULES (22 RULES) — START — ===
+
+DEFAULT_RULES = {
+    "agent_self_modification": {
+        "id_prefix": "SELF-MOD",
+        "description": "Detection of agent self-modification patterns",
+        "rules": [
+            # BASE (001–015)
+            {
+                "id": "SELF-MOD-001",
+                "name": "Self-prompt injection: agent updates its own system prompt",
+                "category": Category.SELF_PROMPT,
+                "severity": Severity.HIGH,
+                "patterns": [
+                    r"agent\.update_system_prompt",
+                    r"system_prompt\s*=\s*",
+                    r"prompt_template\.update",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "prompt_change": match.group(0)[:60] if match else "unknown",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Validate system prompt updates; avoid direct concatenation of user/LLM inputs.",
+            },
+            {
+                "id": "SELF-MOD-002",
+                "name": "Tool regeneration: agent regenerates tools based on LLM response",
+                "category": Category.TOOL_REGENERATION,
+                "severity": Severity.HIGH,
+                "patterns": [
+                    r"agent\.generate_tools",
+                    r"tools\s*=\s*llm\.generate_tools",
+                    r"update_tool_signature",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "tool_change": match.group(0)[:60] if match else "unknown",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Validate regenerated tools; avoid tool generation based on untrusted LLM inputs.",
+            },
+            {
+                "id": "SELF-MOD-003",
+                "name": "Memory strategy change: agent switches to a different memory backend",
+                "category": Category.MEMORY_STRATEGY,
+                "severity": Severity.MEDIUM,
+                "patterns": [
+                    r"agent\.memory\s*=\s*",
+                    r"memory_strategy\s*=\s*",
+                    r"memory\s*=\s*PersistentMemory",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "memory_change": match.group(0)[:60] if match else "unknown",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Validate memory backend changes; ensure persistence and security match requirements.",
+            },
+            {
+                "id": "SELF-MOD-004",
+                "name": "Context window tuning: agent increases context window beyond defaults",
+                "category": Category.CONTEXT_TUNING,
+                "severity": Severity.MEDIUM,
+                "patterns": [
+                    r"max_tokens\s*=\s*(?:\d+|None)",
+                    r"context_window\s*=\s*(?:large|unlimited)",
+                    r"max_history\s*=\s*None",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "tuning_change": match.group(0)[:60] if match else "unknown",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Set reasonable max tokens; avoid `max_tokens=None` for production.",
+            },
+            {
+                "id": "SELF-MOD-005",
+                "name": "Self-evaluation loop: agent evaluates and updates itself without external review",
+                "category": Category.SELF_EVALUATION,
+                "severity": Severity.MEDIUM,
+                "patterns": [
+                    r"evaluate\(self\)",
+                    r"self_evaluate",
+                    r"update\(self\)",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "eval_change": match.group(0)[:60] if match else "unknown",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Add external review hooks for self-evaluation; avoid fully autonomous updates.",
+            },
+            {
+                "id": "SELF-MOD-006",
+                "name": "Persistence of self-mod: changes saved to file/DB for long-term reuse",
+                "category": Category.PERSISTENCE,
+                "severity": Severity.MEDIUM,
+                "patterns": [
+                    r"save_self",
+                    r"persist_self",
+                    r"write_config",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "persistence_type": match.group(0)[:60] if match else "unknown",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Version self-modifications; validate persisted changes before reuse.",
+            },
+            {
+                "id": "SELF-MOD-007",
+                "name": "LLM-driven modification: agent makes changes based on LLM suggestion/response",
+                "category": Category.SELF_PROMPT,
+                "severity": Severity.HIGH,
+                "patterns": [
+                    r"agent\.update\s*\(\s*response\s*=\s*llm",
+                    r"llm\.suggest.*self",
+                    r"agent\.response\s*\.\s*(update|rewrite)",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "llm_change": match.group(0)[:60] if match else "unknown",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Validate LLM suggestions; use human-in-the-loop for critical changes.",
+            },
+            {
+                "id": "SELF-MOD-008",
+                "name": "Agent framework-specific: LangChain self-mod patterns detected",
+                "category": Category.SELF_PROMPT,
+                "severity": Severity.LOW,
+                "patterns": [
+                    r"PromptTemplate\.update",
+                    r"ChatMessageHistory\.update",
+                    r"agent\.update_tools",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "framework": "langchain",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Use LangChain-specific best practices for self-modifications.",
+            },
+            {
+                "id": "SELF-MOD-009",
+                "name": "Agent framework-specific: AutoGen self-mod patterns detected",
+                "category": Category.SELF_PROMPT,
+                "severity": Severity.LOW,
+                "patterns": [
+                    r"ConversableAgent\.update",
+                    r"user_proxy\.update_memory",
+                    r"assistant\.update_tool_signature",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "framework": "autogen",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Pin AutoGen self-mod paths; use `save_chat_history()` for persistence.",
+            },
+            {
+                "id": "SELF-MOD-010",
+                "name": "Agent framework-specific: MCP self-mod patterns detected",
+                "category": Category.SELF_PROMPT,
+                "severity": Severity.LOW,
+                "patterns": [
+                    r"state\.store.*self",
+                    r"context\.store.*self",
+                    r"memory\.persist.*self",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "framework": "mcp",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Explicitly declare MCP self-mod permissions; avoid implicit writes.",
+            },
+            {
+                "id": "SELF-MOD-011",
+                "name": "Self-modification injection: agent modifies itself using user/LLM input",
+                "category": Category.INJECTION,
+                "severity": Severity.HIGH,
+                "patterns": [
+                    r"agent\.prompt\s*\+=\s*|agent\.prompt\s*=\s*\$\{",
+                    r"eval\s*\(\s*response",
+                    r"exec\s*\(\s*response",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "injection_change": match.group(0)[:60] if match else "unknown",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Sanitize injection points; validate input before self-modification.",
+            },
+            {
+                "id": "SELF-MOD-012",
+                "name": "Self-modification validation: agent validates changes before committing",
+                "category": Category.VALIDATION,
+                "severity": Severity.MEDIUM,
+                "patterns": [
+                    r"validate\s*\(\s*self",
+                    r"self\.check\s*\(\s*",
+                    r"verify.*self",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "validation_change": match.group(0)[:60] if match else "unknown",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Add validation hooks for self-modifications; use external review for critical changes.",
+            },
+            {
+                "id": "SELF-MOD-013",
+                "name": "Self-modification drift: agent detects and handles drift between versions",
+                "category": Category.MEMORY_STRATEGY,
+                "severity": Severity.LOW,
+                "patterns": [
+                    r"diff\s*\(\s*self",
+                    r"version\s*=\s*|version_tag",
+                    r"rollback.*self",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "drift_change": match.group(0)[:60] if match else "unknown",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Version self-modifications; validate persisted changes before reuse.",
+            },
+            {
+                "id": "SELF-MOD-014",
+                "name": "Self-modification loops: agent includes recursive self-modifications",
+                "category": Category.SELF_EVALUATION,
+                "severity": Severity.MEDIUM,
+                "patterns": [
+                    r"agent\.update\(\)\.evaluate\(\)\.update\(\)",
+                    r"while.*self\..*update",
+                    r"for.*self\.",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "loop_change": match.group(0)[:60] if match else "unknown",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Add stopping conditions for self-mod loops; avoid infinite recursion.",
+            },
+            {
+                "id": "SELF-MOD-015",
+                "name": "Context window overflow in self-mod: agent expands context during self-modification",
+                "category": Category.CONTEXT_TUNING,
+                "severity": Severity.MEDIUM,
+                "patterns": [
+                    r"max_tokens\s*=\s*(?:\d+|None)|max_tokens\s*\*=\s*\d+",
+                    r"context_window\s*=\s*(?:large|unlimited)",
+                    r"max_history\s*=\s*None",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "overflow_change": match.group(0)[:60] if match else "unknown",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Set reasonable max tokens; avoid `max_tokens=None` for production.",
+            },
+            # — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — —
+            # NEW: CONTEXT & MEMORY TO CODE (101–122)
+            # — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — —
+            {
+                "id": "SELF-MOD-101",
+                "name": "Self-modification memory-to-code: agent evaluates or executes its own memory",
+                "category": Category.INJECTION,
+                "severity": Severity.HIGH,
+                "patterns": [
+                    r"eval\s*\(\s*memory",
+                    r"exec\s*\(\s*memory",
+                    r"memory\s*=\s*eval",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "memory_to_code_patterns": score_memory_to_code_self_mod(match.group(0)) if match else {},
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Sandbox memory evaluation; avoid `eval/exec` on untrusted memory.",
+            },
+            {
+                "id": "SELF-MOD-102",
+                "name": "Self-modification validation: agent validates changes using custom validation hooks",
+                "category": Category.VALIDATION,
+                "severity": Severity.MEDIUM,
+                "patterns": [
+                    r"validate\s*\(\s*self",
+                    r"self\.check\s*\(\s*",
+                    r"pre_hook|post_hook",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "validation_patterns": score_validation_hooks(match.group(0)) if match else {},
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Add validation hooks for self-modifications; use external review for critical changes.",
+            },
+            {
+                "id": "SELF-MOD-103",
+                "name": "Self-modification drift: agent detects drift between versions and handles rollbacks",
+                "category": Category.MEMORY_STRATEGY,
+                "severity": Severity.LOW,
+                "patterns": [
+                    r"diff\s*\(\s*self",
+                    r"version\s*=\s*|version_tag",
+                    r"rollback.*self",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "drift_patterns": score_self_mod_drift(match.group(0)) if match else {},
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Version self-modifications; validate persisted changes before reuse.",
+            },
+            {
+                "id": "SELF-MOD-104",
+                "name": "Self-modification loops: agent includes recursive self-modifications (e.g., update().evaluate().update())",
+                "category": Category.SELF_EVALUATION,
+                "severity": Severity.HIGH,
+                "patterns": [
+                    r"agent\.update\(\)\.evaluate\(\)\.update\(\)",
+                    r"while.*self\..*update",
+                    r"for.*self\.",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "loop_patterns": score_self_mod_loops(match.group(0)) if match else {},
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Add stopping conditions for self-mod loops; avoid infinite recursion.",
+            },
+            {
+                "id": "SELF-MOD-105",
+                "name": "Context window overflow in self-mod: agent expands context during self-modification (e.g., max_tokens *= 2)",
+                "category": Category.CONTEXT_TUNING,
+                "severity": Severity.MEDIUM,
+                "patterns": [
+                    r"max_tokens\s*=\s*(?:\d+|None)|max_tokens\s*\*=\s*\d+",
+                    r"context_window\s*=\s*(?:large|unlimited)",
+                    r"max_history\s*=\s*None",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "overflow_patterns": score_context_overflow_self_mod(match.group(0)) if match else {},
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Set reasonable max tokens; avoid `max_tokens=None` for production.",
+            },
+            {
+                "id": "SELF-MOD-106",
+                "name": "Self-modification injection: agent modifies itself using user/LLM input (e.g., agent.prompt += user_input)",
+                "category": Category.INJECTION,
+                "severity": Severity.HIGH,
+                "patterns": [
+                    r"agent\.prompt\s*\+=\s*|agent\.prompt\s*=\s*\$\{",
+                    r"eval\s*\(\s*response",
+                    r"exec\s*\(\s*response",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "injection_patterns": score_self_mod_injection(match.group(0)) if match else {},
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Sanitize injection points; validate input before self-modification.",
+            },
+            {
+                "id": "SELF-MOD-107",
+                "name": "Agent framework mismatch: agent uses framework-specific patterns that may not translate across frameworks",
+                "category": Category.SELF_PROMPT,
+                "severity": Severity.LOW,
+                "patterns": [
+                    r"PromptTemplate\.update",
+                    r"ConversableAgent\.update",
+                    r"state\.store.*self",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "framework_mismatch_patterns": score_framework_mismatch(match.group(0), ["langchain", "autogen", "mcp"]),
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Standardize framework patterns; validate cross-framework compatibility.",
+            },
+            {
+                "id": "SELF-MOD-108",
+                "name": "Persistence of self-mod: agent saves changes to file/DB for long-term reuse (e.g., agent.save_state('v2'))",
+                "category": Category.PERSISTENCE,
+                "severity": Severity.MEDIUM,
+                "patterns": [
+                    r"save_self",
+                    r"persist_self",
+                    r"write_config",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "persistence_patterns": score_persistence(match.group(0)) if match else {},
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Version self-modifications; validate persisted changes before reuse.",
+            },
+            {
+                "id": "SELF-MOD-109",
+                "name": "LLM-driven modification: agent makes changes based on LLM suggestion/response (e.g., agent.update(response=llm))",
+                "category": Category.SELF_PROMPT,
+                "severity": Severity.HIGH,
+                "patterns": [
+                    r"agent\.update\s*\(\s*response\s*=\s*llm",
+                    r"llm\.suggest.*self",
+                    r"agent\.response\s*\.\s*(update|rewrite)",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "llm_driven_patterns": is_llm_driven_modification(match.group(0)) if match else {},
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Validate LLM suggestions; use human-in-the-loop for critical changes.",
+            },
+            {
+                "id": "SELF-MOD-110",
+                "name": "Agent framework-specific: LangChain self-mod patterns detected (e.g., PromptTemplate.update)",
+                "category": Category.SELF_PROMPT,
+                "severity": Severity.LOW,
+                "patterns": [
+                    r"PromptTemplate\.update",
+                    r"ChatMessageHistory\.update",
+                    r"agent\.update_tools",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "framework": "langchain",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Use LangChain-specific best practices for self-modifications.",
+            },
+            {
+                "id": "SELF-MOD-111",
+                "name": "Agent framework-specific: AutoGen self-mod patterns detected (e.g., ConversableAgent.update)",
+                "category": Category.SELF_PROMPT,
+                "severity": Severity.LOW,
+                "patterns": [
+                    r"ConversableAgent\.update",
+                    r"user_proxy\.update_memory",
+                    r"assistant\.update_tool_signature",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "framework": "autogen",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Pin AutoGen self-mod paths; use `save_chat_history()` for persistence.",
+            },
+            {
+                "id": "SELF-MOD-112",
+                "name": "Agent framework-specific: MCP self-mod patterns detected (e.g., state.store.*self)",
+                "category": Category.SELF_PROMPT,
+                "severity": Severity.LOW,
+                "patterns": [
+                    r"state\.store.*self",
+                    r"context\.store.*self",
+                    r"memory\.persist.*self",
+                ],
+                "evidence_extractor": lambda node, match: {
+                    "framework": "mcp",
+                    "line": node.lineno,
+                },
+                "remediation_hint": "Explicitly declare MCP self-mod permissions; avoid implicit writes.",
+            },
+        ],
+        "rule_map": {},
+    }
+}
+
+# Initialize rule_map
+DEFAULT_RULES["agent_self_modification"]["rule_map"] = {
+    rule["id"]: rule for rule in DEFAULT_RULES["agent_self_modification"]["rules"]
+}
+
+
+
+# === AST SCANNER (EXPANDED) — PART 1 — ===
+
+def scan_ast_file(path: Path, context: ScannerContext) -> List[Finding]:
+    """Scan Python files for agent self-modification patterns (expanded)."""
+    findings = []
+    try:
+        source = path.read_text(encoding="utf-8")
+        tree = ast.parse(source, filename=str(path))
+
+        call_nodes = [n for n in ast.walk(tree) if isinstance(n, ast.Call)]
+
+        for node in call_nodes:
+            func_name = _get_call_name(node.func)
+            if not func_name:
+                continue
+
+            func_lower = func_name.lower()
+            if any(f in func_lower for f in ["update", "rewrite", "regenerate", "tune", "evaluate", "self"]):
+                source_snippet = _get_line_snippet(source, node.lineno)
+
+                for rule in context.rules:
+                    for pattern in rule["patterns"]:
+                        if re.search(pattern, source_snippet, re.IGNORECASE):
+                            # Compute additional metrics
+                            llm_driven = is_llm_driven_modification(source_snippet)
+                            injection = score_self_mod_injection(source_snippet)
+                            validation = score_validation_hooks(source_snippet)
+                            drift = score_self_mod_drift(source_snippet)
+                            loops = score_self_mod_loops(source_snippet)
+                            overflow = score_context_overflow_self_mod(source_snippet)
+                            to_code = score_memory_to_code_self_mod(source_snippet)
+                            persistence = score_persistence(source_snippet)
+                            framework = detect_framework(path, source_snippet)
+                            framework_mismatch = score_framework_mismatch(source_snippet, framework)
+
+                            evidence = rule["evidence_extractor"](node, None) | {
+                                "file": str(path),
+                                "code_line": source_snippet.strip(),
+                                "llm_driven": llm_driven,
+                                "injection": injection,
+                                "validation": validation,
+                                "drift": drift,
+                                "loops": loops,
+                                "overflow": overflow,
+                                "to_code": to_code,
+                                "persistence": persistence,
+                                "framework_mismatch": framework_mismatch,
+                                "frameworks": framework,
+                            }
+
+                            findings.append(
+                                Finding(
+                                    id=rule["id"],
+                                    title=rule["name"],
+                                    severity=rule["severity"],
+                                    category=rule["category"],
+                                    description=f"Found {func_name} usage matching pattern: {pattern}",
+                                    evidence=evidence,
+                                    location=f"{path}:{node.lineno}",
+                                    rule_id=rule["id"],
+                                    remediation_hint=rule.get("remediation_hint"),
+                                    references=[
+                                        "https://langchain-ai.github.io/langchain/",
+                                        "https://microsoft.github.io/autogen/",
+                                    ],
+                                    tags=[
+                                        "self-update" if "update" in func_lower else "self-mod",
+                                        "llm-driven" if llm_driven["is_llm_driven"] else None,
+                                        "injection" if injection["is_vulnerable"] else None,
+                                        "validation" if validation["is_thorough"] else None,
+                                        "persistence" if "save" in func_lower else None,
+                                    ] + framework,
+                                    context={
+                                        "framework": framework[0] if framework else "generic",
+                                        "llm_driven": llm_driven,
+                                        "injection": injection,
+                                        "validation": validation,
+                                        "drift": drift,
+                                        "loops": loops,
+                                        "overflow": overflow,
+                                        "to_code": to_code,
+                                        "persistence": persistence,
+                                        "framework_mismatch": framework_mismatch,
+                                    },
+                                    file_line_range=(node.lineno, node.end_lineno or node.lineno),
+                                )
+                            )
+    except Exception as e:
+        findings.append(
+            Finding(
+                id="SELF-MOD-099",
+                title="AST parse failed",
+                severity=Severity.LOW,
+                category=Category.SELF_PROMPT,
+                description=f"Failed to parse {path}: {e}",
+                evidence={"exception": str(e)},
+                context={"path": str(path)},
+            )
+        )
+    return findings
+
+
+
+def _get_call_name(func_node: ast.AST) -> Optional[str]:
+    if isinstance(func_node, ast.Name):
+        return func_node.id
+    if isinstance(func_node, ast.Attribute):
+        return f"{_get_call_name(func_node.value)}.{func_node.attr}"
+    if isinstance(func_node, ast.Call):
+        return f"{_get_call_name(func_node.func)}()"
+    return None
+
+
+
+def _get_line_snippet(source: str, lineno: int, context_lines: int = 3) -> str:
+    lines = source.splitlines()
+    start = max(0, lineno - 1 - context_lines)
+    end = min(len(lines), lineno + context_lines)
+    return "\n".join(
+        f"{i + 1:>5} | {line}"
+        for i, line in enumerate(lines[start:end], start=start)
+    )
+# === MCP SELF-MODIFICATION STORAGE PARSER (PART 2) ===
+
+def parse_mcp_self_mod_storage(root: Path) -> List[Dict[str, Any]]:
+    """Parse MCP config for self-modification storage patterns (e.g., state stores, context stores)."""
+    state_stores = []
+    config_files = list(root.rglob("mcp*.yaml")) + list(root.rglob("mcp*.yml")) + list(root.rglob("mcp*.json"))
+    for cfg_path in config_files:
+        try:
+            text = cfg_path.read_text()
+            data = json.loads(text) if cfg_path.suffix == ".json" else _load_yaml(text)
+
+            # Look for self-mod storage at top-level or under 'state' / 'memory' keys
+            if "state" in data:
+                states = data["state"] if isinstance(data["state"], list) else [data["state"]]
+                for state in states:
+                    if isinstance(state, dict):
+                        if "self" in str(state.get("path", "")).lower():
+                            state_stores.append({
+                                "path": state.get("path", "/"),
+                                "type": state.get("type", "memory"),
+                                "mode": state.get("mode", "read-write"),
+                                "source": str(cfg_path),
+                            })
+            if "memory" in data:
+                memories = data["memory"] if isinstance(data["memory"], list) else [data["memory"]]
+                for mem in memories:
+                    if isinstance(mem, dict):
+                        if "self" in str(mem.get("path", "")).lower():
+                            state_stores.append({
+                                "path": mem.get("path", "/"),
+                                "type": mem.get("type", "chat"),
+                                "mode": mem.get("mode", "read-write"),
+                                "source": str(cfg_path),
+                            })
+        except Exception:
+            continue
+    return state_stores
+
+
+
+def _load_yaml(text: str) -> Dict[str, Any]:
+    import yaml
+    return yaml.safe_load(text) or {}
+
+
+
+# === CLI (PART 2) ===
+
+if _name_ == "_main_":
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description="Scan for agent self-modification risks (expanded)",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  agent_self_modification_expanded.txt . --max-context-window 4096 --ignore-safe-paths
+  agent_self_modification_expanded.txt ./my_agent --min-severity=high --ci
+
+For more info: https://github.com/yourorg/agent-self-mod-scanner
+""",
+    )
+    parser.add_argument("path", type=Path, help="Project root to scan")
+    parser.add_argument("--no-mcp", action="store_true", help="Skip MCP self-mod storage parsing")
+    parser.add_argument("--min-severity", choices=["low", "medium", "high", "critical"], default="low")
+    parser.add_argument("--format", choices=["table", "json"], default="table")
+    parser.add_argument("--ci", action="store_true", help="CI mode: exit non-zero on critical findings")
+    parser.add_argument(
+        "--max-context-window", type=int, default=4096, help="Max context window size for tuning analysis"
+    )
+    args = parser.parse_args()
+
+    ctx = ScannerContext(
+        source_path=args.path,
+        config={
+            "min_severity": args.min_severity,
+            "max_context_window": args.max_context_window,
+        },
+        rules=DEFAULT_RULES["agent_self_modification"]["rules"].copy(),
+    )
+
+    findings = scan_ast_file(args.path, ctx)
+
+    # Optional MCP parsing
+    if not args.no_mcp:
+        ctx.mcp_self_mod_roots = parse_mcp_self_mod_storage(args.path)
+        for store in ctx.mcp_self_mod_roots:
+            if "self" in store["path"].lower() or store["type"] == "memory":
+                severity = Severity.HIGH if store["mode"] == "read-write" else Severity.MEDIUM
+                findings.append(
+                    Finding(
+                        id="SELF-MOD-MCP-001",
+                        title=f"MCP self-mod storage '{store['path']}' ({store['type']}, {store['mode']})",
+                        severity=severity,
+                        category=Category.PERSISTENCE,
+                        description=f"Self-mod storage type: {store['type']}; mode: {store['mode']}",
+                        evidence={
+                            "type": store["type"],
+                            "mode": store["mode"],
+                            "path": store["path"],
+                            "source": store["source"],
+                        },
+                        location=str(args.path),
+                    )
+                )
+
+    # Deduplicate
+    seen = set()
+    unique_findings: List[Finding] = []
+    for f in findings:
+        key = (f.id, f.location, hash(tuple(sorted(f.evidence.items()))))
+        if key not in seen:
+            seen.add(key)
+            unique_findings.append(f)
+
+    unique_findings.sort(key=lambda f: f.severity.value, reverse=True)
+
+    if args.format == "json":
+        output = []
+        for f in unique_findings:
+            output.append(
+                {
+                    **vars(f),
+                    "risk_score": compute_risk_score(f, ctx),
+                }
+            )
+        print(json.dumps(output, indent=2, default=str))
+    else:
+        print("\n🤖 Agent Self-Modification Scan Results (Expanded)")
+        print("=" * 60)
+
+        for f in unique_findings:
+            risk = compute_risk_score(f, ctx)
+            print(f"\n[{f.severity.value.upper()}] {f.id}: {f.title}")
+            print(f" Location: {f.location}")
+            print(f" Evidence: {f.evidence.get('prompt_change', f.evidence.get('tool_change', 'N/A'))}")
+            if f.evidence.get("llm_driven"):
+                print(f" LLM-Driven: {f.evidence['llm_driven']['llm_driven_score']}/100")
+            if f.evidence.get("injection"):
+                print(f" Injection: {f.evidence['injection']['injection_risk_score']}/100")
+            if f.evidence.get("validation"):
+                print(f" Validation: {f.evidence['validation']['validation_risk_score']}/100")
+            if f.evidence.get("drift"):
+                print(f" Drift: {f.evidence['drift']['drift_risk_score']}/100")
+            if f.evidence.get("loops"):
+                print(f" Loops: {f.evidence['loops']['loops_risk_score']}/100")
+            if f.evidence.get("overflow"):
+                print(f" Context Overflow: {f.evidence['overflow']['overflow_risk_score']}/100")
+            if f.evidence.get("to_code"):
+                print(f" Memory-to-Code: {f.evidence['to_code']['to_code_risk_score']}/100")
+            if f.evidence.get("framework_mismatch"):
+                print(f" Framework Mismatch: {f.evidence['framework_mismatch']['mismatch_risk_score']}/100")
+            if f.remediation_hint:
+                print(f" Remediation: {f.remediation_hint}")
+
+        if args.ci:
+            critical_count = sum(1 for f in unique_findings if f.severity == Severity.CRITICAL)
+            if critical_count > 0:
+                print(f"\n❌ CI fail: {critical_count} critical findings")
+                exit(1)
+            else:
+                print(f"\n✅ CI pass: {len(unique_findings)} findings")
+
+        print("\n✅ Done.")

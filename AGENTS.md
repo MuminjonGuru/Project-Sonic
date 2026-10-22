@@ -2,6 +2,20 @@
 
 ## Boundary
 
+22 October core-execution publication: the student approved committing this tested
+increment, pushing `feat/corpus-core-execution` and opening a PR as MuminjonGuru.
+This overrides the local-only instruction below for this increment. Leave merging
+to the student; keep private plans, target bytes, native evidence and outputs excluded.
+
+22 October core-execution continuation: the student requested the next planned local
+development increment after merging PR #21. `docs/corpus-core-execution.md` adds frozen
+preparation, explicit admission, sequential core execution/replay and offline JSON/HTML.
+Preserve all twenty inputs, three repetitions, the thirteen/seven baseline boundary,
+tool/rule pins, malformed/unsupported states and historical contracts. Preparation and
+authored tests do not authorize wider collection. Source-specific license/optional-stage
+review and a bound core admission precede public collection; no target execution or
+automatic retry. Keep changes local; this continuation does not authorize another push.
+
 22 October publication authorization: the student approved committing the reviewed local
 shared-validation, two-pilot reporting and corpus-input-validation changes in three logical
 commits, pushing the branch and opening a PR using the authenticated MuminjonGuru account.

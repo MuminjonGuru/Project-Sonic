@@ -2,6 +2,27 @@
 
 ## Boundary
 
+22 October publication: the collection driver and report-only recovery changes are
+approved for two commits and one PR under MuminjonGuru. This supersedes the earlier
+local-only restriction for this increment. Leave the merge to the repository owner.
+Keep private plans, downloaded targets, native evidence and generated reports out of
+Git. Commit and PR messages should describe the changes and verification only.
+
+22 October report-only recovery: after dbt completed 105 native invocations, its v1
+JSON report exceeded the unchanged 16 MiB file limit. The student explicitly approved
+a versioned chunked report and linked report-only recovery after native verification.
+See `docs/corpus-report-recovery.md`. Preserve the original failed collection and all
+runtime/rule/input/resource pins; do not alter `src/` or the frozen v1 driver/spec.
+New helpers live under `tools/`. A new linked plan must precede any pending scans.
+No scanner retry, dropping findings, limit increase, commit or push is authorized.
+
+22 October collection continuation: after merging PR #22, the student requested the
+planned admission/collection work. Keep the fixed twenty revisions and Python core,
+three repetitions, thirteen/seven baseline boundary and deterministic review protocol.
+The cohort helper binds separately reviewed admissions and existing pilot references;
+failed/interrupted attempts block without retry. Optional stages remain separately
+reviewed, not silently covered. No rule/pin changes, target execution or new push.
+
 22 October core-execution publication: the student approved committing this tested
 increment, pushing `feat/corpus-core-execution` and opening a PR as MuminjonGuru.
 This overrides the local-only instruction below for this increment. Leave merging

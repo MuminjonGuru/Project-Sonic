@@ -89,6 +89,16 @@ and produces replay-checked JSON/HTML evidence. Unsupported baselines remain exp
 optional stages are separate. Preparation or a successful run does not establish accuracy,
 independent review or confirmed vulnerabilities.
 
+The [collection driver](docs/corpus-collection-driver.md) freezes separately reviewed
+admissions, preserves the two existing pilot references and records sequential repository
+attempts in a hash-linked journal. Failed or interrupted attempts block continuation;
+optional stages and contextual finding review remain separate from core collection.
+
+[Chunked reporting and report-only recovery](docs/corpus-report-recovery.md) add an
+explicit linked continuation for a completed native attempt whose report exceeds the
+existing per-file budget. Original failures remain recorded; the versioned format
+preserves all observations without changing scanner limits or rerunning completed scans.
+
 For the admitted public pilots, detection uses existing tools under explicit, pinned profiles:
 
 - **Semgrep:** all 68 pinned, unchanged GitLab Python rules in the

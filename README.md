@@ -58,6 +58,7 @@ and reported. It does not implement a replacement SAST engine.
 | Infrastructure-as-Code | Pinned KICS execution, normalization and SARIF | Selected Terraform/Kubernetes queries and authored fixtures |
 | Dependencies | Direct OSV analysis compared with Syft -> CycloneDX -> OSV | Controlled PyPI cases and two pinned public-repository lockfiles |
 | Agent artifacts | Bounded validation worker -> pinned Agent Audit -> normalized evidence and SARIF | Thirteen baseline cases, four URL contrasts and two admitted public pilots, including Qdrant MCP JSON; per-file completion remains unknown |
+| Project-authored static families | Seven isolated workers, versioned conditions and explicit inventory/deferred rules | Shared authored validation and the two admitted Python pilots; file-local syntax is not runtime exploitability |
 | Artifact inventory and Git evidence | Filename candidates, commit/tree/blob replay and explicit all-file input decisions | Controlled cases; 47 files in the original pilot and 34 in Qdrant; inventory breadth is not detection breadth |
 | Selected input views | Verified byte copies, full-context policy guards and isolated Python/MCP validation | Controlled cases and explicitly approved pilot selections; a valid view alone does not authorize scanning |
 | Research Semgrep | Pinned 68-rule candidate with separate research and repository-policy views | Controlled cases; 26 Python files in the original pilot and 19 in Qdrant; no general admission or final profile freeze |
@@ -69,6 +70,18 @@ Offline HTML replaces the planned web UI. Bounded benchmark governance and scori
 implemented; broader intake, shareable delivery and held-out evaluation remain incomplete.
 
 ### Detection Rules and Data
+
+The [corpus preflight](docs/corpus-preflight.md) records twenty pinned candidates and checks
+complete Git bytes, selected Python paths, license evidence and unchanged stage size/policy
+limits. It does not scan those candidates or admit arbitrary URLs. The two existing pilots
+remain distinct from the eighteen prospective descriptive-study candidates; oversized baseline
+selections are explicit, never silently sharded or truncated.
+
+The next [isolated input-validation gate](docs/corpus-input-validation.md) binds prepared
+candidate inputs to bounded syntax-worker evidence and explicit per-tool eligibility. It
+does not run detectors or establish vulnerability coverage. The
+[descriptive collection protocol](docs/corpus-collection-protocol.md) fixes three repetitions
+and the bounded review sample before new corpus findings are collected.
 
 For the admitted public pilots, detection uses existing tools under explicit, pinned profiles:
 
@@ -96,8 +109,19 @@ at `c56ae5adf62bb78d852bf7bbcbc5d7b75e2bbe41`, keeping Python, actual MCP JSON a
 paths separate. All seven stages repeat semantically. The MCP analyzer reports an unversioned
 `uvx` launch; other reports require source context, not automatic vulnerability acceptance.
 All 111 eligible lockfile identities survive the name/version projection, but qualifier losses
-remain explicit. Raw evidence stays local. Common-report/HTML binding for this new contract is
-the next increment; it must not be loaded as the original pilot or shown as comprehensive coverage.
+remain explicit. Raw evidence stays local. Source-bound JSON/SARIF/HTML reporting for this
+contract is provided by the separate [repository evidence reporter](docs/repository-custom-rehearsal.md);
+it is not loaded as the original pilot or shown as comprehensive coverage.
+
+### Custom-Family Repository Rehearsal
+
+The [additive rehearsal](docs/repository-custom-rehearsal.md) binds all seven custom families
+to the same verified Python files in the two existing pilots, with three repetitions and
+offline JSON/SARIF/HTML reporting. Tool-execution 1.1.0 corrects postponed-annotation handling;
+the original 1.0.0 analyzer and historical evidence remain intact. The other six workers and
+baseline rule packs are unchanged. Custom findings, inventory, deferred IDs, native baselines
+and analysis limitations stay separate. The new CLI modules and reproducibility commands are
+documented in that guide; wider repositories still require explicit admission.
 
 ## Start Reviewing Here
 

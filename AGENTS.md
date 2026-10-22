@@ -2,6 +2,48 @@
 
 ## Boundary
 
+22 October publication authorization: the student approved committing the reviewed local
+shared-validation, two-pilot reporting and corpus-input-validation changes in three logical
+commits, pushing the branch and opening a PR using the authenticated MuminjonGuru account.
+Commit/PR messages describe changes and verification only. Leave merging to the student.
+This overrides earlier local-only instructions for these changes, not their technical scope.
+Private phase plans, original drafts, downloaded targets and generated evidence stay excluded.
+
+22 October input-validation follow-up: the student confirmed three fresh repetitions for wider
+collection and the bounded deterministic review sample (up to 60 custom condition records,
+12 per active family, and 20 baseline records; every improvement example separately reviewed).
+See `docs/corpus-collection-protocol.md`. This increment adds isolated syntax/input validation
+over all twenty prepared candidates, not detector execution. Preserve the existing thirteen/seven
+size split, full selections, unknowns and policy/default-exclusion refusals. No dropping malformed
+files to admit a baseline. `docs/corpus-input-validation.md` records the additive contract.
+Execution/report bindings, optional-stage and license review remain gates before collection.
+No target execution, tool/rule updates, independent outcome approval, commit or push is authorized.
+
+22 October corpus preflight follow-up: continuation authorizes acquisition/preparation of the
+recorded twenty public candidates and additive offline applicability preview, not scanner
+execution. See `docs/corpus-preflight.md`. Preserve complete Git evidence, fixed revisions,
+source-role labels, license evidence and explicit size/policy refusals. The candidate manifest
+is technical input data; the private completion plan remains outside Git. No baselines are
+sharded or enlarged. No rules, tool/database pins, historical records, target execution,
+held-out claims or publication authority change. Exact execution admission and treatment
+freeze still require the remaining scope/size decisions; keep this increment local.
+The student subsequently approved retaining twenty while comparing the eligible subset and
+reporting unsupported baselines explicitly. Current byte preflight has thirteen within the
+unchanged baseline size limits and seven outside; thirteen is provisional until syntax/policy
+validation. Do not enlarge/shard baselines, drop zero-result targets or pool unmatched cases
+into matched-comparison denominators. This decision does not skip execution admission.
+
+22 October repository rehearsal follow-up: the student authorized resolving the annotation
+issue, repository/report bindings and rehearsal on the two existing pilots. See
+`docs/repository-custom-rehearsal.md`. Tool-execution 1.1.0 is additive; preserve its original
+1.0.0 module/worker and all historical native results. The other six families remain unchanged.
+The new repository contract binds all selected Python bytes to fully replayed LangGraph or
+Qdrant pilot evidence. It does not admit arbitrary directories or the wider prescreened corpus.
+Custom workers may use validated file-local partitions; never shard baseline views implicitly.
+Keep native findings, inventory, unsupported states, repeat identities and tool timing separate.
+The new offline HTML/JSON/SARIF package is internal/unredacted, not the screen-sharing summary.
+No target execution, installs, model calls, tool refresh, new target, commit or push is authorized.
+
 20 October common-reporting follow-up: student continuation authorizes the additive offline
 `custom-repair` / `common-report-v5` adapter over the seven sealed finite repair bundles.
 See `docs/custom-rule-reporting.md`. Preserve exact request/native text and parsed projections,
@@ -528,6 +570,25 @@ public accuracy or independent labels follow. Rehearse usefulness before UI; kee
 - Keep development, pilot, held-out, and demo cases separate.
 
 ## Required Checks
+
+### Shared Custom Validation (22 October 2026)
+
+`docs/shared-custom-validation.md` describes the finite shared-input development runner.
+Use the unchanged seven repair registries and workers; preserve exact native bytes, planned
+rows and failed attempts. Every family receives the same batch selection. Origin-family
+assertions are authored development checks; cross-family observations remain unlabelled.
+Overlap candidates do not authorize deduplication. Keep custom policy research-only, and
+retain incomplete files separately from analyzed files without findings. Public repository
+admission, baseline comparisons and new HTML bindings are separate gates. This runner does
+not authorize scanning prescreened candidates or expanding historical fixture contracts.
+
+`docs/authored-baseline-validation.md` adds the student-approved finite baseline comparison.
+Keep original registry groups, syntax-derived eligibility and explicit excluded cases.
+Agent Audit policy blockers refuse its group; never strip markers or convert refusals to
+zero findings. Semgrep research/policy views remain distinct. Custom evidence is referenced
+from its verified historical bundle, not rerun implicitly. Preserve original source/rule
+bytes and both implementation pins. This grouped authored treatment does not establish
+repository-sharding equivalence, public accuracy or admission of any prescreened target.
 
 ### Offline HTML Follow-up (16 October 2026)
 

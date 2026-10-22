@@ -99,6 +99,16 @@ explicit linked continuation for a completed native attempt whose report exceeds
 existing per-file budget. Original failures remain recorded; the versioned format
 preserves all observations without changing scanner limits or rerunning completed scans.
 
+The separate [corpus review companion](docs/corpus-review-report.md) binds draft contextual
+assessments to the frozen sample, original findings, source hashes and native policy fields.
+Its portable HTML keeps AI proposals, unknowns and original claims distinct. It does not
+record human approval, change scanner results or turn syntax matches into vulnerabilities.
+
+The additive [corpus SARIF export](docs/corpus-sarif.md) preserves separate repository,
+tool, repetition and policy-view runs with explicit projection losses and coverage
+accounting. Draft reviews remain proposals; unsupported cells are not clean scans.
+Native priority is retained separately from unaccepted SARIF review results.
+
 For the admitted public pilots, detection uses existing tools under explicit, pinned profiles:
 
 - **Semgrep:** all 68 pinned, unchanged GitLab Python rules in the

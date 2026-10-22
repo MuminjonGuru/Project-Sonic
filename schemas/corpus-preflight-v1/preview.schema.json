@@ -1,0 +1,600 @@
+{
+  "$defs": {
+    "CorpusCandidate": {
+      "additionalProperties": false,
+      "properties": {
+        "candidate_id": {
+          "pattern": "^R[0-9]{2}$",
+          "title": "Candidate Id",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "mcp",
+            "application",
+            "template",
+            "framework",
+            "library"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "lineage_note": {
+          "maxLength": 1000,
+          "minLength": 1,
+          "title": "Lineage Note",
+          "type": "string"
+        },
+        "prescreen_files": {
+          "maximum": 1000,
+          "minimum": 1,
+          "title": "Prescreen Files",
+          "type": "integer"
+        },
+        "prescreen_python_files": {
+          "maximum": 1000,
+          "minimum": 0,
+          "title": "Prescreen Python Files",
+          "type": "integer"
+        },
+        "reported_license": {
+          "maxLength": 100,
+          "minLength": 1,
+          "title": "Reported License",
+          "type": "string"
+        },
+        "repository": {
+          "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$",
+          "title": "Repository",
+          "type": "string"
+        },
+        "revision": {
+          "pattern": "^[0-9a-f]{40}$",
+          "title": "Revision",
+          "type": "string"
+        },
+        "role": {
+          "enum": [
+            "existing-formative-pilot",
+            "prospective-descriptive-candidate"
+          ],
+          "title": "Role",
+          "type": "string"
+        },
+        "selection_rationale": {
+          "maxLength": 1000,
+          "minLength": 1,
+          "title": "Selection Rationale",
+          "type": "string"
+        }
+      },
+      "required": [
+        "candidate_id",
+        "repository",
+        "revision",
+        "kind",
+        "role",
+        "prescreen_files",
+        "prescreen_python_files",
+        "reported_license",
+        "selection_rationale",
+        "lineage_note"
+      ],
+      "title": "CorpusCandidate",
+      "type": "object"
+    },
+    "InventoryEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "byte_length": {
+          "minimum": 0,
+          "title": "Byte Length",
+          "type": "integer"
+        },
+        "media_type": {
+          "minLength": 1,
+          "title": "Media Type",
+          "type": "string"
+        },
+        "path": {
+          "maxLength": 4096,
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "0.1.0",
+          "default": "0.1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "sha256",
+        "byte_length",
+        "media_type"
+      ],
+      "title": "InventoryEntry",
+      "type": "object"
+    },
+    "PolicyInclude": {
+      "additionalProperties": false,
+      "properties": {
+        "line": {
+          "minimum": 1,
+          "title": "Line",
+          "type": "integer"
+        },
+        "owner": {
+          "minLength": 1,
+          "title": "Owner",
+          "type": "string"
+        },
+        "target": {
+          "minLength": 1,
+          "title": "Target",
+          "type": "string"
+        }
+      },
+      "required": [
+        "owner",
+        "line",
+        "target"
+      ],
+      "title": "PolicyInclude",
+      "type": "object"
+    },
+    "PolicyIssue": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "enum": [
+            "policy-budget",
+            "policy-encoding",
+            "unsupported-directive",
+            "unsafe-include",
+            "missing-include",
+            "nested-include",
+            "python-policy-input"
+          ],
+          "title": "Code",
+          "type": "string"
+        },
+        "line": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Line"
+        },
+        "path": {
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "code"
+      ],
+      "title": "PolicyIssue",
+      "type": "object"
+    },
+    "ResearchInput": {
+      "additionalProperties": false,
+      "properties": {
+        "byte_length": {
+          "minimum": 0,
+          "title": "Byte Length",
+          "type": "integer"
+        },
+        "media_type": {
+          "minLength": 1,
+          "title": "Media Type",
+          "type": "string"
+        },
+        "path": {
+          "maxLength": 4096,
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "0.1.0",
+          "default": "0.1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "sha256",
+        "byte_length",
+        "media_type"
+      ],
+      "title": "ResearchInput",
+      "type": "object"
+    },
+    "SelectionEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "custom_size_state": {
+          "enum": [
+            "within-limit",
+            "unsupported-file-size"
+          ],
+          "title": "Custom Size State",
+          "type": "string"
+        },
+        "path_role": {
+          "enum": [
+            "ci",
+            "tests",
+            "examples",
+            "documentation",
+            "other-source"
+          ],
+          "title": "Path Role",
+          "type": "string"
+        },
+        "source": {
+          "$ref": "#/$defs/InventoryEntry"
+        }
+      },
+      "required": [
+        "source",
+        "path_role",
+        "custom_size_state"
+      ],
+      "title": "SelectionEntry",
+      "type": "object"
+    },
+    "SemgrepPolicyAssessment": {
+      "additionalProperties": false,
+      "properties": {
+        "blockers": {
+          "items": {
+            "$ref": "#/$defs/PolicyIssue"
+          },
+          "title": "Blockers",
+          "type": "array"
+        },
+        "contract": {
+          "const": "semgrep-policy-assessment-v1",
+          "default": "semgrep-policy-assessment-v1",
+          "title": "Contract",
+          "type": "string"
+        },
+        "execution_authorization": {
+          "const": "not-granted",
+          "default": "not-granted",
+          "title": "Execution Authorization",
+          "type": "string"
+        },
+        "files": {
+          "items": {
+            "$ref": "#/$defs/ResearchInput"
+          },
+          "title": "Files",
+          "type": "array"
+        },
+        "implicit_gitignore": {
+          "const": "disabled",
+          "default": "disabled",
+          "title": "Implicit Gitignore",
+          "type": "string"
+        },
+        "includes": {
+          "items": {
+            "$ref": "#/$defs/PolicyInclude"
+          },
+          "title": "Includes",
+          "type": "array"
+        },
+        "label": {
+          "const": "Semgrep ignore files and inline suppressions; Git ignore filtering disabled",
+          "default": "Semgrep ignore files and inline suppressions; Git ignore filtering disabled",
+          "title": "Label",
+          "type": "string"
+        },
+        "pattern_evaluation": {
+          "const": "delegated-to-pinned-semgrep",
+          "default": "delegated-to-pinned-semgrep",
+          "title": "Pattern Evaluation",
+          "type": "string"
+        },
+        "root_defaults": {
+          "enum": [
+            "pinned-native-defaults",
+            "root-file-overrides-defaults"
+          ],
+          "title": "Root Defaults",
+          "type": "string"
+        },
+        "semgrepignore_paths": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Semgrepignore Paths",
+          "type": "array"
+        }
+      },
+      "required": [
+        "root_defaults",
+        "semgrepignore_paths",
+        "files",
+        "includes",
+        "blockers"
+      ],
+      "title": "SemgrepPolicyAssessment",
+      "type": "object"
+    },
+    "StagePreview": {
+      "additionalProperties": false,
+      "properties": {
+        "batch_count": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Batch Count",
+          "type": "integer"
+        },
+        "findings": {
+          "default": null,
+          "title": "Findings",
+          "type": "null"
+        },
+        "policy_files": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Policy Files",
+          "type": "integer"
+        },
+        "reasons": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Reasons",
+          "type": "array"
+        },
+        "scanner_invocations": {
+          "const": 0,
+          "default": 0,
+          "title": "Scanner Invocations",
+          "type": "integer"
+        },
+        "selected_bytes": {
+          "minimum": 0,
+          "title": "Selected Bytes",
+          "type": "integer"
+        },
+        "selected_files": {
+          "minimum": 0,
+          "title": "Selected Files",
+          "type": "integer"
+        },
+        "stage": {
+          "enum": [
+            "custom-seven",
+            "semgrep-paired-views",
+            "agent-audit-python"
+          ],
+          "title": "Stage",
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "pending-validation",
+            "unsupported-size",
+            "policy-refused",
+            "no-input"
+          ],
+          "title": "State",
+          "type": "string"
+        }
+      },
+      "required": [
+        "stage",
+        "state",
+        "reasons",
+        "selected_files",
+        "selected_bytes"
+      ],
+      "title": "StagePreview",
+      "type": "object"
+    }
+  },
+  "$id": "urn:agentsec-evidence:schema:corpus-preflight-preview-v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "agent_policy_paths": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Agent Policy Paths",
+      "type": "array"
+    },
+    "artifact_inventory_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Artifact Inventory Sha256",
+      "type": "string"
+    },
+    "candidate": {
+      "$ref": "#/$defs/CorpusCandidate"
+    },
+    "candidate_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Candidate Sha256",
+      "type": "string"
+    },
+    "contract": {
+      "const": "corpus-admission-preview-v1",
+      "default": "corpus-admission-preview-v1",
+      "title": "Contract",
+      "type": "string"
+    },
+    "custom_partitions": {
+      "items": {
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "title": "Custom Partitions",
+      "type": "array"
+    },
+    "full_inventory_bytes": {
+      "title": "Full Inventory Bytes",
+      "type": "integer"
+    },
+    "full_inventory_files": {
+      "title": "Full Inventory Files",
+      "type": "integer"
+    },
+    "intake_manifest_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Intake Manifest Sha256",
+      "type": "string"
+    },
+    "intake_spec_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Intake Spec Sha256",
+      "type": "string"
+    },
+    "license_candidates": {
+      "items": {
+        "$ref": "#/$defs/InventoryEntry"
+      },
+      "title": "License Candidates",
+      "type": "array"
+    },
+    "license_review": {
+      "const": "pending-source-specific-review",
+      "default": "pending-source-specific-review",
+      "title": "License Review",
+      "type": "string"
+    },
+    "limitations": {
+      "default": [
+        "Size/policy preflight is not scanner admission or security analysis.",
+        "Path roles and artifact candidates are filename heuristics, not effective deployment.",
+        "Python syntax, AST budgets, inline suppressions and output bounds remain untested.",
+        "Licenses require source-specific review; metadata and filename matches are not clearance.",
+        "No held-out or confirmatory role is admitted by this contract.",
+        "Baseline views cannot be sharded to bypass whole-selection limits.",
+        "Optional stages require explicit input selection and validation before execution."
+      ],
+      "items": {
+        "type": "string"
+      },
+      "title": "Limitations",
+      "type": "array"
+    },
+    "metadata_differences": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Metadata Differences",
+      "type": "array"
+    },
+    "optional_artifact_candidates": {
+      "additionalProperties": {
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "title": "Optional Artifact Candidates",
+      "type": "object"
+    },
+    "scanner_invocations": {
+      "const": 0,
+      "default": 0,
+      "title": "Scanner Invocations",
+      "type": "integer"
+    },
+    "scanning_authorization": {
+      "const": "not-granted",
+      "default": "not-granted",
+      "title": "Scanning Authorization",
+      "type": "string"
+    },
+    "selection": {
+      "items": {
+        "$ref": "#/$defs/SelectionEntry"
+      },
+      "title": "Selection",
+      "type": "array"
+    },
+    "selection_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Selection Sha256",
+      "type": "string"
+    },
+    "semgrep_policy": {
+      "$ref": "#/$defs/SemgrepPolicyAssessment"
+    },
+    "source_content_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Source Content Sha256",
+      "type": "string"
+    },
+    "stages": {
+      "items": {
+        "$ref": "#/$defs/StagePreview"
+      },
+      "title": "Stages",
+      "type": "array"
+    },
+    "syntax_validation": {
+      "const": "not-performed",
+      "default": "not-performed",
+      "title": "Syntax Validation",
+      "type": "string"
+    },
+    "target_code_executed": {
+      "const": false,
+      "default": false,
+      "title": "Target Code Executed",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "candidate",
+    "candidate_sha256",
+    "intake_spec_sha256",
+    "intake_manifest_sha256",
+    "source_content_sha256",
+    "full_inventory_files",
+    "full_inventory_bytes",
+    "selection",
+    "selection_sha256",
+    "custom_partitions",
+    "semgrep_policy",
+    "agent_policy_paths",
+    "stages",
+    "license_candidates",
+    "artifact_inventory_sha256",
+    "optional_artifact_candidates",
+    "metadata_differences"
+  ],
+  "title": "CorpusPreview",
+  "type": "object"
+}

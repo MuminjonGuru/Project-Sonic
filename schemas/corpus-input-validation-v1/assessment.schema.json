@@ -1,0 +1,288 @@
+{
+  "$defs": {
+    "AgentArtifact": {
+      "additionalProperties": false,
+      "description": "One source occurrence; recognizing or parsing it is not security coverage.",
+      "properties": {
+        "contract": {
+          "const": "agent-artifact-v1",
+          "default": "agent-artifact-v1",
+          "title": "Contract",
+          "type": "string"
+        },
+        "format_id": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Format Id"
+        },
+        "kind": {
+          "enum": [
+            "python-source",
+            "mcp-config",
+            "agent-config",
+            "prompt",
+            "skill",
+            "memory-config",
+            "iac",
+            "other"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "limitations": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Limitations",
+          "type": "array"
+        },
+        "parse_state": {
+          "enum": [
+            "not-run",
+            "parsed",
+            "malformed",
+            "unsupported",
+            "failed"
+          ],
+          "title": "Parse State",
+          "type": "string"
+        },
+        "reason": {
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        },
+        "source": {
+          "$ref": "#/$defs/InventoryEntry"
+        },
+        "target_snapshot_id": {
+          "minLength": 1,
+          "title": "Target Snapshot Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "target_snapshot_id",
+        "source",
+        "kind",
+        "format_id",
+        "parse_state",
+        "reason"
+      ],
+      "title": "AgentArtifact",
+      "type": "object"
+    },
+    "AgentInputCheck": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact": {
+          "$ref": "#/$defs/AgentArtifact"
+        },
+        "line_count": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Line Count"
+        },
+        "suppression_lines": {
+          "items": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "title": "Suppression Lines",
+          "type": "array"
+        }
+      },
+      "required": [
+        "artifact",
+        "line_count",
+        "suppression_lines"
+      ],
+      "title": "AgentInputCheck",
+      "type": "object"
+    },
+    "CorpusStageGate": {
+      "additionalProperties": false,
+      "properties": {
+        "findings": {
+          "default": null,
+          "title": "Findings",
+          "type": "null"
+        },
+        "reasons": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Reasons",
+          "type": "array"
+        },
+        "scanner_invocations": {
+          "const": 0,
+          "default": 0,
+          "title": "Scanner Invocations",
+          "type": "integer"
+        },
+        "selected_files": {
+          "minimum": 0,
+          "title": "Selected Files",
+          "type": "integer"
+        },
+        "stage": {
+          "enum": [
+            "custom-seven",
+            "semgrep-paired-views",
+            "agent-audit-python"
+          ],
+          "title": "Stage",
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "input-eligible",
+            "input-eligible-with-incomplete-files",
+            "unsupported-size",
+            "input-refused",
+            "policy-refused",
+            "no-input"
+          ],
+          "title": "State",
+          "type": "string"
+        }
+      },
+      "required": [
+        "stage",
+        "state",
+        "reasons",
+        "selected_files"
+      ],
+      "title": "CorpusStageGate",
+      "type": "object"
+    },
+    "InventoryEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "byte_length": {
+          "minimum": 0,
+          "title": "Byte Length",
+          "type": "integer"
+        },
+        "media_type": {
+          "minLength": 1,
+          "title": "Media Type",
+          "type": "string"
+        },
+        "path": {
+          "maxLength": 4096,
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "0.1.0",
+          "default": "0.1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "sha256",
+        "byte_length",
+        "media_type"
+      ],
+      "title": "InventoryEntry",
+      "type": "object"
+    }
+  },
+  "$id": "urn:agentsec-evidence:schema:corpus-input-validation-assessment-v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "candidate_id": {
+      "title": "Candidate Id",
+      "type": "string"
+    },
+    "checks": {
+      "items": {
+        "$ref": "#/$defs/AgentInputCheck"
+      },
+      "title": "Checks",
+      "type": "array"
+    },
+    "contract": {
+      "const": "corpus-input-assessment-v1",
+      "default": "corpus-input-assessment-v1",
+      "title": "Contract",
+      "type": "string"
+    },
+    "omitted_from_validation": {
+      "items": {
+        "$ref": "#/$defs/InventoryEntry"
+      },
+      "title": "Omitted From Validation",
+      "type": "array"
+    },
+    "potential_paired_comparison": {
+      "title": "Potential Paired Comparison",
+      "type": "boolean"
+    },
+    "revision": {
+      "title": "Revision",
+      "type": "string"
+    },
+    "scanner_admission": {
+      "const": "pending-execution-protocol-and-resource-review",
+      "default": "pending-execution-protocol-and-resource-review",
+      "title": "Scanner Admission",
+      "type": "string"
+    },
+    "security_scanner_invocations": {
+      "const": 0,
+      "default": 0,
+      "title": "Security Scanner Invocations",
+      "type": "integer"
+    },
+    "selection_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Selection Sha256",
+      "type": "string"
+    },
+    "stages": {
+      "items": {
+        "$ref": "#/$defs/CorpusStageGate"
+      },
+      "title": "Stages",
+      "type": "array"
+    }
+  },
+  "required": [
+    "candidate_id",
+    "revision",
+    "selection_sha256",
+    "checks",
+    "omitted_from_validation",
+    "stages",
+    "potential_paired_comparison"
+  ],
+  "title": "CorpusInputAssessment",
+  "type": "object"
+}

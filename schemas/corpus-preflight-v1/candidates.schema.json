@@ -1,0 +1,130 @@
+{
+  "$defs": {
+    "CorpusCandidate": {
+      "additionalProperties": false,
+      "properties": {
+        "candidate_id": {
+          "pattern": "^R[0-9]{2}$",
+          "title": "Candidate Id",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "mcp",
+            "application",
+            "template",
+            "framework",
+            "library"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "lineage_note": {
+          "maxLength": 1000,
+          "minLength": 1,
+          "title": "Lineage Note",
+          "type": "string"
+        },
+        "prescreen_files": {
+          "maximum": 1000,
+          "minimum": 1,
+          "title": "Prescreen Files",
+          "type": "integer"
+        },
+        "prescreen_python_files": {
+          "maximum": 1000,
+          "minimum": 0,
+          "title": "Prescreen Python Files",
+          "type": "integer"
+        },
+        "reported_license": {
+          "maxLength": 100,
+          "minLength": 1,
+          "title": "Reported License",
+          "type": "string"
+        },
+        "repository": {
+          "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$",
+          "title": "Repository",
+          "type": "string"
+        },
+        "revision": {
+          "pattern": "^[0-9a-f]{40}$",
+          "title": "Revision",
+          "type": "string"
+        },
+        "role": {
+          "enum": [
+            "existing-formative-pilot",
+            "prospective-descriptive-candidate"
+          ],
+          "title": "Role",
+          "type": "string"
+        },
+        "selection_rationale": {
+          "maxLength": 1000,
+          "minLength": 1,
+          "title": "Selection Rationale",
+          "type": "string"
+        }
+      },
+      "required": [
+        "candidate_id",
+        "repository",
+        "revision",
+        "kind",
+        "role",
+        "prescreen_files",
+        "prescreen_python_files",
+        "reported_license",
+        "selection_rationale",
+        "lineage_note"
+      ],
+      "title": "CorpusCandidate",
+      "type": "object"
+    }
+  },
+  "$id": "urn:agentsec-evidence:schema:corpus-preflight-candidates-v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "candidates": {
+      "items": {
+        "$ref": "#/$defs/CorpusCandidate"
+      },
+      "maxItems": 20,
+      "minItems": 1,
+      "title": "Candidates",
+      "type": "array"
+    },
+    "contract": {
+      "const": "corpus-candidates-v1",
+      "default": "corpus-candidates-v1",
+      "title": "Contract",
+      "type": "string"
+    },
+    "scanning_authorization": {
+      "const": "not-granted",
+      "default": "not-granted",
+      "title": "Scanning Authorization",
+      "type": "string"
+    },
+    "scope": {
+      "const": "purposive-descriptive-not-confirmatory",
+      "default": "purposive-descriptive-not-confirmatory",
+      "title": "Scope",
+      "type": "string"
+    },
+    "selection_date": {
+      "const": "2026-10-21",
+      "default": "2026-10-21",
+      "title": "Selection Date",
+      "type": "string"
+    }
+  },
+  "required": [
+    "candidates"
+  ],
+  "title": "CorpusCandidates",
+  "type": "object"
+}

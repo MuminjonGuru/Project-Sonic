@@ -2,6 +2,29 @@
 
 ## Boundary
 
+23 October publication: commit and publish the review companion and corpus SARIF
+changes in two commits and one PR under MuminjonGuru. This overrides the local-only
+publication restrictions below for these changes. Leave merging to the repository
+owner. Keep generated evidence, downloaded targets, private plans and meeting files
+out of Git. Commit and PR descriptions cover changes and verification only; retain
+the actual draft-review provenance in the implementation and documentation.
+
+22 October corpus-SARIF follow-up: continuation authorizes an additive, offline export
+of the already collected Python core. Keep repository/tool/view/repetition/batch identities
+and null unobserved outcomes distinct. Preserve native priority, policy and draft-review
+provenance without promoting them to approved vulnerabilities. Record projection losses,
+validate schema plus SARIF prose constraints, and retain original reports. New helpers
+belong under `tools/`; frozen runtime/export helpers remain unchanged. No scans, rule
+updates, optional-stage execution, human acceptance, commit or push is authorized.
+
+22 October review-report follow-up: continuation authorizes an additive offline HTML
+companion for the frozen corpus source-context proposals. See `docs/corpus-review-report.md`.
+Keep original reports/queues and all runtime/rule pins unchanged. Validate exact selected
+native records, source citations and native policy fields; never turn an AI proposal into
+human acceptance, a confirmed vulnerability or a suppression/merge. New tooling belongs
+under `tools/`, not frozen `src/` or v1/v2 execution/report helpers. Keep generated outputs,
+private plans and targets local. No rescanning, optional stage, commit or push is authorized.
+
 22 October publication: the collection driver and report-only recovery changes are
 approved for two commits and one PR under MuminjonGuru. This supersedes the earlier
 local-only restriction for this increment. Leave the merge to the repository owner.

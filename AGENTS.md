@@ -2,6 +2,14 @@
 
 ## Boundary
 
+23 October export-correction follow-up: student continuation authorizes the additive offline
+review-level projection in `docs/sarif-review-projection.md`. Preserve frozen exporters,
+original reports, native severity/policy, all rule/tool pins and evidence identities.
+Require an external source hash, a fresh output folder and a reversible field-level ledger;
+do not infer native replay, human acceptance or complete SARIF/consumer conformance.
+The final corpus scope remains Python-only with existing optional evidence reported separately.
+No new scanner execution, optional collection, outcome change, commit or push is authorized.
+
 23 October publication: commit and publish the review companion and corpus SARIF
 changes in two commits and one PR under MuminjonGuru. This overrides the local-only
 publication restrictions below for these changes. Leave merging to the repository

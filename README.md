@@ -109,6 +109,12 @@ tool, repetition and policy-view runs with explicit projection losses and covera
 accounting. Draft reviews remain proposals; unsupported cells are not clean scans.
 Native priority is retained separately from unaccepted SARIF review results.
 
+For older exports, the [versioned SARIF correction](docs/sarif-review-projection.md)
+fixes review/level combinations in a new source-bound package, preserving previous levels
+and original bytes. Historical emitters remain unchanged for replay; use the correction
+for legacy SARIF delivery rather than claiming schema validation proves full conformance.
+The newer corpus export already uses review/none. No scan or finding approval is involved.
+
 For the admitted public pilots, detection uses existing tools under explicit, pinned profiles:
 
 - **Semgrep:** all 68 pinned, unchanged GitLab Python rules in the

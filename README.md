@@ -83,6 +83,12 @@ does not run detectors or establish vulnerability coverage. The
 [descriptive collection protocol](docs/corpus-collection-protocol.md) fixes three repetitions
 and the bounded review sample before new corpus findings are collected.
 
+The additive [core execution workflow](docs/corpus-core-execution.md) prepares frozen
+Python selections, requires a plan-bound review record, runs eligible stages sequentially
+and produces replay-checked JSON/HTML evidence. Unsupported baselines remain explicit;
+optional stages are separate. Preparation or a successful run does not establish accuracy,
+independent review or confirmed vulnerabilities.
+
 For the admitted public pilots, detection uses existing tools under explicit, pinned profiles:
 
 - **Semgrep:** all 68 pinned, unchanged GitLab Python rules in the

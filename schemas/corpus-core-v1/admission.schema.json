@@ -1,0 +1,96 @@
+{
+  "$id": "urn:agentsec-evidence:schema:corpus-core-admission-v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "contract": {
+      "const": "corpus-core-admission-v1",
+      "default": "corpus-core-admission-v1",
+      "title": "Contract",
+      "type": "string"
+    },
+    "decision": {
+      "const": "admit-fixed-core-only",
+      "default": "admit-fixed-core-only",
+      "title": "Decision",
+      "type": "string"
+    },
+    "independent_outcome_approval": {
+      "const": false,
+      "default": false,
+      "title": "Independent Outcome Approval",
+      "type": "boolean"
+    },
+    "intended_use": {
+      "const": "private-static-analysis-no-source-redistribution",
+      "default": "private-static-analysis-no-source-redistribution",
+      "title": "Intended Use",
+      "type": "string"
+    },
+    "license_evidence": {
+      "additionalProperties": {
+        "pattern": "^[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "minProperties": 1,
+      "title": "License Evidence",
+      "type": "object"
+    },
+    "license_review_note": {
+      "maxLength": 4000,
+      "minLength": 20,
+      "title": "License Review Note",
+      "type": "string"
+    },
+    "optional_stage_review_note": {
+      "maxLength": 4000,
+      "minLength": 20,
+      "title": "Optional Stage Review Note",
+      "type": "string"
+    },
+    "plan_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Plan Sha256",
+      "type": "string"
+    },
+    "provenance": {
+      "enum": [
+        "student",
+        "student-AI-assisted",
+        "independent-reviewer"
+      ],
+      "title": "Provenance",
+      "type": "string"
+    },
+    "resource_review_note": {
+      "maxLength": 4000,
+      "minLength": 20,
+      "title": "Resource Review Note",
+      "type": "string"
+    },
+    "reviewer": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Reviewer",
+      "type": "string"
+    },
+    "treatment_review_note": {
+      "maxLength": 4000,
+      "minLength": 20,
+      "title": "Treatment Review Note",
+      "type": "string"
+    }
+  },
+  "required": [
+    "plan_sha256",
+    "reviewer",
+    "provenance",
+    "license_evidence",
+    "license_review_note",
+    "optional_stage_review_note",
+    "resource_review_note",
+    "treatment_review_note"
+  ],
+  "title": "CorpusCoreAdmission",
+  "type": "object"
+}

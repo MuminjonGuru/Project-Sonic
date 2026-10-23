@@ -4,6 +4,10 @@
 preserving native evidence, producing provenance-aware normalized records, exporting SARIF,
 and measuring evidence quality for AI-agent repositories.
 
+For a prepared Windows environment, follow the
+[controlled scan-to-HTML demo](#controlled-scan-to-html-demo). It uses one registered
+development example, not an arbitrary repository or the full twenty-repository collection.
+
 ## Architecture
 
 Offline scoring now reads pinned historical benchmark sessions without rerunning scanners.
@@ -52,17 +56,29 @@ The current implementation is a working CLI prototype, not a complete agent-secu
 It integrates established scanners and evaluates how their evidence is preserved, compared,
 and reported. It does not implement a replacement SAST engine.
 
+The completed Python collection contains **20 pinned repositories**, with three repetitions.
+The fixed Semgrep and Agent Audit baselines ran on **13 eligible repository selections**;
+seven larger selections exceeded the frozen baseline harness limits and remain explicitly
+unsupported. That boundary describes this harness, not the upstream tools' maximum capacity.
+The collection is descriptive, not a held-out accuracy benchmark. Existing dependency,
+MCP configuration and infrastructure evidence is separate from this Python core.
+
 | Area | Implemented capability | Evidence boundary |
 |---|---|---|
-| Code | Pinned Semgrep execution, normalization and SARIF | Authored fixtures and two admitted public Python pilots; the 68-rule research profile remains a candidate |
+| Code | Pinned Semgrep execution, normalization and SARIF | Controlled cases and 13 eligible selections in the 20-repository Python collection; 68 unchanged GitLab rules |
 | Infrastructure-as-Code | Pinned KICS execution, normalization and SARIF | Selected Terraform/Kubernetes queries and authored fixtures |
 | Dependencies | Direct OSV analysis compared with Syft -> CycloneDX -> OSV | Controlled PyPI cases and two pinned public-repository lockfiles |
-| Agent artifacts | Bounded validation worker -> pinned Agent Audit -> normalized evidence and SARIF | Thirteen baseline cases, four URL contrasts and two admitted public pilots, including Qdrant MCP JSON; per-file completion remains unknown |
-| Project-authored static families | Seven isolated workers, versioned conditions and explicit inventory/deferred rules | Shared authored validation and the two admitted Python pilots; file-local syntax is not runtime exploitability |
-| Artifact inventory and Git evidence | Filename candidates, commit/tree/blob replay and explicit all-file input decisions | Controlled cases; 47 files in the original pilot and 34 in Qdrant; inventory breadth is not detection breadth |
+| Agent artifacts | Bounded validation worker -> pinned Agent Audit -> normalized evidence and SARIF | Controlled cases, URL contrasts and 13 eligible Python selections; Qdrant MCP JSON is separate evidence; per-file completion remains unknown |
+| Project-authored static families | Seven isolated workers, versioned conditions and explicit inventory/deferred rules | Shared controlled validation and all 20 admitted Python selections; file-local syntax is not runtime exploitability |
+| Artifact inventory and Git evidence | Filename candidates, commit/tree/blob replay and explicit all-file input decisions | Controlled cases and the admitted pinned collection; inventory breadth is not detection breadth |
 | Selected input views | Verified byte copies, full-context policy guards and isolated Python/MCP validation | Controlled cases and explicitly approved pilot selections; a valid view alone does not authorize scanning |
-| Research Semgrep | Pinned 68-rule candidate with separate research and repository-policy views | Controlled cases; 26 Python files in the original pilot and 19 in Qdrant; no general admission or final profile freeze |
-| Reporting and replay | Static/dependency/agent bundles and controlled research cases in common JSON/SARIF; dedicated public-pilot report and replay | Views, repetitions, refusals and dependency paths remain separate; no combined vulnerability total |
+| Research Semgrep | Pinned 68-rule candidate with separate research and repository-policy views | Controlled cases and 309 selected Python files across 13 eligible repositories; no unrestricted repository admission or comprehensive SAST claim |
+| Reporting and replay | Common JSON/HTML, versioned corpus reports, contextual review companions and SARIF projections | Views, repetitions, refusals and dependency paths remain separate; review proposals are not confirmed vulnerabilities |
+
+Five custom families emit narrow security-condition records: tool execution, network/data
+transfer, filesystem access, memory/state and self-modification. Orchestration and
+agent-to-agent analysis are inventory-first; they do not emit active security-condition
+findings. Seven implemented families do not mean comprehensive coverage of seven risk areas.
 
 Public-source execution uses separately admitted finite contracts, not arbitrary repositories. Prompts, skills,
 memory, permissions and agent communication have no comprehensive dedicated treatment here.
@@ -71,17 +87,17 @@ implemented; broader intake, shareable delivery and held-out evaluation remain i
 
 ### Detection Rules and Data
 
-The [corpus preflight](docs/corpus-preflight.md) records twenty pinned candidates and checks
+The [corpus preflight](docs/corpus-preflight.md) records twenty pinned inputs and checks
 complete Git bytes, selected Python paths, license evidence and unchanged stage size/policy
-limits. It does not scan those candidates or admit arbitrary URLs. The two existing pilots
-remain distinct from the eighteen prospective descriptive-study candidates; oversized baseline
+limits. Preflight itself does not scan inputs or admit arbitrary URLs. The two earlier pilots
+remain distinct from the eighteen later descriptive-study selections; oversized baseline
 selections are explicit, never silently sharded or truncated.
 
-The next [isolated input-validation gate](docs/corpus-input-validation.md) binds prepared
+The [isolated input-validation gate](docs/corpus-input-validation.md) binds prepared
 candidate inputs to bounded syntax-worker evidence and explicit per-tool eligibility. It
 does not run detectors or establish vulnerability coverage. The
 [descriptive collection protocol](docs/corpus-collection-protocol.md) fixes three repetitions
-and the bounded review sample before new corpus findings are collected.
+and the bounded review sample used for the completed collection.
 
 The additive [core execution workflow](docs/corpus-core-execution.md) prepares frozen
 Python selections, requires a plan-bound review record, runs eligible stages sequentially
@@ -241,6 +257,132 @@ source labels, statuses, limitations and the two dependency paths separate. See 
 Saved results must be identified as retained evidence, not presented as a live scan. Runtime
 workspaces and generated outputs are not distributed in Git, so a fresh checkout does not
 include the private pilot bundles or meeting reports.
+
+### Controlled Scan-to-HTML Demo
+
+This is a **prepared Windows/PowerShell environment** walkthrough of one registered
+`python-positive` example through Agent Audit and the common HTML reporter. It demonstrates
+the integrated evidence pipeline, not all seven custom families, a random GitHub repository,
+or the larger corpus report format.
+
+Prerequisites:
+
+- Run from this development checkout, with its locked Python environment already installed
+  under `.venv`. The commands use that environment directly; they do not synchronize packages.
+- Docker Desktop must be running locally in Linux-container mode. Both exact image IDs in
+  `configs/tools/agent-audit.toml` must be present. They are local pins, not public image tags;
+  cloning this repository is insufficient. See [private image recovery](docs/agent-image-reproduction.md)
+  for a separately provisioned environment. Do not pull replacements or change pins for a demo.
+- Each fresh scan requires authorization under the current research freeze. Keep demonstration
+  outputs separate from the frozen collection; after the agreed experiment cutoff, use retained
+  results rather than launching another scan. This guide does not reopen the study.
+
+**Documentation status, 23 October 2026:** command interfaces and source contracts were
+checked; no fresh end-to-end demonstration was run for this README update. Rehearse on the
+prepared machine before relying on live execution in a meeting.
+
+#### 1. Check the Environment
+
+Keep the same PowerShell window for every step. Do not continue after a failed check.
+
+```powershell
+$ErrorActionPreference = 'Stop'
+$PSNativeCommandUseErrorActionPreference = $false
+$env:PYTHONDONTWRITEBYTECODE = '1'
+$project = (Get-Location).Path
+$cli = (Resolve-Path '.\.venv\Scripts\agentsec-evidence.exe').Path
+$python = (Resolve-Path '.\.venv\Scripts\python.exe').Path
+
+$dockerType = docker info --format '{{.OSType}}'
+if ($LASTEXITCODE -ne 0 -or $dockerType -ne 'linux') {
+    throw 'A running local Docker Linux engine is required.'
+}
+
+$configJson = & $python -B -c "import json,pathlib,tomllib; print(json.dumps(tomllib.loads(pathlib.Path('configs/tools/agent-audit.toml').read_text())))"
+if ($LASTEXITCODE -ne 0) { throw 'Could not read the pinned image configuration.' }
+$config = $configJson | ConvertFrom-Json
+foreach ($image in @($config.image, $config.validator_image)) {
+    docker image inspect $image --format '{{.Id}}'
+    if ($LASTEXITCODE -ne 0) { throw 'A required pinned image is missing. Stop here.' }
+}
+```
+
+The first check should report Linux via `$dockerType`; the image checks print the two IDs.
+These checks do not pull images, start a scanner or execute target code.
+
+#### 2. Display the Input and Run One Scan
+
+The fixture passes a tool argument to `eval`. Display its text; do not run it with Python
+or install its imports. The CLI accepts the registered case ID, not a repository URL.
+Every attempt below receives a separate workspace and new report destinations.
+
+```powershell
+$cases = Get-Content '.\test_cases\development\agent-artifacts\cases.json' -Raw | ConvertFrom-Json
+($cases.cases | Where-Object id -eq 'python-positive').content
+
+$tag = (Get-Date -Format 'yyyyMMdd-HHmmss') + '-' + [guid]::NewGuid().ToString('N').Substring(0, 8)
+$workspace = Join-Path $project "workspace\live-demo-$tag"
+$common = Join-Path $project "outputs\live-demo-$tag-common"
+$html = Join-Path $project "outputs\live-demo-$tag-html"
+foreach ($path in @($workspace, $common, $html)) {
+    if (Test-Path -LiteralPath $path) { throw "Destination already exists: $path" }
+}
+New-Item -ItemType Directory -Force (Join-Path $project 'outputs') | Out-Null
+
+$raw = & $cli scan agent-audit python-positive --workspace $workspace --json
+$scanExit = $LASTEXITCODE
+if ($scanExit -notin @(0, 8)) {
+    $raw
+    throw "Scan stopped with exit $scanExit. Preserve the attempt; do not retry silently."
+}
+$scan = ($raw -join "`n") | ConvertFrom-Json
+if (-not $scan.run_id -or -not $scan.run_root) { throw 'Missing run identity.' }
+$scan | Select-Object run_id, terminal_state, semantic_sha256
+```
+
+Exit `8` means **partial analysis**, not a clean result. This Agent Audit treatment cannot
+prove per-file completion, even when native output parses and the pipeline finishes.
+Exit `0` means workflow completion, not absence of vulnerabilities. Other exits stop this
+walkthrough: `2` command/input error, `4` execution failure, `5` parsing/validation failure,
+and `6` admission refusal. Do not interpret a failed command as zero findings.
+
+#### 3. Validate the Evidence and Generate HTML
+
+Use the run identity returned by the scan; do not guess it or reuse a historical run ID.
+The following steps process the recorded output without launching another scanner.
+
+```powershell
+& $cli validate $scan.run_id --workspace $workspace --json
+if ($LASTEXITCODE -ne 0) { throw 'Evidence validation failed.' }
+
+& $cli report build $scan.run_root --output $common
+if ($LASTEXITCODE -ne 0) { throw 'Common report generation failed.' }
+
+& $cli report html $common --output $html
+if ($LASTEXITCODE -ne 0) { throw 'HTML generation failed.' }
+
+& $cli report validate-html $html
+if ($LASTEXITCODE -ne 0) { throw 'HTML package validation failed.' }
+
+Invoke-Item (Join-Path $html 'report.html')
+```
+
+Open the generated report's source, analysis-status and scanner-report sections. Validation
+checks the declared evidence/package contracts; it does not confirm vulnerability claims or
+establish complete SARIF consumer interoperability. No additional evidence exports are selected.
+The HTML is internal and unredacted, with no automatic secret masking or public-release clearance.
+
+The retained historical positive example produced four overlapping native reports. Those
+are not four independent vulnerabilities. Its upstream shell-oriented classification of the
+`eval` observation is a known interpretation concern, not an endorsed mapping. Inspect the
+new result instead of promising a particular count before execution. See the
+[runner's interpretation limits](docs/agent-static-runner.md#interpretation).
+
+The raw run remains under `$scan.run_root`; the common report is under `$common`, and the
+portable HTML folder is under `$html`. Preserve failed attempts and existing bundles.
+If execution is unavailable during a meeting, open a prepared report and explicitly identify
+it as retained output, not a fresh scan. The source bytes, rules and historical results must
+not be edited to make a demonstration succeed.
 
 ## Development Environment
 

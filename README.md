@@ -131,6 +131,12 @@ and original bytes. Historical emitters remain unchanged for replay; use the cor
 for legacy SARIF delivery rather than claiming schema validation proves full conformance.
 The newer corpus export already uses review/none. No scan or finding approval is involved.
 
+The separate [OWASP Agentic 2026 mapping tool](docs/owasp-agentic-mapping.md) adds
+proposed, version-bound relationships to retained corpus evidence without rescanning.
+It produces JSON/Markdown alongside the original reports, distinguishes inventory from
+conditions, and leaves unmapped rules and unassessed categories explicit. This is not
+full Top 10 coverage or a compliance score; the initial three mappings remain unreviewed.
+
 For the admitted public pilots, detection uses existing tools under explicit, pinned profiles:
 
 - **Semgrep:** all 68 pinned, unchanged GitLab Python rules in the

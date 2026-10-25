@@ -1,0 +1,90 @@
+{
+  "contract": "owasp-agentic-mapping-registry-v1",
+  "version": "1.0.0",
+  "authorship": "AI-drafted project interpretation",
+  "review_status": "proposed-not-independently-reviewed",
+  "taxonomy": {
+    "name": "OWASP Top 10 for Agentic Applications",
+    "edition": "2026",
+    "publisher": "OWASP Gen AI Security Project",
+    "publication_date": "2025-12-09",
+    "checked_date": "2026-10-25",
+    "url": "https://genai.owasp.org/resource/owasp-top-10-for-agentic-applications-for-2026/",
+    "document_url": "https://genai.owasp.org/download/52117/?tmstv=1765059207",
+    "document_sha256": "a2db94cd00b08e0b3a5e5b619afe024bdbcd74503111085705e4f3dd886fcb5c",
+    "license": "CC-BY-SA-4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "attribution": "Category identifiers and titles: OWASP Top 10 for Agentic Applications 2026, OWASP Gen AI Security Project, CC-BY-SA-4.0. Project-specific relationships are additions, not OWASP endorsements. Source terms are recorded here; project redistribution licensing remains separately unresolved."
+  },
+  "categories": [
+    {"id": "ASI01", "title": "Agent Goal Hijack"},
+    {"id": "ASI02", "title": "Tool Misuse and Exploitation"},
+    {"id": "ASI03", "title": "Identity and Privilege Abuse"},
+    {"id": "ASI04", "title": "Agentic Supply Chain Vulnerabilities"},
+    {"id": "ASI05", "title": "Unexpected Code Execution (RCE)"},
+    {"id": "ASI06", "title": "Memory & Context Poisoning"},
+    {"id": "ASI07", "title": "Insecure Inter-Agent Communication"},
+    {"id": "ASI08", "title": "Cascading Failures"},
+    {"id": "ASI09", "title": "Human-Agent Trust Exploitation"},
+    {"id": "ASI10", "title": "Rogue Agents"}
+  ],
+  "mappings": [
+    {
+      "family": "tool-execution",
+      "producer": "student-tool-execution",
+      "producer_version": "1.1.0",
+      "rule_id": "TOOL-EXEC-004",
+      "record_kind": "condition",
+      "relationship": "conditional-static-relevance",
+      "category": "ASI05",
+      "reference_page": 21,
+      "rationale": "A tool parameter syntactically reaches eval/exec in the same function. This is relevant to reviewing unintended code execution, but the syntax alone does not establish an adversarial execution path.",
+      "required_verification": "Confirm tool registration, parameter provenance, validation, executable reachability, intended behavior and sandbox privileges. Parameter rebinding or trusted inputs may invalidate an attacker-controlled interpretation.",
+      "native_rule": {
+        "evidence_kind": "same-function-parameter-reference",
+        "remediation": "Replace tool-argument evaluation with bounded, explicitly allowed operations.",
+        "rule_id": "TOOL-EXEC-004",
+        "severity": "high",
+        "title": "Direct tool parameter reference passed to eval or exec"
+      }
+    },
+    {
+      "family": "memory-state",
+      "producer": "student-memory-repaired",
+      "producer_version": "1.0.0",
+      "rule_id": "MEM-SEC-107",
+      "record_kind": "condition",
+      "relationship": "conditional-static-relevance",
+      "category": "ASI01",
+      "reference_page": 9,
+      "rationale": "Nonliteral content in a system-message declaration is a review point for instruction provenance. It becomes relevant to goal hijacking only if lower-trust content can influence actual agent instructions or decisions.",
+      "required_verification": "Trace content origin, template construction, actual model use, agent goal/action effects and intervening controls. Fixed templates and trusted configuration may be ordinary behavior. This rule does not establish memory persistence or poisoning.",
+      "native_rule": {
+        "boundary": "Literal role/content shape or resolved SystemMessage; no model use or poisoning proof.",
+        "priority": "medium",
+        "rule_id": "MEM-SEC-107",
+        "status": "active-condition",
+        "title": "Nonliteral content in declared system message"
+      }
+    },
+    {
+      "family": "agent-to-agent",
+      "producer": "student-agent-to-agent-repaired",
+      "producer_version": "1.0.0",
+      "rule_id": "A2A-001",
+      "record_kind": "inventory",
+      "relationship": "inventory-context-only",
+      "category": "ASI07",
+      "reference_page": 27,
+      "rationale": "Agent-like call or routing syntax can identify code worth inspecting when locating communication boundaries. It is inventory context, not a test of communication security.",
+      "required_verification": "Establish that separate agents actually communicate and inspect transport, message integrity, identity, authorization and semantic validation. Naming alone establishes none of these and does not establish Agent2Agent protocol support.",
+      "native_rule": {
+        "boundary": "Receiver spelling and argument shape; not actual agent invocation or safe routing.",
+        "related_ids": [],
+        "rule_id": "A2A-001",
+        "status": "inventory-only",
+        "title": "Agent-like call or routing syntax"
+      }
+    }
+  ]
+}

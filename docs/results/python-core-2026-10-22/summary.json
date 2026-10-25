@@ -1,0 +1,674 @@
+{
+  "format": "curated-python-core-summary-v1",
+  "prepared_on": "2026-10-25",
+  "evidence_collection_date": "2026-10-22",
+  "purpose": "private-repository-review",
+  "new_scanner_invocations": 0,
+  "finding_count_repetition": 1,
+  "repository_count": 20,
+  "selected_python_file_occurrences": 1903,
+  "baseline_eligible_repositories": 13,
+  "baseline_selected_python_files": 309,
+  "baseline_unsupported_repositories": 7,
+  "baseline_unsupported_python_files": 1594,
+  "repetitions": 3,
+  "retained_core_invocations": 999,
+  "custom_condition_records": 456,
+  "custom_family_condition_records": {
+    "tool-execution": 20,
+    "network-data": 128,
+    "filesystem": 263,
+    "memory-state": 41,
+    "self-modification": 4,
+    "orchestration": 0,
+    "agent-to-agent": 0
+  },
+  "baseline_finding_records": {
+    "semgrep-research": 219,
+    "semgrep-policy": 40,
+    "agent-audit-python": 217
+  },
+  "semantic_comparison_unit": "repository-stage across three repetitions; custom batches aggregated",
+  "semantic_comparisons": {
+    "equal": 179,
+    "not-assessed": 21
+  },
+  "policy_file_accounting": {
+    "reported": 182,
+    "native_skipped": 43,
+    "unreported": 84
+  },
+  "agent_audit_per_file_completion": "unknown",
+  "source_bindings": [
+    {
+      "label": "retained-core-results",
+      "sha256": "d38e02faf7f22d25ce4e1df199e3725a621b095bddacb003b018ea0bdc922263",
+      "included": false
+    },
+    {
+      "label": "retained-file-accounting",
+      "sha256": "b673dece329ffe8f02cea5788d9ffa8c0a3099f88dd38200e2d7459cb4b6d05d",
+      "included": false
+    },
+    {
+      "label": "tracked-candidate-manifest",
+      "sha256": "168670bb83516913e501685cee22156c3fe14af4c8ef5b137ab827d1ec0a469c",
+      "included": "elsewhere-in-repository"
+    }
+  ],
+  "limitations": [
+    "Counts are first-repetition condition or native finding records, not unique or confirmed vulnerabilities. Cross-rule, cross-tool and policy-view overlaps are not deduplicated.",
+    "Custom conditions cover 20 selected repositories; baselines cover only 13. Do not compare whole-corpus totals as detector superiority or accuracy.",
+    "Seven baseline selections are unsupported by the frozen harness size contract, not proven beyond the upstream scanners' capacity. Their counts remain null, not zero.",
+    "R01 and R02 are previously inspected formative pilots. The other 18 are purposive descriptive cases, not held-out accuracy data or independent random samples.",
+    "Three repetitions measure semantic agreement at fixed inputs, tool/rule pins and configuration. They are not independent vulnerability samples or evidence of cross-machine reproduction.",
+    "File reporting is not exhaustive security coverage. Twelve executed Semgrep policy views are incomplete; the remaining view is not-established. Agent Audit per-file completion remains unknown.",
+    "Orchestration and agent-to-agent families are inventory-first. Their zero condition count does not establish absence of those risks. Inventory and limitation records are excluded from condition totals.",
+    "The 72-record source-context review is AI-drafted with student review pending and no independent reviewer. This summary makes no precision, recall, exploitability, prevalence or compliance claim.",
+    "Dependency, MCP JSON and IaC results are separate treatments, not part of this Python-only collection. Targets, dependencies and live agents were not executed.",
+    "This curated derivative omits native reports, source excerpts, per-finding locations, messages and local paths. Hashes identify retained inputs but do not independently attest to their validity; this package alone cannot replay native evidence.",
+    "This package is approved for the existing private repository. It does not settle institutional ownership, source licensing or public-release permission."
+  ],
+  "repositories": [
+    {
+      "id": "R01",
+      "repository": "langchain-samples/cicd-pipeline-example",
+      "revision": "5ab0d0a0f3c90999f786f834d9c05484dfe5f2bf",
+      "role": "existing-formative-pilot",
+      "selected_python_files": 26,
+      "custom_condition_records": 15,
+      "custom_family_condition_records": {
+        "tool-execution": 0,
+        "network-data": 1,
+        "filesystem": 11,
+        "memory-state": 3,
+        "self-modification": 0,
+        "orchestration": 0,
+        "agent-to-agent": 0
+      },
+      "retained_invocations_all_repetitions": 30,
+      "semgrep-research": {
+        "state": "observed",
+        "finding_records": 0
+      },
+      "semgrep-policy": {
+        "state": "observed",
+        "finding_records": 0
+      },
+      "agent-audit-python": {
+        "state": "observed",
+        "finding_records": 8
+      }
+    },
+    {
+      "id": "R02",
+      "repository": "qdrant/mcp-server-qdrant",
+      "revision": "c56ae5adf62bb78d852bf7bbcbc5d7b75e2bbe41",
+      "role": "existing-formative-pilot",
+      "selected_python_files": 19,
+      "custom_condition_records": 0,
+      "custom_family_condition_records": {
+        "tool-execution": 0,
+        "network-data": 0,
+        "filesystem": 0,
+        "memory-state": 0,
+        "self-modification": 0,
+        "orchestration": 0,
+        "agent-to-agent": 0
+      },
+      "retained_invocations_all_repetitions": 30,
+      "semgrep-research": {
+        "state": "observed",
+        "finding_records": 2
+      },
+      "semgrep-policy": {
+        "state": "observed",
+        "finding_records": 2
+      },
+      "agent-audit-python": {
+        "state": "observed",
+        "finding_records": 2
+      }
+    },
+    {
+      "id": "R03",
+      "repository": "chroma-core/chroma-mcp",
+      "revision": "98ff67589bdcc31b730a5415ff9529433f949077",
+      "role": "prospective-descriptive-candidate",
+      "selected_python_files": 3,
+      "custom_condition_records": 0,
+      "custom_family_condition_records": {
+        "tool-execution": 0,
+        "network-data": 0,
+        "filesystem": 0,
+        "memory-state": 0,
+        "self-modification": 0,
+        "orchestration": 0,
+        "agent-to-agent": 0
+      },
+      "retained_invocations_all_repetitions": 30,
+      "semgrep-research": {
+        "state": "observed",
+        "finding_records": 0
+      },
+      "semgrep-policy": {
+        "state": "observed",
+        "finding_records": 0
+      },
+      "agent-audit-python": {
+        "state": "observed",
+        "finding_records": 1
+      }
+    },
+    {
+      "id": "R04",
+      "repository": "redis/mcp-redis",
+      "revision": "b814c36c6309d5e2e5ea238b86ff25f60edc0ce8",
+      "role": "prospective-descriptive-candidate",
+      "selected_python_files": 44,
+      "custom_condition_records": 1,
+      "custom_family_condition_records": {
+        "tool-execution": 1,
+        "network-data": 0,
+        "filesystem": 0,
+        "memory-state": 0,
+        "self-modification": 0,
+        "orchestration": 0,
+        "agent-to-agent": 0
+      },
+      "retained_invocations_all_repetitions": 30,
+      "semgrep-research": {
+        "state": "observed",
+        "finding_records": 0
+      },
+      "semgrep-policy": {
+        "state": "observed",
+        "finding_records": 0
+      },
+      "agent-audit-python": {
+        "state": "observed",
+        "finding_records": 6
+      }
+    },
+    {
+      "id": "R05",
+      "repository": "motherduckdb/mcp-server-motherduck",
+      "revision": "41acb581d9bc04e427655ba5178b2c5c01f68cd2",
+      "role": "prospective-descriptive-candidate",
+      "selected_python_files": 31,
+      "custom_condition_records": 1,
+      "custom_family_condition_records": {
+        "tool-execution": 0,
+        "network-data": 0,
+        "filesystem": 1,
+        "memory-state": 0,
+        "self-modification": 0,
+        "orchestration": 0,
+        "agent-to-agent": 0
+      },
+      "retained_invocations_all_repetitions": 30,
+      "semgrep-research": {
+        "state": "observed",
+        "finding_records": 1
+      },
+      "semgrep-policy": {
+        "state": "observed",
+        "finding_records": 0
+      },
+      "agent-audit-python": {
+        "state": "observed",
+        "finding_records": 12
+      }
+    },
+    {
+      "id": "R06",
+      "repository": "neo4j-contrib/mcp-neo4j",
+      "revision": "1c7ad0793b5f06b42b9c44f855c23eb2064c3bb7",
+      "role": "prospective-descriptive-candidate",
+      "selected_python_files": 50,
+      "custom_condition_records": 14,
+      "custom_family_condition_records": {
+        "tool-execution": 0,
+        "network-data": 13,
+        "filesystem": 1,
+        "memory-state": 0,
+        "self-modification": 0,
+        "orchestration": 0,
+        "agent-to-agent": 0
+      },
+      "retained_invocations_all_repetitions": 30,
+      "semgrep-research": {
+        "state": "observed",
+        "finding_records": 188
+      },
+      "semgrep-policy": {
+        "state": "observed",
+        "finding_records": 16
+      },
+      "agent-audit-python": {
+        "state": "observed",
+        "finding_records": 130
+      }
+    },
+    {
+      "id": "R07",
+      "repository": "dbt-labs/dbt-mcp",
+      "revision": "3365e6dd75d1bb4ff92cceb25da6d1a59454b002",
+      "role": "prospective-descriptive-candidate",
+      "selected_python_files": 273,
+      "custom_condition_records": 9,
+      "custom_family_condition_records": {
+        "tool-execution": 0,
+        "network-data": 0,
+        "filesystem": 9,
+        "memory-state": 0,
+        "self-modification": 0,
+        "orchestration": 0,
+        "agent-to-agent": 0
+      },
+      "retained_invocations_all_repetitions": 105,
+      "semgrep-research": {
+        "state": "unsupported-size",
+        "finding_records": null
+      },
+      "semgrep-policy": {
+        "state": "unsupported-size",
+        "finding_records": null
+      },
+      "agent-audit-python": {
+        "state": "unsupported-size",
+        "finding_records": null
+      }
+    },
+    {
+      "id": "R08",
+      "repository": "MarkusPfundstein/mcp-obsidian",
+      "revision": "5ee0b84fa8319fd2fdf0db0ee1febb065e712a15",
+      "role": "prospective-descriptive-candidate",
+      "selected_python_files": 15,
+      "custom_condition_records": 13,
+      "custom_family_condition_records": {
+        "tool-execution": 0,
+        "network-data": 13,
+        "filesystem": 0,
+        "memory-state": 0,
+        "self-modification": 0,
+        "orchestration": 0,
+        "agent-to-agent": 0
+      },
+      "retained_invocations_all_repetitions": 30,
+      "semgrep-research": {
+        "state": "observed",
+        "finding_records": 0
+      },
+      "semgrep-policy": {
+        "state": "observed",
+        "finding_records": 0
+      },
+      "agent-audit-python": {
+        "state": "observed",
+        "finding_records": 13
+      }
+    },
+    {
+      "id": "R09",
+      "repository": "ckreiling/mcp-server-docker",
+      "revision": "57a7df208fdc2362505835f670e53c66f3717c48",
+      "role": "prospective-descriptive-candidate",
+      "selected_python_files": 5,
+      "custom_condition_records": 0,
+      "custom_family_condition_records": {
+        "tool-execution": 0,
+        "network-data": 0,
+        "filesystem": 0,
+        "memory-state": 0,
+        "self-modification": 0,
+        "orchestration": 0,
+        "agent-to-agent": 0
+      },
+      "retained_invocations_all_repetitions": 30,
+      "semgrep-research": {
+        "state": "observed",
+        "finding_records": 0
+      },
+      "semgrep-policy": {
+        "state": "observed",
+        "finding_records": 0
+      },
+      "agent-audit-python": {
+        "state": "observed",
+        "finding_records": 2
+      }
+    },
+    {
+      "id": "R10",
+      "repository": "langchain-ai/local-deep-researcher",
+      "revision": "96555649619b9c482442f2cba043312bd7692507",
+      "role": "prospective-descriptive-candidate",
+      "selected_python_files": 7,
+      "custom_condition_records": 3,
+      "custom_family_condition_records": {
+        "tool-execution": 0,
+        "network-data": 0,
+        "filesystem": 0,
+        "memory-state": 3,
+        "self-modification": 0,
+        "orchestration": 0,
+        "agent-to-agent": 0
+      },
+      "retained_invocations_all_repetitions": 30,
+      "semgrep-research": {
+        "state": "observed",
+        "finding_records": 1
+      },
+      "semgrep-policy": {
+        "state": "observed",
+        "finding_records": 1
+      },
+      "agent-audit-python": {
+        "state": "observed",
+        "finding_records": 8
+      }
+    },
+    {
+      "id": "R11",
+      "repository": "langchain-ai/open_deep_research",
+      "revision": "1b7d2e80db9faa586165c60e09096dbbfd483a64",
+      "role": "prospective-descriptive-candidate",
+      "selected_python_files": 22,
+      "custom_condition_records": 18,
+      "custom_family_condition_records": {
+        "tool-execution": 0,
+        "network-data": 0,
+        "filesystem": 3,
+        "memory-state": 15,
+        "self-modification": 0,
+        "orchestration": 0,
+        "agent-to-agent": 0
+      },
+      "retained_invocations_all_repetitions": 30,
+      "semgrep-research": {
+        "state": "observed",
+        "finding_records": 20
+      },
+      "semgrep-policy": {
+        "state": "observed",
+        "finding_records": 19
+      },
+      "agent-audit-python": {
+        "state": "observed",
+        "finding_records": 17
+      }
+    },
+    {
+      "id": "R12",
+      "repository": "virattt/ai-hedge-fund",
+      "revision": "4e1657ddc689e3939c481a8f0955444b10f02dc9",
+      "role": "prospective-descriptive-candidate",
+      "selected_python_files": 118,
+      "custom_condition_records": 7,
+      "custom_family_condition_records": {
+        "tool-execution": 0,
+        "network-data": 2,
+        "filesystem": 5,
+        "memory-state": 0,
+        "self-modification": 0,
+        "orchestration": 0,
+        "agent-to-agent": 0
+      },
+      "retained_invocations_all_repetitions": 42,
+      "semgrep-research": {
+        "state": "unsupported-size",
+        "finding_records": null
+      },
+      "semgrep-policy": {
+        "state": "unsupported-size",
+        "finding_records": null
+      },
+      "agent-audit-python": {
+        "state": "unsupported-size",
+        "finding_records": null
+      }
+    },
+    {
+      "id": "R13",
+      "repository": "FoundationAgents/OpenManus",
+      "revision": "3309bf4e416fb1c74b008f3e86494439a31bad53",
+      "role": "prospective-descriptive-candidate",
+      "selected_python_files": 90,
+      "custom_condition_records": 14,
+      "custom_family_condition_records": {
+        "tool-execution": 1,
+        "network-data": 0,
+        "filesystem": 13,
+        "memory-state": 0,
+        "self-modification": 0,
+        "orchestration": 0,
+        "agent-to-agent": 0
+      },
+      "retained_invocations_all_repetitions": 42,
+      "semgrep-research": {
+        "state": "unsupported-size",
+        "finding_records": null
+      },
+      "semgrep-policy": {
+        "state": "unsupported-size",
+        "finding_records": null
+      },
+      "agent-audit-python": {
+        "state": "unsupported-size",
+        "finding_records": null
+      }
+    },
+    {
+      "id": "R14",
+      "repository": "langchain-ai/react-agent",
+      "revision": "087d90d0c876668956b733a104f1708cef0128e2",
+      "role": "prospective-descriptive-candidate",
+      "selected_python_files": 12,
+      "custom_condition_records": 1,
+      "custom_family_condition_records": {
+        "tool-execution": 0,
+        "network-data": 0,
+        "filesystem": 0,
+        "memory-state": 1,
+        "self-modification": 0,
+        "orchestration": 0,
+        "agent-to-agent": 0
+      },
+      "retained_invocations_all_repetitions": 30,
+      "semgrep-research": {
+        "state": "observed",
+        "finding_records": 3
+      },
+      "semgrep-policy": {
+        "state": "observed",
+        "finding_records": 0
+      },
+      "agent-audit-python": {
+        "state": "observed",
+        "finding_records": 1
+      }
+    },
+    {
+      "id": "R15",
+      "repository": "langchain-ai/retrieval-agent-template",
+      "revision": "6a441ef6018b5465c5e97f4b3ca88b807b4b6fb2",
+      "role": "prospective-descriptive-candidate",
+      "selected_python_files": 13,
+      "custom_condition_records": 0,
+      "custom_family_condition_records": {
+        "tool-execution": 0,
+        "network-data": 0,
+        "filesystem": 0,
+        "memory-state": 0,
+        "self-modification": 0,
+        "orchestration": 0,
+        "agent-to-agent": 0
+      },
+      "retained_invocations_all_repetitions": 30,
+      "semgrep-research": {
+        "state": "observed",
+        "finding_records": 0
+      },
+      "semgrep-policy": {
+        "state": "observed",
+        "finding_records": 0
+      },
+      "agent-audit-python": {
+        "state": "observed",
+        "finding_records": 1
+      }
+    },
+    {
+      "id": "R16",
+      "repository": "huggingface/smolagents",
+      "revision": "96f33faaf028479119ec8d34507b47694cf14e34",
+      "role": "prospective-descriptive-candidate",
+      "selected_python_files": 75,
+      "custom_condition_records": 71,
+      "custom_family_condition_records": {
+        "tool-execution": 8,
+        "network-data": 23,
+        "filesystem": 38,
+        "memory-state": 0,
+        "self-modification": 2,
+        "orchestration": 0,
+        "agent-to-agent": 0
+      },
+      "retained_invocations_all_repetitions": 42,
+      "semgrep-research": {
+        "state": "unsupported-size",
+        "finding_records": null
+      },
+      "semgrep-policy": {
+        "state": "unsupported-size",
+        "finding_records": null
+      },
+      "agent-audit-python": {
+        "state": "unsupported-size",
+        "finding_records": null
+      }
+    },
+    {
+      "id": "R17",
+      "repository": "andrewyng/aisuite",
+      "revision": "66c7890c2d68c2d67f41723bc848bb6713d82a9c",
+      "role": "prospective-descriptive-candidate",
+      "selected_python_files": 355,
+      "custom_condition_records": 68,
+      "custom_family_condition_records": {
+        "tool-execution": 1,
+        "network-data": 45,
+        "filesystem": 16,
+        "memory-state": 6,
+        "self-modification": 0,
+        "orchestration": 0,
+        "agent-to-agent": 0
+      },
+      "retained_invocations_all_repetitions": 126,
+      "semgrep-research": {
+        "state": "unsupported-size",
+        "finding_records": null
+      },
+      "semgrep-policy": {
+        "state": "unsupported-size",
+        "finding_records": null
+      },
+      "agent-audit-python": {
+        "state": "unsupported-size",
+        "finding_records": null
+      }
+    },
+    {
+      "id": "R18",
+      "repository": "openai/swarm",
+      "revision": "6af0b4caf37dca4526dfd98e9fbd8ce36e7eeb22",
+      "role": "prospective-descriptive-candidate",
+      "selected_python_files": 62,
+      "custom_condition_records": 29,
+      "custom_family_condition_records": {
+        "tool-execution": 0,
+        "network-data": 0,
+        "filesystem": 19,
+        "memory-state": 10,
+        "self-modification": 0,
+        "orchestration": 0,
+        "agent-to-agent": 0
+      },
+      "retained_invocations_all_repetitions": 30,
+      "semgrep-research": {
+        "state": "observed",
+        "finding_records": 4
+      },
+      "semgrep-policy": {
+        "state": "observed",
+        "finding_records": 2
+      },
+      "agent-audit-python": {
+        "state": "observed",
+        "finding_records": 16
+      }
+    },
+    {
+      "id": "R19",
+      "repository": "run-llama/llama-agents",
+      "revision": "656b3fc5a37debfb44ddcf90b51488e59e3564d4",
+      "role": "prospective-descriptive-candidate",
+      "selected_python_files": 516,
+      "custom_condition_records": 102,
+      "custom_family_condition_records": {
+        "tool-execution": 7,
+        "network-data": 25,
+        "filesystem": 67,
+        "memory-state": 3,
+        "self-modification": 0,
+        "orchestration": 0,
+        "agent-to-agent": 0
+      },
+      "retained_invocations_all_repetitions": 189,
+      "semgrep-research": {
+        "state": "unsupported-size",
+        "finding_records": null
+      },
+      "semgrep-policy": {
+        "state": "unsupported-size",
+        "finding_records": null
+      },
+      "agent-audit-python": {
+        "state": "unsupported-size",
+        "finding_records": null
+      }
+    },
+    {
+      "id": "R20",
+      "repository": "microsoft/TaskWeaver",
+      "revision": "d44ddef23f90059fb17999d3095db4240e98f955",
+      "role": "prospective-descriptive-candidate",
+      "selected_python_files": 167,
+      "custom_condition_records": 90,
+      "custom_family_condition_records": {
+        "tool-execution": 2,
+        "network-data": 6,
+        "filesystem": 80,
+        "memory-state": 0,
+        "self-modification": 2,
+        "orchestration": 0,
+        "agent-to-agent": 0
+      },
+      "retained_invocations_all_repetitions": 63,
+      "semgrep-research": {
+        "state": "unsupported-size",
+        "finding_records": null
+      },
+      "semgrep-policy": {
+        "state": "unsupported-size",
+        "finding_records": null
+      },
+      "agent-audit-python": {
+        "state": "unsupported-size",
+        "finding_records": null
+      }
+    }
+  ]
+}

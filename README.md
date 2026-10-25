@@ -64,6 +64,11 @@ unsupported. That boundary describes this harness, not the upstream tools' maxim
 The collection is descriptive, not a held-out accuracy benchmark. Existing dependency,
 MCP configuration and infrastructure evidence is separate from this Python core.
 
+The [retained evaluation summary](docs/results/python-core-2026-10-22/README.md) includes
+the twenty pinned repository results, coverage and repeatability tables, limitations,
+and a downloadable offline HTML summary. This curated package excludes raw evidence
+and source excerpts; it does not change the repository's licensing or publication status.
+
 | Area | Implemented capability | Evidence boundary |
 |---|---|---|
 | Code | Pinned Semgrep execution, normalization and SARIF | Controlled cases and 13 eligible selections in the 20-repository Python collection; 68 unchanged GitLab rules |

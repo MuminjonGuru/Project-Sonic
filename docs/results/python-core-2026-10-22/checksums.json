@@ -1,0 +1,35 @@
+{
+  "algorithm": "SHA-256",
+  "files": [
+    {
+      "path": "coverage.csv",
+      "bytes": 2521,
+      "sha256": "03a8a9ea0d18f151fc1feaaba40e9dabc099fe70b3778278202f5c4f06a75d88"
+    },
+    {
+      "path": "README.md",
+      "bytes": 9883,
+      "sha256": "1c105f738ed982d5f065b02fa7e993bcaf658262e6a07f2424bf71565421ba49"
+    },
+    {
+      "path": "repeatability.csv",
+      "bytes": 5599,
+      "sha256": "c1db08229f3b908b1aa74ad8688a8addacc0a35d8908ec18c52be4b6ef85a893"
+    },
+    {
+      "path": "report.html",
+      "bytes": 14881,
+      "sha256": "c23a8b2a791a73408a803b05c37412e8eeb216daa9a389ce2622016f84698904"
+    },
+    {
+      "path": "repositories.csv",
+      "bytes": 3411,
+      "sha256": "4093323932fc3279798feec914d2914128f7bc22a2d7d19be6fe75dffce01565"
+    },
+    {
+      "path": "summary.json",
+      "bytes": 21081,
+      "sha256": "ae5c76f4bb89670ceab1a24849038163da465f28639ecddca116f0524bd47228"
+    }
+  ]
+}
